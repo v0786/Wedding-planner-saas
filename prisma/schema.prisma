@@ -1,0 +1,231 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  passwordHash  String?
+  accounts      Account[]
+  sessions      Session[]
+  memberships   WorkspaceMember[]
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Workspace {
+  id          String   @id @default(cuid())
+  name        String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  members     WorkspaceMember[]
+  weddings    Wedding[]
+}
+
+model WorkspaceMember {
+  id          String   @id @default(cuid())
+  workspaceId String
+  userId      String
+  role        String   @default("owner")
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([workspaceId, userId])
+}
+
+model Wedding {
+  id              String   @id @default(cuid())
+  workspaceId     String
+  name            String
+  coupleName1     String
+  coupleName2     String?
+  date            DateTime?
+  venue           String?
+  address         String? @db.Text
+  mapUrl          String?
+  timezone        String   @default("Asia/Kolkata")
+  description     String? @db.Text
+  rsvpDeadline    DateTime?
+  allowGuestEdits Boolean  @default(true)
+  invitationToken String   @unique @default(cuid())
+  published       Boolean  @default(false)
+  workspace       Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  events          Event[]
+  guests          Guest[]
+  rsvpSubmissions RsvpSubmission[]
+  customQuestions CustomQuestion[]
+  auditLogs       AuditLog[]
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([workspaceId])
+  @@index([invitationToken])
+}
+
+model Event {
+  id              String   @id @default(cuid())
+  weddingId       String
+  name            String
+  date            DateTime?
+  time            String?
+  venue           String?
+  address         String? @db.Text
+  description     String? @db.Text
+  order           Int      @default(0)
+  rsvpDeadline    DateTime?
+  wedding         Wedding  @relation(fields: [weddingId], references: [id], onDelete: Cascade)
+  rsvpEventResponses RsvpEventResponse[]
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([weddingId])
+}
+
+model Guest {
+  id            String   @id @default(cuid())
+  weddingId     String
+  firstName     String
+  lastName      String?
+  mobile        String?
+  email         String?
+  group         String?
+  notes         String? @db.Text
+  dietaryPrefs  String? @db.Text
+  wedding       Wedding  @relation(fields: [weddingId], references: [id], onDelete: Cascade)
+  rsvpSubmission RsvpSubmission?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([weddingId])
+}
+
+model RsvpSubmission {
+  id              String   @id @default(cuid())
+  weddingId       String
+  guestId         String   @unique
+  fullName        String
+  mobile          String
+  status          String   @default("pending")
+  editTokenHash   String?
+  submittedAt     DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  wedding         Wedding  @relation(fields: [weddingId], references: [id], onDelete: Cascade)
+  guest           Guest    @relation(fields: [guestId], references: [id], onDelete: Cascade)
+  familyMembers   FamilyMember[]
+  eventResponses  RsvpEventResponse[]
+  answers         Answer[]
+  createdAt       DateTime @default(now())
+
+  @@index([weddingId])
+  @@index([editTokenHash])
+}
+
+model FamilyMember {
+  id                String         @id @default(cuid())
+  rsvpSubmissionId  String
+  fullName          String
+  relation          String?
+  age               Int?
+  dietaryPrefs      String? @db.Text
+  rsvpSubmission    RsvpSubmission @relation(fields: [rsvpSubmissionId], references: [id], onDelete: Cascade)
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+}
+
+model RsvpEventResponse {
+  id                String         @id @default(cuid())
+  rsvpSubmissionId  String
+  eventId           String
+  status            String         @default("pending")
+  rsvpSubmission    RsvpSubmission @relation(fields: [rsvpSubmissionId], references: [id], onDelete: Cascade)
+  event             Event          @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  @@unique([rsvpSubmissionId, eventId])
+}
+
+model CustomQuestion {
+  id        String   @id @default(cuid())
+  weddingId String
+  question  String
+  type      String   @default("text")
+  options   Json?
+  required  Boolean  @default(false)
+  order     Int      @default(0)
+  enabled   Boolean  @default(true)
+  wedding   Wedding  @relation(fields: [weddingId], references: [id], onDelete: Cascade)
+  answers   Answer[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([weddingId])
+}
+
+model Answer {
+  id                String         @id @default(cuid())
+  rsvpSubmissionId  String
+  questionId        String
+  value             String         @db.Text
+  rsvpSubmission    RsvpSubmission @relation(fields: [rsvpSubmissionId], references: [id], onDelete: Cascade)
+  question          CustomQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  weddingId String
+  action    String
+  details   Json?
+  userId    String?
+  wedding   Wedding  @relation(fields: [weddingId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@index([weddingId])
+}

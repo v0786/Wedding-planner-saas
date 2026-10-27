@@ -1,0 +1,6 @@
+OpenCode LAN file server
+scheme: http
+port: 8123
+url: http://192.168.0.125:8123/
+username: opencode
+password: see app File settings
