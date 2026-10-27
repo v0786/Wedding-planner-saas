@@ -1,39 +1,26 @@
-# Architecture - Wedding Guest Manager
+# Architecture --- Wedding Planner SaaS
 
-## Overview
-Mobile-first SaaS built as a modular monolith using Next.js 15 App Router.
+**Status:** Implemented (MVP)  
+**Version:** 1.1
 
-## Tech Stack
-- **Frontend**: Next.js 15, React 19, TypeScript, Tailwind CSS
-- **Backend**: Next.js API routes/Server Actions
-- **Database**: PostgreSQL with Prisma ORM
-- **Authentication**: NextAuth.js v5
-- **Validation**: Zod
+## 1. Architecture goals
+Mobile-first experience, simple deployment, safe multi-tenancy, accurate RSVP calculations.
 
-## Architecture Pattern
-Modular monolith with clear separation of concerns:
-- `app/` - Next.js App Router (pages, layouts, API routes)
-- `components/` - Reusable UI components
-- `lib/` - Utilities, auth, database client
-- `prisma/` - Database schema and migrations
+## 2. Stack
+- Web app: Next.js 15 + TypeScript
+- UI: Tailwind CSS
+- Database: PostgreSQL
+- Authentication: NextAuth.js v5 (credentials)
+- ORM: Prisma
+- Hosting: Vercel or compatible
 
-## Multi-Tenancy
-- Workspaces are the tenant boundary
-- All data scoped by workspaceId through relationships
-- Server-side authorization on every request
-- Users can only access data in workspaces they belong to
+## 3. High-level modules
+1. Web UI (App Router)
+2. API layer (Route Handlers)
+3. Auth/workspace layer
+4. Data layer (Prisma + PostgreSQL)
+5. Public RSVP service
+6. Reporting
 
-## Security
-- NextAuth.js for authentication
-- Server-side session validation
-- Workspace membership checks on all protected operations
-- Unpredictable tokens for public invitations (cuid)
-- Password hashing with bcryptjs
-- Input validation with Zod
-- No service role keys exposed to client
-
-## Data Flow
-1. Host authenticates → creates/selects workspace → manages wedding
-2. Host creates events and guests → publishes invitation
-3. Guest opens public link → fills RSVP form (no auth) → submits
-4. Data saved with proper tenant scoping
+## 4. Implementation
+Implemented with modular monolith structure. See prisma/schema.prisma for models.
