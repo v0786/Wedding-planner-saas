@@ -1,8 +1,7 @@
 # Project Memory --- Wedding Planner SaaS
 
 **Last updated:** 2026-10-28\
-**Stage:** Product planning; coding has not been authorized/started in
-this workflow.
+**Stage:** Phase 1 MVP prototype started; backend persistence and auth are not yet implemented.
 
 ## 1. Current snapshot
 
@@ -99,6 +98,14 @@ this workflow.
 -   `plan.md`: phases and gates.
 
 ## 7. Change log
+
+### 1.2 — 2026-10-28
+
+- Added the first responsive dashboard and guest-management prototype.
+- Marked demo data clearly; no persistence or production-readiness claim.
+- Build passed; browser preview was unavailable during verification.
+
+
 
 ### 1.1 --- 2026-10-28
 

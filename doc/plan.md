@@ -43,6 +43,12 @@
 
 ## Phase 1b --- Foundation and workspace security
 
+**Current status:** UI prototype started; backend foundation not yet implemented.
+
+- Prototype surface: responsive overview dashboard and searchable guest-record list using explicitly labeled demo data.
+- Next implementation gate: confirm Supabase schema/RLS approach, then implement authentication, workspace isolation, and persisted wedding/guest records.
+
+
 ### Tasks
 
 -   Inspect repository and existing code before changes.
