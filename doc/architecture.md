@@ -49,20 +49,34 @@ Final choices require approval before implementation.
 ## 4. Domain model
 
 Suggested entities: - `users` - `workspaces` - `workspace_members` -
-`weddings` - `events` - `guests` (individual people) - `households` or
-`guest_parties` - `party_members` (if using explicit household
-grouping) - `rsvp_submissions` (one current response per
-respondent/party as defined by the final domain rules) -
-`rsvp_attendees` - `rsvp_event_responses` - `rsvp_questions` -
+`weddings` - `events` - `guests` (individual people) - `households` -
+`household_members` - `rsvp_submissions` (one current response per
+household and wedding) - `rsvp_attendees` (the invited people represented
+by that submission) - `rsvp_event_responses` - `rsvp_questions` -
 `rsvp_question_options` - `rsvp_answers` - `invitation_links` -
 `rsvp_edit_tokens` - `faq_articles` - `audit_logs` - future:
 `notification_preferences`, `notification_deliveries`, `subscriptions`,
 `payments`
 
-Exact table design and whether an RSVP is person-based or
-household-based must be finalized before migrations. Regardless of
-representation, a resubmission must update the correct existing RSVP and
-must not inflate attendance.
+### Confirmed MVP RSVP model
+
+Use a household-based submission with individually listed guests. A
+household belongs to one wedding, contains one or more guest records, and
+has one current RSVP submission for that wedding. The submission stores the
+respondent/contact details and the selected RSVP status for each included
+person. Event responses are stored per person per event, so attendance,
+meal, and event totals remain accurate for families with different
+attendance choices. A resubmission updates the existing household
+submission transactionally; it never creates a second current submission
+or inflates counts.
+
+A household is an organizational grouping for the invitation flow, not a
+permission boundary. Hosts may correct household or guest records through
+authorized dashboard actions. Guest edit tokens can update only the
+associated household submission and its still-open event responses.
+
+This model is the default MVP decision and must be reflected in
+migrations and tests before implementation approval.
 
 ## 5. Key relationships and invariants
 

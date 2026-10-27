@@ -10,7 +10,9 @@
 -   Confirm product name and initial customer segment.
 -   Finalize guest journey, host journey, custom question behavior, and
     RSVP deadline rules.
--   Resolve household/person model and attendee-count rules.
+-   Resolve household/person model and attendee-count rules. **DONE:**
+    household-based RSVP submission with individually listed guests and
+    per-person, per-event responses.
 -   Draft privacy, retention, and deletion policy.
 -   Interview 5--10 potential hosts/planners and recruit 1--3 pilot
     weddings.

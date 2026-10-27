@@ -61,8 +61,11 @@
 
   Final product name/domain OPEN                    Working name only
 
-  Exact household/RSVP      OPEN                    Must resolve before
-  schema                                            migrations
+  Exact household/RSVP      DONE                    Household-based
+  schema                                            submission; individual
+                                                    guests and per-event
+                                                    responses; one current
+                                                    submission per household
 
   Final stack/provider      OPEN                    Proposed stack
   selection                                         documented
