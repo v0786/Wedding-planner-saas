@@ -23,7 +23,25 @@
 -   Pilot feedback informs the MVP scope.
 -   User explicitly authorizes coding.
 
-## Phase 1 --- Foundation and workspace security
+## Phase 1 --- Product discovery
+
+### Current plan
+
+- Recruit and interview 3 family wedding hosts and 2 independent wedding planners.
+- Use the short problem-first questionnaire in `prd.md`.
+- Track recruitment and evidence in the interview tracker in `prd.md`.
+- Compare current workflows, alternatives, pain severity, trust concerns, willingness to pay, and repeated use cases.
+- Re-check competitor pricing/features before using them in pricing or scope decisions.
+- Keep verified findings, hypotheses, and founder decisions clearly separated.
+
+### Exit criteria
+
+- Five interviews completed, or a documented recruitment blocker is approved.
+- Findings summarized with evidence and unresolved questions.
+- Founder approves the initial customer focus, prioritized MVP, success metrics, and pricing hypothesis.
+- No coding or AI feature implementation begins as part of discovery.
+
+## Phase 1b --- Foundation and workspace security
 
 ### Tasks
 

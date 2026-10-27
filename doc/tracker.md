@@ -74,6 +74,19 @@
                                                     hosts
   -------------------------------------------------------------------------
 
+## 2. Phase 1 discovery status
+
+| Item | Status | Notes |
+|---|---|---|
+| Define discovery sample | DONE | Proposal: 3 family hosts + 2 independent planners; not final market validation |
+| Prepare interview questionnaire | DONE | Ten-question, problem-first guide added to `prd.md` |
+| Prepare interview tracker | DONE | Five empty interview slots added to `prd.md`; no participants/results invented |
+| Prepare recruitment message | DONE | Short phone/video recruitment copy added to `prd.md` |
+| Verify competitor inputs | DONE | Preliminary public-source scan: Joy, Weddingkart, Sehnai, Wedence, WedPlan |
+| Conduct interviews | TODO | Recruit and interview five people; record evidence separately from hypotheses |
+| Synthesize findings | BLOCKED | Requires completed interviews |
+| Approve target segment and MVP scope | BLOCKED | Requires evidence and founder approval |
+
 ## 2. Pre-coding tasks
 
   ------------------------------------------------------------------------------

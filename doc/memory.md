@@ -80,7 +80,15 @@ this workflow.
 -   Pricing and first customer segment.
 -   Final stack/provider selection.
 
-## 6. Document set
+## 6. Current discovery plan
+
+- Initial mixed sample: 3 family wedding hosts and 2 independent wedding planners.
+- This sample is a discovery plan only; final target market is not validated.
+- Discovery must cover problems, current alternatives, essential workflows, trust concerns, willingness to pay, and MVP opportunities.
+- No interview participants or results have been recorded yet.
+- Competitor scan is preliminary and based on public official information checked 2026-10-28; prices/features must be rechecked before commercial decisions.
+
+## 7. Document set
 
 -   `prd.md`: scope, requirements, acceptance criteria.
 -   `architecture.md`: modules, data model, security, flows.

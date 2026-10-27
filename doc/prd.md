@@ -149,6 +149,65 @@ Validate the product with real hosts before expanding scope.
     retention/deletion and backup/recovery policies.
 -   Keep secrets out of source control.
 
+## 8. Phase 1 discovery plan (proposal, not validated)
+
+### Recruitment sample
+
+Recruit five interviews:
+
+- 3 family wedding hosts who are organizing or recently organized an Indian wedding.
+- 2 independent wedding planners who manage client weddings.
+
+This is a discovery sample only. It does not confirm the final target market or exclude other customer segments.
+
+### Short interview questionnaire
+
+1. Tell me about the last wedding you organized or managed.
+2. How did you collect guest names, attendance, event-wise attendance, and meal needs?
+3. What was difficult, slow, or error-prone?
+4. Which tools did you use (WhatsApp, calls, spreadsheets, paper, forms, or another product)?
+5. What did you do when a guest changed their response or did not reply?
+6. What information did you need for each event, and who needed the final counts?
+7. What would make you trust a new tool with guest names and phone numbers?
+8. What would be the most valuable improvement to your current process?
+9. Have you paid for a wedding-planning or RSVP tool? If yes, how much and for what?
+10. What would make you try a tool for one wedding, and what would stop you?
+
+Ask for permission before recording. Do not lead with the proposed solution. Record facts, quotes, and observed workflows separately from interpretation.
+
+### Interview tracker template
+
+| ID | Segment | Recruitment source | Status | Interview date | Current tools | Main pain | Evidence quote | Willingness-to-pay signal | Follow-up |
+|---|---|---|---|---|---|---|---|---|---|
+| F1 | Family host | — | Not recruited | — | — | — | — | — | — |
+| F2 | Family host | — | Not recruited | — | — | — | — | — | — |
+| F3 | Family host | — | Not recruited | — | — | — | — | — | — |
+| P1 | Independent planner | — | Not recruited | — | — | — | — | — | — |
+| P2 | Independent planner | — | Not recruited | — | — | — | — | — | — |
+
+### Recruitment message
+
+Hello [Name], I am researching how families and independent wedding planners manage guest lists, RSVPs, and event attendance. I am not selling anything. Would you be open to a short 15–20 minute phone or video conversation about your recent experience? I will not publish your name or personal details. Please reply with a convenient time if interested.
+
+### Competitor scan: verified public information
+
+Checked 2026-10-28 against publicly available official product/pricing pages or official product pages. Pricing and features can change; these are comparison inputs, not validated customer preferences.
+
+- **Joy (withjoy.com):** free wedding website, online RSVP, and connected guest-list management; optional paid upgrades such as custom domains and premium stationery. Public pricing is primarily free plus optional upgrades.
+- **Weddingkart (weddingkart.in):** one-time per-wedding pricing. Publicly listed Basic at ₹5,999 before GST (₹7,079 including GST) and Standard at ₹14,999 before GST (₹17,699 including GST). Features publicly described include WhatsApp RSVPs, message credits, team collaboration, and higher-tier guest/travel/photo collection; AI voice features are also described.
+- **Sehnai (sehnai.com):** free plan for one wedding up to 50 guests; Pro publicly listed at ₹4,999 before GST (₹5,899 including GST) per wedding. Publicly described features include WhatsApp guest messaging, WhatsApp RSVP invites, guest concierge, and a paid own-number add-on; planner pricing is custom.
+- **Wedence (wedence.com):** public product information describes an invitation homepage, online guest registration, and digital RSVP. Pricing was not reliably visible in the reviewed public results, so it is not used for price comparison.
+- **WedPlan:** public results describe planning services/packages, but a reliable current public SaaS price and feature list was not available in the reviewed source material. Treat as a research lead, not a verified direct competitor benchmark.
+
+### Discovery assumptions to test
+
+- Families need a simpler shared RSVP link and accurate event-level counts than their current WhatsApp/spreadsheet process.
+- Independent planners may value repeatable workflows, exports, and managing multiple weddings more than a one-off family host.
+- A one-time per-wedding price may be easier to understand than a subscription during discovery.
+- Privacy, edit recovery, and duplicate-free attendance counts may be trust blockers.
+
+These are hypotheses until supported by interviews or pilot evidence.
+
 ## 8. Success measures
 
 Pilot measures: RSVP completion rate, time to set up a wedding/import
