@@ -8,7 +8,7 @@ export default function RsvpForm({ wedding, token }: any) {
   const [mobile, setMobile] = useState("")
   const [familyMembers, setFamilyMembers] = useState<any[]>([])
   const [eventResponses, setEventResponses] = useState<any>({})
-  const [status, setStatus] = useState("confirmed")
+  
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
   const router = useRouter()
@@ -52,8 +52,9 @@ export default function RsvpForm({ wedding, token }: any) {
         const data = await res.json()
         setError(data.error || "Something went wrong")
       }
-    } catch (err) {
-      setError("Something went wrong")
+    } catch (error) {
+        console.error(error)
+        setError("Something went wrong")
     } finally {
       setLoading(false)
     }

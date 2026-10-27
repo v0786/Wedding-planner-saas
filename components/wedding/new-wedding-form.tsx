@@ -32,8 +32,9 @@ export default function NewWeddingForm() {
         const data = await res.json()
         setError(data.error || "Something went wrong")
       }
-    } catch (err) {
-      setError("Something went wrong")
+    } catch (error) {
+        console.error(error)
+        setError("Something went wrong")
     } finally {
       setLoading(false)
     }

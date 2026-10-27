@@ -29,8 +29,9 @@ export default function LoginForm() {
         router.push("/dashboard")
         router.refresh()
       }
-    } catch (err) {
-      setError("Something went wrong")
+    } catch (error) {
+        console.error(error)
+        setError("Something went wrong")
     } finally {
       setLoading(false)
     }
