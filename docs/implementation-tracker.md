@@ -39,7 +39,7 @@ Browser-based Playwright E2E is not runnable in this container (see limitations)
 - Lint: PASS (no warnings)
 - Unit Tests: 6 suites / 42 tests PASS
 - Integration Tests: 6 tests PASS
-- HTTP Smoke Test: 30 checks PASS
+- HTTP Smoke Test: 78 checks PASS
 - Production Build: PASS (15 static pages generated; trace collection passes)
 - Playwright E2E: NOT RUN (browser cannot launch in this container; see limitations)
 
@@ -63,14 +63,14 @@ Browser-based Playwright E2E is not runnable in this container (see limitations)
 
 ## Remaining Blockers
 - Playwright browser automation does not run in this container (Chromium/Firefox fail to start under gVisor; both error at process launch). The core journey is instead verified by the HTTP smoke test (`npm run test:smoke`), which exercises the real API and page renders.
-- Rate limiter is in-memory and process-local; multi-instance deployments must replace the store (Redis/Upstash/database/edge KV). Documented in `lib/rate-limit.ts`.
+- Rate limiter is now PostgreSQL-backed and shared across instances (fixed-window, table `RateLimit`). In-memory store remains available for tests.
 - Custom questions now have full host management (API + UI) and are covered by the smoke test.
 - Latest changes committed and pushed to `main` after verification.
 
 ## Test Commands
 - `npm test` — 6 suites / 42 tests PASS
 - `npm run test:integration` — 6 tests PASS
-- `npm run test:smoke` — 30 checks PASS (requires running server + seeded DB)
+- `npm run test:smoke` — 78 checks PASS (requires running server + seeded DB)
 - `npm run lint` — PASS (no warnings/errors)
 - `npx tsc --noEmit` (with `NODE_OPTIONS=--max-old-space-size=4096`) — PASS
 - `npm run build` (with increased heap) — PASS

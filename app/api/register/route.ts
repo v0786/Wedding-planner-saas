@@ -14,7 +14,7 @@ export async function POST(req: Request) {
   try {
     assertSameOrigin(req)
 
-    const limit = checkRateLimit(clientKey(req, "register"), {
+    const limit = await checkRateLimit(clientKey(req, "register"), {
       limit: 5,
       windowMs: 15 * 60 * 1000,
     })

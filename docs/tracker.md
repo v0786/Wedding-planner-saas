@@ -13,7 +13,7 @@
 - [x] Dashboard & reports
 - [x] WhatsApp sharing
 - [x] RSVP edit tokens
-- [x] Rate limiting (process-local, documented)
+- [x] Rate limiting (PostgreSQL-backed, shared across instances)
 - [x] Tenant isolation
 - [x] TypeScript compiles (PASS)
 - [x] Prisma schema valid (PASS)

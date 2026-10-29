@@ -291,6 +291,265 @@ async function main() {
   const guestCsvReport = await host.request(`/api/weddings/${weddingId}/guests/export`);
   check("guest export remains downloadable after edits", guestCsvReport.status === 200);
 
+
+  // UI navigation: public pages.
+  for (const path of ["/", "/faq", "/onboarding", "/auth/register", "/auth/login"]) {
+    const response = await fetch(`${base}${path}`);
+    check(`public page renders: ${path}`, response.status === 200);
+  }
+
+  // UI navigation: authenticated host pages.
+  for (const path of [
+    "/dashboard",
+    "/dashboard/reports",
+    `/dashboard/weddings/${weddingId}`,
+    `/dashboard/weddings/${weddingId}/events`,
+    `/dashboard/weddings/${weddingId}/guests`,
+    `/dashboard/weddings/${weddingId}/reports`,
+    `/dashboard/weddings/${weddingId}/invite`,
+    `/dashboard/weddings/${weddingId}/questions`,
+  ]) {
+    const response = await host.request(path);
+    check(`host page renders: ${path}`, response.status === 200);
+  }
+
+  // Unauthenticated browser navigation to a protected page redirects to login.
+  const protectedPage = await fetch(`${base}/dashboard`, { redirect: "manual" });
+  check(
+    "unauthenticated dashboard navigation redirects to login",
+    protectedPage.status === 307 || protectedPage.status === 302 || protectedPage.status === 303,
+  );
+
+  // Host workflow: update wedding details.
+  const updateWeddingResponse = await host.request(`/api/weddings/${weddingId}`, {
+    method: "PATCH",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ name: `Smoke Wedding Updated ${suffix}`, venue: "Updated Hall" }),
+  });
+  const updatedWedding = await updateWeddingResponse.json();
+  check("host can update wedding details", updateWeddingResponse.status === 200);
+  const weddingDetailResponse = await host.request(`/api/weddings/${weddingId}`);
+  const weddingDetail = await weddingDetailResponse.json();
+  check(
+    "wedding update is persisted",
+    weddingDetailResponse.status === 200 &&
+      weddingDetail.wedding?.name === `Smoke Wedding Updated ${suffix}` &&
+      weddingDetail.wedding?.venue === "Updated Hall",
+  );
+
+  // Event management: update and delete a temporary event.
+  const tempEventResponse = await host.request(`/api/weddings/${weddingId}/events`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ name: "Temp Event", order: 9 }),
+  });
+  const tempEvent = (await tempEventResponse.json()).event;
+  check("host can create a temporary event", tempEventResponse.status === 201 && Boolean(tempEvent?.id));
+  const updateEventResponse = await host.request(`/api/weddings/${weddingId}/events/${tempEvent?.id}`, {
+    method: "PATCH",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ name: "Temp Event Updated", venue: "Temp Venue" }),
+  });
+  const updatedEvent = (await updateEventResponse.json()).event;
+  check(
+    "host can update an event",
+    updateEventResponse.status === 200 && updatedEvent?.name === "Temp Event Updated",
+  );
+  const deleteEventResponse = await host.request(`/api/weddings/${weddingId}/events/${tempEvent?.id}`, {
+    method: "DELETE",
+  });
+  check("host can delete an event", deleteEventResponse.status === 200);
+  const eventsAfterDelete = await host.request(`/api/weddings/${weddingId}/events`);
+  const eventsAfterDeleteJson = await eventsAfterDelete.json();
+  check(
+    "deleted event is removed",
+    eventsAfterDelete.status === 200 &&
+      !eventsAfterDeleteJson.events?.some((item) => item.id === tempEvent?.id),
+  );
+
+  // Custom question management: update and delete a temporary question.
+  const tempQuestionResponse = await host.request(`/api/weddings/${weddingId}/questions`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ question: "Temp question", type: "text", required: false, order: 2 }),
+  });
+  const tempQuestion = (await tempQuestionResponse.json()).question;
+  check("host can create a temporary question", tempQuestionResponse.status === 201 && Boolean(tempQuestion?.id));
+  const updateQuestionResponse = await host.request(`/api/weddings/${weddingId}/questions/${tempQuestion?.id}`, {
+    method: "PATCH",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ question: "Temp question updated", required: true }),
+  });
+  const updatedQuestion = (await updateQuestionResponse.json()).question;
+  check(
+    "host can update a custom question",
+    updateQuestionResponse.status === 200 && updatedQuestion?.question === "Temp question updated",
+  );
+  const deleteQuestionResponse = await host.request(`/api/weddings/${weddingId}/questions/${tempQuestion?.id}`, {
+    method: "DELETE",
+  });
+  check("host can delete a custom question", deleteQuestionResponse.status === 200);
+
+  // Guest management: delete a temporary guest.
+  const tempGuestResponse = await host.request(`/api/weddings/${weddingId}/guests`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ firstName: "TempGuest", mobile: `95${suffix.slice(-8)}` }),
+  });
+  const tempGuest = (await tempGuestResponse.json()).guest;
+  check("host can create a temporary guest", tempGuestResponse.status === 201 && Boolean(tempGuest?.id));
+  const deleteGuestResponse = await host.request(`/api/weddings/${weddingId}/guests/${tempGuest?.id}`, {
+    method: "DELETE",
+  });
+  check("host can delete a guest", deleteGuestResponse.status === 200);
+
+  // Validation failures.
+  const invalidWeddingResponse = await host.request("/api/weddings", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({}),
+  });
+  check("wedding creation rejects invalid input", invalidWeddingResponse.status === 400);
+  const invalidEventResponse = await host.request(`/api/weddings/${weddingId}/events`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({}),
+  });
+  check("event creation rejects invalid input", invalidEventResponse.status === 400);
+  const invalidGuestResponse = await host.request(`/api/weddings/${weddingId}/guests`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({}),
+  });
+  check("guest creation rejects invalid input", invalidGuestResponse.status === 400);
+  const invalidQuestionResponse = await host.request(`/api/weddings/${weddingId}/questions`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({}),
+  });
+  check("question creation rejects invalid input", invalidQuestionResponse.status === 400);
+  const invalidQuestionUpdateResponse = await host.request(`/api/weddings/${weddingId}/questions/${question.id}`, {
+    method: "PATCH",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ question: "" }),
+  });
+  check("question update rejects invalid input", invalidQuestionUpdateResponse.status === 400);
+  const invalidPublishResponse = await host.request(`/api/weddings/${weddingId}/publish`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ published: "yes" }),
+  });
+  check("publish rejects invalid input", invalidPublishResponse.status === 400);
+  const emptyRsvpResponse = await fetch(`${base}/api/rsvp`, {
+    method: "POST",
+    headers: { "content-type": "application/json", "x-forwarded-for": "10.1.1.1" },
+    body: JSON.stringify({}),
+  });
+  check("RSVP rejects an empty body", emptyRsvpResponse.status === 400);
+  const missingMobileRsvpResponse = await fetch(`${base}/api/rsvp`, {
+    method: "POST",
+    headers: { "content-type": "application/json", "x-forwarded-for": "10.1.1.2" },
+    body: JSON.stringify({ token: invitationToken, fullName: "No Mobile" }),
+  });
+  check("RSVP rejects a missing mobile number", missingMobileRsvpResponse.status === 400);
+  const unknownTokenRsvpResponse = await fetch(`${base}/api/rsvp`, {
+    method: "POST",
+    headers: { "content-type": "application/json", "x-forwarded-for": "10.1.1.3" },
+    body: JSON.stringify({ token: "not-a-real-invitation", fullName: "Nobody", mobile: "9999999999" }),
+  });
+  check("RSVP rejects an unknown invitation token", unknownTokenRsvpResponse.status === 404);
+  const invalidEditTokenResponse = await fetch(`${base}/api/rsvp`, {
+    method: "POST",
+    headers: { "content-type": "application/json", "x-forwarded-for": "10.1.1.4" },
+    body: JSON.stringify({
+      token: invitationToken,
+      fullName: "Smoke RSVP",
+      mobile: rsvpMobile,
+      answers: [{ questionId: question.id, value: "smoke answer" }],
+      editToken: "definitely-not-a-valid-edit-token",
+    }),
+  });
+  check("RSVP rejects an invalid edit token", invalidEditTokenResponse.status === 403);
+
+  // Past-deadline edge case.
+  const pastWeddingResponse = await host.request("/api/weddings", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      name: `Past Deadline Wedding ${suffix}`,
+      coupleName1: "Past",
+      rsvpDeadline: "2020-01-01",
+    }),
+  });
+  const pastWedding = (await pastWeddingResponse.json()).wedding;
+  check("host can create a past-deadline wedding", pastWeddingResponse.status === 201 && Boolean(pastWedding?.id));
+  if (pastWedding?.id) {
+    await host.request(`/api/weddings/${pastWedding.id}/publish`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ published: true }),
+    });
+    const pastRsvpResponse = await fetch(`${base}/api/rsvp`, {
+      method: "POST",
+      headers: { "content-type": "application/json", "x-forwarded-for": "10.1.1.5" },
+      body: JSON.stringify({
+        token: pastWedding.invitationToken,
+        fullName: "Too Late",
+        mobile: `94${suffix.slice(-8)}`,
+      }),
+    });
+    check("RSVP rejects a submission after the wedding deadline", pastRsvpResponse.status === 400);
+    await host.request(`/api/weddings/${pastWedding.id}`, { method: "DELETE" });
+  }
+
+  // Event-level deadline edge case.
+  const eventDeadlineResponse = await host.request(`/api/weddings/${weddingId}/events`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      name: "Past Event",
+      rsvpDeadline: "2020-01-01",
+      order: 2,
+    }),
+  });
+  const pastEvent = (await eventDeadlineResponse.json()).event;
+  check("host can create an event with a past deadline", eventDeadlineResponse.status === 201 && Boolean(pastEvent?.id));
+  if (pastEvent?.id) {
+    const eventDeadlineRsvpResponse = await fetch(`${base}/api/rsvp`, {
+      method: "POST",
+      headers: { "content-type": "application/json", "x-forwarded-for": "10.1.1.6" },
+      body: JSON.stringify({
+        token: invitationToken,
+        fullName: "Event Too Late",
+        mobile: `93${suffix.slice(-8)}`,
+        eventResponses: { [pastEvent.id]: "yes" },
+        answers: [{ questionId: question.id, value: "late" }],
+      }),
+    });
+    check("RSVP rejects an event whose deadline has passed", eventDeadlineRsvpResponse.status === 400);
+    await host.request(`/api/weddings/${weddingId}/events/${pastEvent.id}`, { method: "DELETE" });
+  }
+
+  // Unpublish makes the invitation unavailable.
+  const unpublishResponse = await host.request(`/api/weddings/${weddingId}/publish`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ published: false }),
+  });
+  check("host can unpublish the invitation", unpublishResponse.status === 200);
+  const unpublishedInvitePage = await fetch(`${base}/invite/${invitationToken}`);
+  const unpublishedInviteHtml = await unpublishedInvitePage.text();
+  check(
+    "unpublished invitation is not available to guests",
+    unpublishedInvitePage.status === 200 && unpublishedInviteHtml.includes("not active"),
+  );
+  // Republish for any remaining checks (none after this point, but keeps state clean).
+  await host.request(`/api/weddings/${weddingId}/publish`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ published: true }),
+  });
+
   // Tenant isolation: a second account must not see or modify this wedding.
   const outsiderEmail = `smoke-outsider-${suffix}@example.com`;
   const registerResponse = await fetch(`${base}/api/register`, {
@@ -313,6 +572,35 @@ async function main() {
     body: JSON.stringify({ firstName: "Intruder" }),
   });
   check("cross-workspace guest write is rejected", crossTenantWrite.status === 404);
+
+  const crossTenantEventRead = await outsider.request(`/api/weddings/${weddingId}/events`);
+  check("cross-workspace event read returns 404", crossTenantEventRead.status === 404);
+  const crossTenantQuestionRead = await outsider.request(`/api/weddings/${weddingId}/questions`);
+  check("cross-workspace question read returns 404", crossTenantQuestionRead.status === 404);
+  const crossTenantPublish = await outsider.request(`/api/weddings/${weddingId}/publish`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ published: true }),
+  });
+  check("cross-workspace publish is rejected", crossTenantPublish.status === 404);
+  const crossTenantGuestExport = await outsider.request(`/api/weddings/${weddingId}/guests/export`);
+  check("cross-workspace guest export is rejected", crossTenantGuestExport.status === 404);
+  const crossTenantRsvpExport = await outsider.request(`/api/weddings/${weddingId}/rsvps/export`);
+  check("cross-workspace RSVP export is rejected", crossTenantRsvpExport.status === 404);
+  const crossTenantReportPage = await outsider.request(`/dashboard/weddings/${weddingId}/reports`);
+  check("cross-workspace report page is not found", crossTenantReportPage.status === 404);
+
+  // Rate limiting: repeated registration attempts from one IP are throttled.
+  let registrationRateLimited = false;
+  for (let attempt = 0; attempt < 6; attempt += 1) {
+    const rateLimitResponse = await fetch(`${base}/api/register`, {
+      method: "POST",
+      headers: { "content-type": "application/json", "x-forwarded-for": "10.250.250.250" },
+      body: JSON.stringify({}),
+    });
+    if (attempt === 5 && rateLimitResponse.status === 429) registrationRateLimited = true;
+  }
+  check("registration rate limit returns 429", registrationRateLimited);
 
   const deleteResponse = await host.request(`/api/weddings/${weddingId}`, { method: "DELETE" });
   check("host can delete the wedding", deleteResponse.status === 200);

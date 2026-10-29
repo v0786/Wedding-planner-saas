@@ -13,7 +13,7 @@ export async function POST(req: Request) {
   try {
     assertSameOrigin(req)
 
-    const limit = checkRateLimit(clientKey(req, "rsvp"), {
+    const limit = await checkRateLimit(clientKey(req, "rsvp"), {
       limit: 10,
       windowMs: 10 * 60 * 1000,
     })
