@@ -1,14 +1,14 @@
 import { describe, it, expect, jest, beforeEach } from "@jest/globals"
 import { getWeddingAccess, requireWeddingAccess } from "@/lib/wedding-access"
 
-const findFirst = jest.fn()
+const findFirst = jest.fn() as jest.Mock<any>;
 
 const fakeDb = {
   wedding: { findFirst },
 } as unknown as Parameters<typeof getWeddingAccess>[2]
 
 describe("tenant access", () => {
-  beforeEach(() => findFirst.mockReset())
+  beforeEach(() => { findFirst.mockReset() })
 
   it("scopes wedding lookup to workspace membership", async () => {
     findFirst.mockResolvedValue({ id: "wedding-1" } as never)

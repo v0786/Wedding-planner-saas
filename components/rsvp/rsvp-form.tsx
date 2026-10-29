@@ -118,7 +118,6 @@ export default function RsvpForm({
           token,
           fullName,
           mobile,
-          status,
           dietaryPrefs,
           familyMembers: familyMembers.filter((member) => member.fullName.trim()),
           eventResponses,
