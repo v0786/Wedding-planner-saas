@@ -41,7 +41,7 @@ Browser-based Playwright E2E is not runnable in this container (see limitations)
 - Integration Tests: 6 tests PASS
 - HTTP Smoke Test: 78 checks PASS
 - Production Build: PASS (15 static pages generated; trace collection passes)
-- Playwright E2E: NOT RUN (browser cannot launch in this container; see limitations)
+- Playwright E2E: NOT RUN locally (browser cannot launch in this container); CI workflow added at `.github/workflows/ci.yml`.
 
 ## Security fixes (initial findings)
 1. Undefined `status` reference in `components/rsvp/rsvp-form.tsx` — fixed (removed unused state).
@@ -74,4 +74,4 @@ Browser-based Playwright E2E is not runnable in this container (see limitations)
 - `npm run lint` — PASS (no warnings/errors)
 - `npx tsc --noEmit` (with `NODE_OPTIONS=--max-old-space-size=4096`) — PASS
 - `npm run build` (with increased heap) — PASS
-- `npm run test:e2e` — NOT RUN (browser unavailable in this container)
+- `npm run test:e2e` — NOT RUN locally (browser unavailable in this container); CI workflow added at `.github/workflows/ci.yml`
