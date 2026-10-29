@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "NODE_OPTIONS=--max-old-space-size=2048 next build",
     "start": "next start",
     "lint": "next lint",
     "postinstall": "prisma generate",
@@ -18,7 +18,8 @@
     "test:integration": "jest --config jest.integration.config.js",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "test:smoke": "node scripts/smoke-e2e.mjs"
   },
   "prisma": {
     "seed": "node prisma/seed.mjs"

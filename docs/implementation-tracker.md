@@ -3,56 +3,75 @@
 **Last updated:** 2026-10-29
 
 ## Overall Status
-Implementation in progress — core features exist, QA and remaining fixes pending.
+Implementation complete for the scoped SaaS. Core flows verified against a real
+PostgreSQL database with unit, integration, and HTTP end-to-end smoke tests.
+Browser-based Playwright E2E is not runnable in this container (see limitations).
 
 ## Completed
-- [x] Authentication & workspaces (NextAuth v5, bcrypt)
-- [x] Wedding & event management
-- [x] Guest management with CSV import/export
+- [x] Authentication & workspaces (NextAuth v5, bcrypt, transactional registration)
+- [x] Wedding & event management (CRUD, publish/unpublish, ordering)
+- [x] Guest management (CRUD, search/filter/pagination, CSV import/export)
 - [x] One shared invitation link per wedding
-- [x] Public RSVP with family members
-- [x] Event selection
+- [x] Public RSVP with family members and per-event responses
+- [x] Custom questions rendered and saved
+- [x] RSVP edit tokens (hash-only storage, stable on edit)
+- [x] RSVP deadlines (wedding- and event-level, enforced server-side)
 - [x] Dashboard with reports summary
+- [x] Reports (counts, headcount, dietary, groups, event attendance, CSV export)
+- [x] Audit logging
+- [x] Rate limiting (process-local, documented as not multi-instance safe)
+- [x] Tenant/workspace isolation on every private route
+- [x] CSRF origin defence in depth
+- [x] UX: not-found, error, loading/empty states; hydration-safe invite manager
 - [x] TypeScript compiles (PASS with `NODE_OPTIONS=--max-old-space-size=4096`)
 - [x] Prisma schema valid
 - [x] ESLint configured and passing (no warnings)
-- [x] Basic tests added and passing (30/32 tests pass; 2 integration tests limited by environment)
-- [x] `.env.example` variable names aligned with NextAuth expectations
+- [x] Unit tests (6 suites, 42 tests) passing
+- [x] Integration tests (6 tests) passing against `wedding_guest_manager_test`
+- [x] HTTP smoke test (28 checks) passing against a running production build
+- [x] Production build (PASS, including trace collection after excluding sharp/detect-libc)
+- [x] `.env.example` aligned with Auth.js v5 (`AUTH_SECRET`, `AUTH_URL`, `AUTH_TRUST_HOST`)
+- [x] Docs updated (README, tracker, agent-tooling)
 
 ## QA Results
 - TypeScript: PASS
 - Prisma Validation: PASS
 - Lint: PASS (no warnings)
-- Unit Tests: 30/32 passing (2 tests limited by Jest/Prisma environment — not code bugs)
-- Integration Tests: Environment-blocked (Prisma Client cannot run in jsdom; Request global missing)
-- Production Build: PASS compilation/types/pages
+- Unit Tests: 6 suites / 42 tests PASS
+- Integration Tests: 6 tests PASS
+- HTTP Smoke Test: 28 checks PASS
+- Production Build: PASS (15 static pages generated; trace collection passes)
+- Playwright E2E: NOT RUN (browser cannot launch in this container; see limitations)
 
-## Phase 5 Fixes from AGENT.md
-
-- [x] #1: Undefined `status` reference in `components/rsvp/rsvp-form.tsx` — Fixed: added `status` state initialized to `"pending"`
-- [x] #2: Missing `app/auth/register/page.tsx` — Already exists
-- [x] #3: Broken links and missing `/onboarding` route — Fixed: created `app/onboarding/page.tsx`
-- [ ] #4: Unsafe RSVP API behaviour when `mobile` or `fullName` is absent — Addressed: Zod validation in `rsvpSchema` catches missing required fields server-side
-- [ ] #5: Missing validation for wedding and publish APIs — Already has Zod validation (`weddingCreateSchema`, `publishSchema`)
-- [ ] #6: Non-transactional user/workspace/membership registration — Already uses `prisma.$transaction` in register API
-- [ ] #7: Tracker claims that disagree with actual features or test results — Reviewing
-- [x] #8: In-place mutation in family-member form state — Fixed: replaced mutable `updated[index][field] = value` with `familyMembers.map(...)` pattern
-- [ ] #9: Custom RSVP questions fetched but not rendered/saved — Already addressed: form renders custom questions and saves answers via `answers` state
-- [x] #10: Invitation URLs computed from `window.location.origin` during server rendering — Fixed: `InviteLinkManager` now accepts `baseUrl` prop, page passes `process.env.NEXT_PUBLIC_APP_URL` fallback
-- [ ] #11: Edit token generated but not surfaced safely to the guest — Already addressed: thank-you page shows edit link with warning to keep it private
-- [ ] #12: Missing central route protection/authorization consistency — Reviewing; most protected routes use `requireUserId` + `requireWeddingAccess`
-- [ ] #13: Missing rate limiting/abuse controls for public registration and RSVP — Already in place (5 req/15min for register, 10 req/10min for RSVP, process-local with note for multi-instance)
-- [ ] #14: Dependencies that appear unused — Verified: all `@/lib/...` modules are imported and used; some package.json dependencies have zero direct `from "..."` imports in app/ (likely used through lib wrappers)
-- [x] #15: `.env.example` Auth.js/NextAuth variable mismatch — Fixed: changed `AUTH_SECRET/AUTH_URL` to `NEXTAUTH_URL/NEXTAUTH_SECRET` matching `NextAuth` convention
-- [x] #16: Placeholder tests that do not verify real behaviour — Added meaningful tests for validation, rate limits, tokens, CSV, and RSVP schema behavior (30 tests now pass)
+## Security fixes (initial findings)
+1. Undefined `status` reference in `components/rsvp/rsvp-form.tsx` — fixed (removed unused state).
+2. Missing `app/auth/register/page.tsx` — implemented.
+3. Broken links and missing `/onboarding`, events, guests, reports routes — implemented.
+4. Unsafe RSVP API when `mobile`/`fullName` absent — Zod validation + mobile required.
+5. Missing wedding/publish validation — Zod schemas + `publishSchema`.
+6. Non-transactional registration — `prisma.$transaction` wraps user/workspace/membership.
+7. Tracker claims corrected (this document).
+8. In-place mutation in family-member state — immutable `map` update.
+9. Custom questions fetched but not rendered/saved — rendered in form; answers saved.
+10. Invitation URLs from `window.location.origin` during SSR — computed after mount.
+11. Edit token not surfaced safely — thank-you page shows private edit link with warning.
+12. Route protection/authorization consistency — `requireUserId` + `requireWeddingAccess` on every private route.
+13. Rate limiting/abuse controls — 5 req/15 min register, 10 req/10 min RSVP, process-local (documented).
+14. Dependencies — verified; no unused direct imports remain in app code.
+15. `.env.example` Auth.js mismatch — fixed.
+16. Placeholder tests — replaced with behaviour-driven tests.
 
 ## Remaining Blockers
-- 2 unit tests (`wedding-access.test.ts`, `rsvp-service.test.ts`) fail due to Jest environment limitations (Prisma Client cannot run in jsdom, `Request` global missing from Next.js imports). These are environment issues, not code bugs. The application functions correctly when running against a real database.
-- Production build trace collection failure (procfs environmental issue in container — known container limitation, not a code bug)
-- No database configured — integration/E2E tests cannot run without PostgreSQL
+- Playwright browser automation does not run in this container (Chromium/Firefox fail to start under gVisor; both error at process launch). The core journey is instead verified by the HTTP smoke test (`npm run test:smoke`), which exercises the real API and page renders.
+- Rate limiter is in-memory and process-local; multi-instance deployments must replace the store (Redis/Upstash/database/edge KV). Documented in `lib/rate-limit.ts`.
+- Custom questions have no management UI/API yet; they are seeded and rendered/saved on RSVP, but hosts cannot create/edit them from the dashboard. Not in the initial required scope beyond rendering; flagged as a follow-up.
+- No commit/push performed (not authorized).
 
 ## Test Commands
-- `npm test` — runs 30/32 unit tests (5 test suites)
-- `npm run lint` — passes with no warnings/errors
-- `npx tsc --noEmit` — passes with increased memory allocation
-- `npm run build` — production build passes (trace collection failure is environmental)
+- `npm test` — 6 suites / 42 tests PASS
+- `npm run test:integration` — 6 tests PASS
+- `npm run test:smoke` — 28 checks PASS (requires running server + seeded DB)
+- `npm run lint` — PASS (no warnings/errors)
+- `npx tsc --noEmit` (with `NODE_OPTIONS=--max-old-space-size=4096`) — PASS
+- `npm run build` (with increased heap) — PASS
+- `npm run test:e2e` — NOT RUN (browser unavailable in this container)
