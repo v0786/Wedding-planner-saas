@@ -113,6 +113,14 @@ async function main() {
   const event = (await eventResponse.json()).event;
   check("host can create an event", eventResponse.status === 201 && Boolean(event?.id));
 
+  const questionResponse = await host.request(`/api/weddings/${weddingId}/questions`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ question: "Smoke question", type: "text", required: true, order: 1 }),
+  });
+  const question = (await questionResponse.json()).question;
+  check("host can create a custom RSVP question", questionResponse.status === 201 && Boolean(question?.id));
+
   const guestResponse = await host.request(`/api/weddings/${weddingId}/guests`, {
     method: "POST",
     headers: { "content-type": "application/json" },
@@ -199,7 +207,9 @@ async function main() {
   );
 
   const rsvpPage = await fetch(`${base}/rsvp/${invitationToken}`);
+  const rsvpHtml = await rsvpPage.text();
   check("public RSVP page renders", rsvpPage.status === 200);
+  check("custom question renders on the RSVP form", rsvpHtml.includes("Smoke question"));
 
   const rsvpMobile = `96${suffix.slice(-8)}`;
   const submitResponse = await fetch(`${base}/api/rsvp`, {
@@ -212,6 +222,7 @@ async function main() {
       dietaryPrefs: "Vegetarian",
       familyMembers: [{ fullName: "Smoke Plus One", relation: "Spouse", age: "30" }],
       eventResponses: { [event.id]: "yes" },
+      answers: [{ questionId: question.id, value: "smoke answer" }],
     }),
   });
   const submitted = await submitResponse.json();
@@ -225,8 +236,10 @@ async function main() {
   );
   const editData = await editLoad.json();
   check(
-    "edit token loads the RSVP",
-    editLoad.status === 200 && editData.rsvp?.fullName === "Smoke RSVP",
+    "edit token loads the RSVP and its answer",
+    editLoad.status === 200 &&
+      editData.rsvp?.fullName === "Smoke RSVP" &&
+      editData.rsvp?.answers?.[0]?.value === "smoke answer",
   );
 
   const editResponse = await fetch(`${base}/api/rsvp`, {
@@ -239,6 +252,7 @@ async function main() {
       dietaryPrefs: "Jain",
       familyMembers: [],
       eventResponses: { [event.id]: "no" },
+      answers: [{ questionId: question.id, value: "edited smoke answer" }],
       editToken: submitted.editToken,
     }),
   });

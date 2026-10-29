@@ -18,6 +18,7 @@ export default async function WeddingDetailPage({ params }: { params: Promise<{ 
       rsvpSubmissions: {
         include: { familyMembers: { select: { id: true } } },
       },
+      customQuestions: { select: { id: true } },
       auditLogs: { orderBy: { createdAt: "desc" }, take: 5 },
     },
   })
@@ -109,6 +110,13 @@ export default async function WeddingDetailPage({ params }: { params: Promise<{ 
         >
           <h2 className="font-semibold text-gray-900">Reports</h2>
           <p className="mt-1 text-sm text-gray-600">Attendance, dietary and event summaries</p>
+        </Link>
+        <Link
+          href={`/dashboard/weddings/${wedding.id}/questions`}
+          className="rounded-lg bg-white p-5 shadow hover:shadow-md"
+        >
+          <h2 className="font-semibold text-gray-900">Custom Questions ({wedding.customQuestions.length})</h2>
+          <p className="mt-1 text-sm text-gray-600">Manage RSVP questions</p>
         </Link>
         <Link
           href={`/dashboard/weddings/${wedding.id}/invite`}
