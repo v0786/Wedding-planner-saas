@@ -141,7 +141,9 @@ model Guest {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
+  @@unique([weddingId, mobile])
   @@index([weddingId])
+  @@index([weddingId, group])
 }
 
 model RsvpSubmission {
@@ -151,6 +153,7 @@ model RsvpSubmission {
   fullName        String
   mobile          String
   status          String   @default("pending")
+  dietaryPrefs    String?  @db.Text
   editTokenHash   String?
   submittedAt     DateTime @default(now())
   updatedAt       DateTime @updatedAt
@@ -216,6 +219,8 @@ model Answer {
   question          CustomQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
   createdAt         DateTime       @default(now())
   updatedAt         DateTime       @updatedAt
+
+  @@unique([rsvpSubmissionId, questionId])
 }
 
 model AuditLog {
@@ -228,4 +233,5 @@ model AuditLog {
   createdAt DateTime @default(now())
 
   @@index([weddingId])
+  @@index([userId])
 }

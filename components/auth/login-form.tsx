@@ -29,50 +29,63 @@ export default function LoginForm() {
         router.push("/dashboard")
         router.refresh()
       }
-    } catch (error) {
-        console.error(error)
-        setError("Something went wrong")
+    } catch (err) {
+      console.error(err)
+      setError("Something went wrong")
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-      <div className="rounded-md shadow-sm -space-y-px">
-        <div>
-          <input
-            type="email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-            placeholder="Email address"
-          />
-        </div>
-        <div>
-          <input
-            type="password"
-            required
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-            placeholder="Password"
-          />
-        </div>
+    <form className="space-y-5 rounded-lg bg-white p-6 shadow" onSubmit={handleSubmit}>
+      <div>
+        <label htmlFor="login-email" className="block text-sm font-medium text-gray-700">
+          Email address
+        </label>
+        <input
+          id="login-email"
+          type="email"
+          required
+          autoComplete="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className={inputClass}
+          placeholder="you@example.com"
+        />
       </div>
-
-      {error && <div className="text-red-600 text-sm">{error}</div>}
 
       <div>
-        <button
-          type="submit"
-          disabled={loading}
-          className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
-        >
-          {loading ? "Signing in..." : "Sign in"}
-        </button>
+        <label htmlFor="login-password" className="block text-sm font-medium text-gray-700">
+          Password
+        </label>
+        <input
+          id="login-password"
+          type="password"
+          required
+          autoComplete="current-password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          className={inputClass}
+        />
       </div>
+
+      {error && (
+        <div role="alert" className="text-sm text-red-600">
+          {error}
+        </div>
+      )}
+
+      <button
+        type="submit"
+        disabled={loading}
+        className="w-full rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 disabled:opacity-50"
+      >
+        {loading ? "Signing in..." : "Sign in"}
+      </button>
     </form>
   )
 }
+
+const inputClass =
+  "mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"

@@ -11,6 +11,8 @@ const customJestConfig = {
     '^@/(.*)$': '<rootDir>/$1',
   },
   testMatch: ['**/__tests__/**/*.[jt]s?(x)', '**/?(*.)+(spec|test).[tj]s?(x)'],
+  testPathIgnorePatterns: ['/node_modules/', '/__tests__/integration/', '/tests/e2e/'],
+  coveragePathIgnorePatterns: ['/node_modules/', '/__tests__/', '/prisma/'],
 }
 
 module.exports = createJestConfig(customJestConfig)

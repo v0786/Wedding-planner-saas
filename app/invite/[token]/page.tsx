@@ -32,6 +32,7 @@ export default async function InvitePage({ params }: { params: Promise<{ token: 
             <p className="mt-2 text-gray-600">{new Date(wedding.date).toLocaleDateString('en-IN', { dateStyle: 'long' })}</p>
           )}
           {wedding.venue && <p className="mt-1 text-gray-600">{wedding.venue}</p>}
+          {wedding.address && <p className="mt-1 whitespace-pre-line text-sm text-gray-500">{wedding.address}</p>}
         </div>
 
         {wedding.description && (
@@ -48,7 +49,9 @@ export default async function InvitePage({ params }: { params: Promise<{ token: 
                 <div key={event.id} className="border-l-4 border-pink-500 pl-4">
                   <h3 className="font-semibold">{event.name}</h3>
                   {event.date && <p className="text-sm text-gray-600">{new Date(event.date).toLocaleDateString('en-IN')}</p>}
+                  {event.time && <p className="text-sm text-gray-600">{event.time}</p>}
                   {event.venue && <p className="text-sm text-gray-600">{event.venue}</p>}
+                  {event.description && <p className="mt-1 text-sm text-gray-500">{event.description}</p>}
                 </div>
               ))}
             </div>

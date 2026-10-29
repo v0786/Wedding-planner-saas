@@ -1,40 +1,61 @@
+import { requireUserId } from "@/lib/server-auth"
 import { NextResponse } from "next/server"
-import { auth } from "@/auth"
 import { prisma } from "@/lib/prisma"
+import {
+  assertSameOrigin,
+  handleApiError,
+  readJson,
+  ApiError,
+} from "@/lib/api"
+import { weddingCreateSchema } from "@/lib/validation"
+import { logAudit } from "@/lib/audit"
+
+export async function GET() {
+  try {
+    const userId = await requireUserId()
+    const weddings = await prisma.wedding.findMany({
+      where: { workspace: { members: { some: { userId } } } },
+      orderBy: { createdAt: "desc" },
+      include: { _count: { select: { guests: true, rsvpSubmissions: true, events: true } } },
+    })
+    return NextResponse.json({ weddings })
+  } catch (error) {
+    return handleApiError(error)
+  }
+}
 
 export async function POST(req: Request) {
   try {
-    const session = await auth()
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
-
-    const body = await req.json()
-    const { name, coupleName1, coupleName2, date, venue } = body
+    assertSameOrigin(req)
+    const userId = await requireUserId()
+    const body = await readJson(req)
+    const data = weddingCreateSchema.parse(body)
 
     const membership = await prisma.workspaceMember.findFirst({
-      where: { userId: session.user.id },
+      where: { userId },
+      orderBy: { createdAt: "asc" },
     })
-
-    if (!membership) {
-      return NextResponse.json({ error: "No workspace found" }, { status: 400 })
-    }
+    if (!membership) throw new ApiError("No workspace found for this account", 400)
 
     const wedding = await prisma.wedding.create({
       data: {
         workspaceId: membership.workspaceId,
-        name,
-        coupleName1,
-        coupleName2: coupleName2 || null,
-        date: date ? new Date(date) : null,
-        venue: venue || null,
+        name: data.name,
+        coupleName1: data.coupleName1,
+        coupleName2: data.coupleName2,
+        date: data.date,
+        venue: data.venue,
+        address: data.address,
+        description: data.description,
+        timezone: data.timezone,
+        rsvpDeadline: data.rsvpDeadline,
         invitationToken: crypto.randomUUID(),
       },
     })
 
+    await logAudit(wedding.id, userId, "wedding.created", { name: wedding.name })
     return NextResponse.json({ wedding }, { status: 201 })
   } catch (error) {
-    console.error(error)
-    return NextResponse.json({ error: "Something went wrong" }, { status: 500 })
+    return handleApiError(error)
   }
 }

@@ -3,15 +3,37 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 
+type FormState = {
+  name: string
+  coupleName1: string
+  coupleName2: string
+  date: string
+  venue: string
+  address: string
+  description: string
+  rsvpDeadline: string
+}
+
+const emptyForm: FormState = {
+  name: "",
+  coupleName1: "",
+  coupleName2: "",
+  date: "",
+  venue: "",
+  address: "",
+  description: "",
+  rsvpDeadline: "",
+}
+
 export default function NewWeddingForm() {
-  const [name, setName] = useState("")
-  const [coupleName1, setCoupleName1] = useState("")
-  const [coupleName2, setCoupleName2] = useState("")
-  const [date, setDate] = useState("")
-  const [venue, setVenue] = useState("")
+  const [form, setForm] = useState<FormState>(emptyForm)
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
   const router = useRouter()
+
+  function update(field: keyof FormState, value: string) {
+    setForm((current) => ({ ...current, [field]: value }))
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -22,91 +44,153 @@ export default function NewWeddingForm() {
       const res = await fetch("/api/weddings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, coupleName1, coupleName2, date, venue }),
+        body: JSON.stringify(form),
       })
 
+      const data = await res.json()
       if (res.ok) {
-        const data = await res.json()
         router.push(`/dashboard/weddings/${data.wedding.id}`)
+        router.refresh()
       } else {
-        const data = await res.json()
         setError(data.error || "Something went wrong")
       }
-    } catch (error) {
-        console.error(error)
-        setError("Something went wrong")
+    } catch (err) {
+      console.error(err)
+      setError("Something went wrong")
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <form onSubmit={handleSubmit} className="bg-white shadow rounded-lg p-6 space-y-6">
-      <div>
-        <label className="block text-sm font-medium text-gray-700">Wedding Name</label>
+    <form onSubmit={handleSubmit} className="space-y-6 rounded-lg bg-white p-6 shadow">
+      <Field label="Wedding Name" htmlFor="wedding-name">
         <input
+          id="wedding-name"
           type="text"
           required
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+          maxLength={200}
+          value={form.name}
+          onChange={(e) => update("name", e.target.value)}
+          className={inputClass}
           placeholder="e.g., Rahul & Priya Wedding"
         />
+      </Field>
+
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+        <Field label="First Person Name" htmlFor="couple-name-1">
+          <input
+            id="couple-name-1"
+            type="text"
+            required
+            maxLength={120}
+            value={form.coupleName1}
+            onChange={(e) => update("coupleName1", e.target.value)}
+            className={inputClass}
+          />
+        </Field>
+        <Field label="Second Person Name (optional)" htmlFor="couple-name-2">
+          <input
+            id="couple-name-2"
+            type="text"
+            maxLength={120}
+            value={form.coupleName2}
+            onChange={(e) => update("coupleName2", e.target.value)}
+            className={inputClass}
+          />
+        </Field>
       </div>
 
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-        <div>
-          <label className="block text-sm font-medium text-gray-700">First Person Name</label>
+        <Field label="Wedding Date" htmlFor="wedding-date">
           <input
-            type="text"
-            required
-            value={coupleName1}
-            onChange={(e) => setCoupleName1(e.target.value)}
-            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+            id="wedding-date"
+            type="date"
+            value={form.date}
+            onChange={(e) => update("date", e.target.value)}
+            className={inputClass}
           />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700">Second Person Name</label>
+        </Field>
+        <Field label="RSVP Deadline (optional)" htmlFor="rsvp-deadline">
           <input
-            type="text"
-            value={coupleName2}
-            onChange={(e) => setCoupleName2(e.target.value)}
-            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+            id="rsvp-deadline"
+            type="date"
+            value={form.rsvpDeadline}
+            onChange={(e) => update("rsvpDeadline", e.target.value)}
+            className={inputClass}
           />
-        </div>
+        </Field>
       </div>
 
-      <div>
-        <label className="block text-sm font-medium text-gray-700">Wedding Date</label>
+      <Field label="Venue (optional)" htmlFor="wedding-venue">
         <input
-          type="date"
-          value={date}
-          onChange={(e) => setDate(e.target.value)}
-          className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-        />
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-700">Venue</label>
-        <input
+          id="wedding-venue"
           type="text"
-          value={venue}
-          onChange={(e) => setVenue(e.target.value)}
-          className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+          maxLength={200}
+          value={form.venue}
+          onChange={(e) => update("venue", e.target.value)}
+          className={inputClass}
         />
-      </div>
+      </Field>
 
-      {error && <div className="text-red-600 text-sm">{error}</div>}
+      <Field label="Address (optional)" htmlFor="wedding-address">
+        <textarea
+          id="wedding-address"
+          rows={2}
+          maxLength={1000}
+          value={form.address}
+          onChange={(e) => update("address", e.target.value)}
+          className={inputClass}
+        />
+      </Field>
 
-      <div>
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
-        >
-          {loading ? "Creating..." : "Create Wedding"}
-        </button>
-      </div>
+      <Field label="Invitation Message (optional)" htmlFor="wedding-description">
+        <textarea
+          id="wedding-description"
+          rows={4}
+          maxLength={5000}
+          value={form.description}
+          onChange={(e) => update("description", e.target.value)}
+          className={inputClass}
+          placeholder="A short welcome message for your guests"
+        />
+      </Field>
+
+      {error && (
+        <div role="alert" className="text-sm text-red-600">
+          {error}
+        </div>
+      )}
+
+      <button
+        type="submit"
+        disabled={loading}
+        className="w-full rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 disabled:opacity-50"
+      >
+        {loading ? "Creating..." : "Create Wedding"}
+      </button>
     </form>
+  )
+}
+
+const inputClass =
+  "mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+
+function Field({
+  label,
+  htmlFor,
+  children,
+}: {
+  label: string
+  htmlFor: string
+  children: React.ReactNode
+}) {
+  return (
+    <div>
+      <label htmlFor={htmlFor} className="block text-sm font-medium text-gray-700">
+        {label}
+      </label>
+      {children}
+    </div>
   )
 }

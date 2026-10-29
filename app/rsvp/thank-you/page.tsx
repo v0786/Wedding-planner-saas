@@ -1,17 +1,42 @@
 import Link from "next/link"
 
-export default function ThankYouPage() {
+export const dynamic = "force-dynamic"
+
+export default async function ThankYouPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ invite?: string; edit?: string }>
+}) {
+  const { invite, edit } = await searchParams
+  const editHref =
+    invite && edit
+      ? `/rsvp/${encodeURIComponent(invite)}/edit?token=${encodeURIComponent(edit)}`
+      : null
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-      <div className="max-w-md w-full text-center">
-        <div className="bg-white shadow rounded-lg p-8">
-          <div className="text-6xl mb-4">🎉</div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Thank You!</h1>
-          <p className="text-gray-600 mb-6">
+    <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
+      <div className="w-full max-w-md text-center">
+        <div className="rounded-lg bg-white p-8 shadow">
+          <div className="mb-4 text-6xl">🎉</div>
+          <h1 className="mb-4 text-2xl font-bold text-gray-900">Thank You!</h1>
+          <p className="mb-6 text-gray-600">
             Your RSVP has been received successfully. We look forward to celebrating with you!
           </p>
-          <p className="text-sm text-gray-500 mb-6">
-            If you need to make changes to your response, please contact the hosts.
+
+          {editHref && (
+            <div className="mb-6 rounded-md bg-blue-50 p-4 text-left text-sm text-blue-900">
+              <p className="font-medium">Need to change something later?</p>
+              <p className="mt-1">
+                Save this private link. Anyone with it can edit this RSVP, so keep it to yourself.
+              </p>
+              <Link href={editHref} className="mt-2 inline-block break-all font-medium underline">
+                Edit my RSVP
+              </Link>
+            </div>
+          )}
+
+          <p className="mb-6 text-sm text-gray-500">
+            If you lose the edit link, contact the hosts and they can help.
           </p>
           <Link href="/" className="text-pink-600 hover:text-pink-700">
             Back to Home
