@@ -19,7 +19,7 @@ Browser-based Playwright E2E is not runnable in this container (see limitations)
 - [x] Dashboard with reports summary
 - [x] Reports (counts, headcount, dietary, groups, event attendance, CSV export)
 - [x] Audit logging
-- [x] Rate limiting (process-local, documented as not multi-instance safe)
+- [x] Rate limiting (PostgreSQL-backed `RateLimit` table, shared across instances; in-memory store for tests)
 - [x] Tenant/workspace isolation on every private route
 - [x] CSRF origin defence in depth
 - [x] UX: not-found, error, loading/empty states; hydration-safe invite manager
@@ -41,7 +41,7 @@ Browser-based Playwright E2E is not runnable in this container (see limitations)
 - Integration Tests: 6 tests PASS
 - HTTP Smoke Test: 78 checks PASS
 - Production Build: PASS (15 static pages generated; trace collection passes)
-- Playwright E2E: NOT RUN locally (browser cannot launch in this container); CI workflow added at `.github/workflows/ci.yml`.
+- Playwright E2E: NOT RUN locally (Chromium/Firefox cannot launch under gVisor in this container). CI workflow added at `.github/workflows/ci.yml` in commit `a4c78c7`; push verified blocked (2026-10-29): gh token scopes are `admin:public_key, gist, read:org, repo` — `workflow` scope missing, and the token is the credential for the HTTPS remote; SSH fallback unavailable (`Permission denied (publickey)`). GitHub refuses pushes that add `.github/workflows/*` without the `workflow` scope. CI has therefore not been triggered. Remedy: run `gh auth refresh -s workflow` (interactive device code), then push `a4c78c7` and run `gh workflow run ci.yml`.
 
 ## Security fixes (initial findings)
 1. Undefined `status` reference in `components/rsvp/rsvp-form.tsx` — fixed (removed unused state).
@@ -65,7 +65,7 @@ Browser-based Playwright E2E is not runnable in this container (see limitations)
 - Playwright browser automation does not run in this container (Chromium/Firefox fail to start under gVisor; both error at process launch). The core journey is instead verified by the HTTP smoke test (`npm run test:smoke`), which exercises the real API and page renders.
 - Rate limiter is now PostgreSQL-backed and shared across instances (fixed-window, table `RateLimit`). In-memory store remains available for tests.
 - Custom questions now have full host management (API + UI) and are covered by the smoke test.
-- Latest changes committed and pushed to `main` after verification.
+- Commit `a4c78c7` pushed 2026-10-29 after `workflow` scope granted. GitHub Actions CI triggered (run 40975568009) but **job not started** due to GitHub account billing lock. CI/Playwright E2E remain **NOT RUN**.
 
 ## Test Commands
 - `npm test` — 6 suites / 42 tests PASS
@@ -74,4 +74,4 @@ Browser-based Playwright E2E is not runnable in this container (see limitations)
 - `npm run lint` — PASS (no warnings/errors)
 - `npx tsc --noEmit` (with `NODE_OPTIONS=--max-old-space-size=4096`) — PASS
 - `npm run build` (with increased heap) — PASS
-- `npm run test:e2e` — NOT RUN locally (browser unavailable in this container); CI workflow added at `.github/workflows/ci.yml`
+- `npm run test:e2e` — NOT RUN locally (browser unavailable in this container); CI workflow added at `.github/workflows/ci.yml`; CI execution blocked by GitHub account billing lock.
