@@ -9,6 +9,7 @@ import {
 import { eventSchema } from "@/lib/validation"
 import { requireWeddingAccess } from "@/lib/wedding-access"
 import { logAudit } from "@/lib/audit"
+import { assertWeddingLimit, withWorkspaceLimitLock } from "@/lib/subscriptions/service"
 
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -31,14 +32,18 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     assertSameOrigin(req)
     const userId = await requireUserId()
     const { id } = await params
-    await requireWeddingAccess(id, userId)
+    const wedding = await requireWeddingAccess(id, userId)
 
     const body = await readJson(req)
     const data = eventSchema.parse(body)
 
-    const event = await prisma.event.create({
-      data: { ...data, weddingId: id },
+    const event = await withWorkspaceLimitLock(wedding.workspaceId, "events", async (tx) => {
+      await assertWeddingLimit(wedding.workspaceId, id, "events")
+      return tx.event.create({
+        data: { ...data, weddingId: id },
+      })
     })
+
     await logAudit(id, userId, "event.created", { eventId: event.id, name: event.name })
     return NextResponse.json({ event }, { status: 201 })
   } catch (error) {

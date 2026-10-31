@@ -87,6 +87,70 @@ async function main() {
     await login(host, "demo@example.com", "demo1234"),
   );
 
+  // The journey below exercises premium features (custom questions, CSV
+  // import/export, reports) and creates more than one wedding. The Free plan
+  // allows neither, so provision a plan entitlement fixture for the demo
+  // workspace and remove it again once the run finishes. This mirrors what a
+  // real paid account has, without requiring Razorpay credentials.
+  const proPlan = await prisma.plan.upsert({
+    where: { code: "PRO" },
+    update: {},
+    create: {
+      code: "PRO",
+      name: "Pro",
+      description: "More weddings, a bigger guest list and rich RSVP collection.",
+      priceInPaise: null,
+      currency: "INR",
+      billingPeriodDays: 30,
+      features: {
+        whatsappSharing: true,
+        customQuestions: true,
+        csvImport: true,
+        csvExport: true,
+        reports: true,
+        customBranding: true,
+        prioritySupport: false,
+      },
+      limits: {
+        weddings: 3,
+        guestsPerWedding: 500,
+        eventsPerWedding: 5,
+        customQuestionsPerWedding: 10,
+      },
+      isActive: false,
+      sortOrder: 1,
+    },
+  });
+  const demoUser = await prisma.user.findUnique({
+    where: { email: "demo@example.com" },
+    include: { memberships: { select: { workspaceId: true } } },
+  });
+  const demoWorkspaceId = demoUser?.memberships[0]?.workspaceId;
+  let entitlementFixture = null;
+  if (demoWorkspaceId) {
+    const periodEnd = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+    entitlementFixture = await prisma.subscription.upsert({
+      where: { workspaceId: demoWorkspaceId },
+      update: {
+        planId: proPlan.id,
+        status: "ACTIVE",
+        currentPeriodStart: new Date(),
+        currentPeriodEnd: periodEnd,
+        cancelAtPeriodEnd: false,
+        pendingPlanCode: null,
+      },
+      create: {
+        workspaceId: demoWorkspaceId,
+        planId: proPlan.id,
+        status: "ACTIVE",
+        currentPeriodStart: new Date(),
+        currentPeriodEnd: periodEnd,
+        cancelAtPeriodEnd: false,
+      },
+    });
+  }
+  check("plan entitlement fixture is provisioned for the demo workspace", Boolean(entitlementFixture));
+
   const createResponse = await host.request("/api/weddings", {
     method: "POST",
     headers: { "content-type": "application/json" },
@@ -471,36 +535,31 @@ async function main() {
   });
   check("RSVP rejects an invalid edit token", invalidEditTokenResponse.status === 403);
 
-  // Past-deadline edge case.
-  const pastWeddingResponse = await host.request("/api/weddings", {
-    method: "POST",
+  // Past-deadline edge case. The plan limit allows a limited number of
+  // weddings, so the deadline is moved on the existing wedding instead of
+  // creating a second one.
+  const pastDeadlinePatch = await host.request(`/api/weddings/${weddingId}`, {
+    method: "PATCH",
     headers: { "content-type": "application/json" },
+    body: JSON.stringify({ rsvpDeadline: "2020-01-01" }),
+  });
+  check("host can move the RSVP deadline into the past", pastDeadlinePatch.status === 200);
+  const pastRsvpResponse = await fetch(`${base}/api/rsvp`, {
+    method: "POST",
+    headers: { "content-type": "application/json", "x-forwarded-for": "10.1.1.5" },
     body: JSON.stringify({
-      name: `Past Deadline Wedding ${suffix}`,
-      coupleName1: "Past",
-      rsvpDeadline: "2020-01-01",
+      token: invitationToken,
+      fullName: "Too Late",
+      mobile: `94${suffix.slice(-8)}`,
     }),
   });
-  const pastWedding = (await pastWeddingResponse.json()).wedding;
-  check("host can create a past-deadline wedding", pastWeddingResponse.status === 201 && Boolean(pastWedding?.id));
-  if (pastWedding?.id) {
-    await host.request(`/api/weddings/${pastWedding.id}/publish`, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ published: true }),
-    });
-    const pastRsvpResponse = await fetch(`${base}/api/rsvp`, {
-      method: "POST",
-      headers: { "content-type": "application/json", "x-forwarded-for": "10.1.1.5" },
-      body: JSON.stringify({
-        token: pastWedding.invitationToken,
-        fullName: "Too Late",
-        mobile: `94${suffix.slice(-8)}`,
-      }),
-    });
-    check("RSVP rejects a submission after the wedding deadline", pastRsvpResponse.status === 400);
-    await host.request(`/api/weddings/${pastWedding.id}`, { method: "DELETE" });
-  }
+  check("RSVP rejects a submission after the wedding deadline", pastRsvpResponse.status === 400);
+  // Restore the deadline so the remaining checks run against a live wedding.
+  await host.request(`/api/weddings/${weddingId}`, {
+    method: "PATCH",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ rsvpDeadline: "2027-05-01" }),
+  });
 
   // Event-level deadline edge case.
   const eventDeadlineResponse = await host.request(`/api/weddings/${weddingId}/events`, {
@@ -541,7 +600,7 @@ async function main() {
   const unpublishedInviteHtml = await unpublishedInvitePage.text();
   check(
     "unpublished invitation is not available to guests",
-    unpublishedInvitePage.status === 200 && unpublishedInviteHtml.includes("not active"),
+    unpublishedInvitePage.status === 200 && unpublishedInviteHtml.includes("no longer active"),
   );
   // Republish for any remaining checks (none after this point, but keeps state clean).
   await host.request(`/api/weddings/${weddingId}/publish`, {
@@ -618,6 +677,11 @@ async function main() {
       await prisma.workspace.deleteMany({ where: { id: membership.workspaceId } });
     }
     await prisma.user.deleteMany({ where: { id: outsiderUser.id } });
+  }
+
+  // Remove the entitlement fixture so the demo workspace returns to Free.
+  if (entitlementFixture) {
+    await prisma.subscription.deleteMany({ where: { id: entitlementFixture.id } });
   }
 
   console.log(`\n${passed} checks passed, ${failures.length} failed`);

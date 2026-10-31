@@ -11,6 +11,7 @@ import {
 import { guestQuerySchema, guestSchema } from "@/lib/validation"
 import { requireWeddingAccess } from "@/lib/wedding-access"
 import { logAudit } from "@/lib/audit"
+import { assertWeddingLimit, withWorkspaceLimitLock } from "@/lib/subscriptions/service"
 
 export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -74,20 +75,25 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     assertSameOrigin(req)
     const userId = await requireUserId()
     const { id } = await params
-    await requireWeddingAccess(id, userId)
+    const wedding = await requireWeddingAccess(id, userId)
 
     const body = await readJson(req)
     const data = guestSchema.parse(body)
 
-    if (data.mobile) {
-      const existing = await prisma.guest.findFirst({
-        where: { weddingId: id, mobile: data.mobile },
-        select: { id: true },
-      })
-      if (existing) throw new ApiError("A guest with this mobile number already exists", 409)
-    }
+    const guest = await withWorkspaceLimitLock(wedding.workspaceId, "guests", async (tx) => {
+      await assertWeddingLimit(wedding.workspaceId, id, "guests")
 
-    const guest = await prisma.guest.create({ data: { ...data, weddingId: id } })
+      if (data.mobile) {
+        const existing = await tx.guest.findFirst({
+          where: { weddingId: id, mobile: data.mobile },
+          select: { id: true },
+        })
+        if (existing) throw new ApiError("A guest with this mobile number already exists", 409)
+      }
+
+      return tx.guest.create({ data: { ...data, weddingId: id } })
+    })
+
     await logAudit(id, userId, "guest.created", { guestId: guest.id })
     return NextResponse.json({ guest }, { status: 201 })
   } catch (error) {

@@ -9,6 +9,7 @@ import {
 } from "@/lib/api"
 import { weddingCreateSchema } from "@/lib/validation"
 import { logAudit } from "@/lib/audit"
+import { assertWorkspaceLimit, withWorkspaceLimitLock } from "@/lib/subscriptions/service"
 
 export async function GET() {
   try {
@@ -37,20 +38,25 @@ export async function POST(req: Request) {
     })
     if (!membership) throw new ApiError("No workspace found for this account", 400)
 
-    const wedding = await prisma.wedding.create({
-      data: {
-        workspaceId: membership.workspaceId,
-        name: data.name,
-        coupleName1: data.coupleName1,
-        coupleName2: data.coupleName2,
-        date: data.date,
-        venue: data.venue,
-        address: data.address,
-        description: data.description,
-        timezone: data.timezone,
-        rsvpDeadline: data.rsvpDeadline,
-        invitationToken: crypto.randomUUID(),
-      },
+    // Server-side entitlement check: the UI cannot bypass this. The lock makes
+    // the count-then-create pair safe under concurrent requests.
+    const wedding = await withWorkspaceLimitLock(membership.workspaceId, "weddings", async (tx) => {
+      await assertWorkspaceLimit(membership.workspaceId, "weddings")
+      return tx.wedding.create({
+        data: {
+          workspaceId: membership.workspaceId,
+          name: data.name,
+          coupleName1: data.coupleName1,
+          coupleName2: data.coupleName2,
+          date: data.date,
+          venue: data.venue,
+          address: data.address,
+          description: data.description,
+          timezone: data.timezone,
+          rsvpDeadline: data.rsvpDeadline,
+          invitationToken: crypto.randomUUID(),
+        },
+      })
     })
 
     await logAudit(wedding.id, userId, "wedding.created", { name: wedding.name })

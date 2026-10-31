@@ -1,7 +1,7 @@
 # Project Tracker — Wedding Planner SaaS
 
-**Last updated:** 2026-10-29
-**Overall status:** MVP features locally verified; CI/Playwright E2E blocked by GitHub account billing lock
+**Last updated:** 2026-10-31
+**Overall status:** MVP + subscription billing verified locally; live payments not yet verified (no Razorpay credentials or published prices); CI/Playwright E2E blocked by GitHub account billing lock
 
 ## Completed
 - [x] Authentication & workspaces (NextAuth v5 / Auth.js v5, bcrypt)
@@ -17,26 +17,39 @@
 - [x] Tenant isolation (workspace membership enforced on every private route)
 - [x] TypeScript compiles (PASS with `NODE_OPTIONS=--max-old-space-size=4096`)
 - [x] Prisma schema valid (PASS)
-- [x] ESLint configured and passing (PASS, no warnings)
-- [x] Unit tests (7 suites / 46 tests) PASS
-- [x] Integration tests (6 tests) PASS
-- [x] HTTP smoke test (78 checks) PASS
+- [x] ESLint configured and passing (PASS, one pre-existing `<img>` warning)
+- [x] Unit tests (10 suites / 65 tests) PASS
+- [x] Integration tests (2 suites / 26 tests) PASS
+- [x] HTTP smoke test (79 checks) PASS
 - [x] Production build PASS (including trace collection)
+- [x] Subscription plans FREE / PRO / PRIME (central config + `Plan` table)
+- [x] Admin pricing/limits editor at `/dashboard/admin/plans`
+- [x] Razorpay checkout, signature verification, signed webhook, payment history
+- [x] Payment amount/currency verified against Razorpay before activation (checkout and webhook)
+- [x] Server-side entitlement enforcement with current/max/upgrade URL errors
+- [x] Upgrades, same-plan renewals, scheduled move to Free, cancellation/resume, expiry settlement
+- [x] Concurrency-safe activation, settlement and quota checks (row/advisory locks)
+- [x] `Payment.billingPeriodDays` snapshot isolates existing purchases from later plan price/duration changes
+- [x] Paid-to-paid downgrades refused (no unpaid plan grants); only the move to Free is scheduled
 
 ## QA Results
 - TypeScript: PASS
 - Prisma Validation: PASS
-- Lint: PASS (no warnings)
-- Unit Tests: PASS (46 tests)
-- Integration Tests: PASS (6 tests)
-- HTTP Smoke Test: PASS (78 checks)
+- Lint: PASS (one pre-existing `<img>` warning)
+- Unit Tests: PASS (10 suites / 65 tests)
+- Integration Tests: PASS (2 suites / 26 tests, includes 20 subscription tests)
+- HTTP Smoke Test: PASS (79 checks)
 - E2E Tests: NOT RUN locally (browser cannot launch in this container); CI workflow added but execution blocked by GitHub account billing lock
 - Production Build: PASS (including trace collection)
 
 ## Remaining
-- [ ] Browser-based Playwright E2E — never run anywhere yet (browsers cannot launch in this container). `.github/workflows/ci.yml` (commit `a4c78c7`, pushed to `main`) runs it in CI; HTTP smoke (78 checks) covers the core journey meanwhile.
+- [ ] Configure Razorpay keys (`RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, `RAZORPAY_WEBHOOK_SECRET`) and set the webhook URL to `/api/webhooks/razorpay`.
+- [ ] Publish real PRO/PRIME prices and billing durations via `/dashboard/admin/plans` (defaults stay “Coming Soon” on purpose).
+- [ ] Complete at least one sandbox Razorpay payment (checkout signature, captured amount, webhook delivery) before claiming production readiness.
+- [ ] Set admin access (`User.isAdmin` or `ADMIN_EMAILS`).
+- [ ] Browser-based Playwright E2E — never run anywhere yet (browsers cannot launch in this container). `.github/workflows/ci.yml` (commit `a4c78c7`, pushed to `main`) runs it in CI; HTTP smoke (79 checks) covers the core journey meanwhile.
 - [x] Management UI/API for custom RSVP questions — completed in commit `9f414f1` (API `app/api/weddings/[id]/questions/`, host UI page, smoke coverage).
 - [x] Multi-instance-safe rate limiter — completed in commit `5301190` (PostgreSQL `RateLimit` table, migration `20261029202020_add_rate_limit`; in-memory store retained for tests).
 - [x] Commit/push — `a4c78c7` committed and pushed to `main` after `workflow` scope granted. GitHub Actions CI triggered (run 40975568009) but **job not started** due to GitHub account billing lock. CI/Playwright E2E remain NOT RUN.
-- [ ] `.env.example` still shows `NEXTAUTH_URL`/`NEXTAUTH_SECRET` (v4 names) — actual implementation uses `AUTH_URL`/`AUTH_SECRET`/`AUTH_TRUST_HOST` (Auth.js v5). Correction pending approval.
+- [x] `.env.example` now uses the Auth.js v5 names (`AUTH_URL`/`AUTH_SECRET`/`AUTH_TRUST_HOST`) and includes the Razorpay/admin variables.
 - [ ] Vercel deployment — not started; checklist prepared, awaiting approval.
