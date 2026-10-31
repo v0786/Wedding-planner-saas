@@ -50,6 +50,6 @@
 - [ ] Browser-based Playwright E2E — never run anywhere yet (browsers cannot launch in this container). `.github/workflows/ci.yml` (commit `a4c78c7`, pushed to `main`) runs it in CI; HTTP smoke (79 checks) covers the core journey meanwhile.
 - [x] Management UI/API for custom RSVP questions — completed in commit `9f414f1` (API `app/api/weddings/[id]/questions/`, host UI page, smoke coverage).
 - [x] Multi-instance-safe rate limiter — completed in commit `5301190` (PostgreSQL `RateLimit` table, migration `20261029202020_add_rate_limit`; in-memory store retained for tests).
-- [x] Commit/push — `a4c78c7` committed and pushed to `main` after `workflow` scope granted. GitHub Actions CI triggered (run 40975568009) but **job not started** due to GitHub account billing lock. CI/Playwright E2E remain NOT RUN.
+- [x] Commit/push — `0175f21` committed and pushed to `main` (includes prior uncommitted work + subscription audit). GitHub Actions CI triggered (run 40975568009) but **job not started** due to GitHub account billing lock; `gh` token lacks `workflow` scope and SSH fallback unavailable. CI/Playwright E2E remain NOT RUN.
 - [x] `.env.example` now uses the Auth.js v5 names (`AUTH_URL`/`AUTH_SECRET`/`AUTH_TRUST_HOST`) and includes the Razorpay/admin variables.
 - [ ] Vercel deployment — not started; checklist prepared, awaiting approval.

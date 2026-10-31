@@ -113,7 +113,7 @@ Not production-ready yet (external blockers, no code claim):
 - Playwright browser automation does not run in this container (Chromium/Firefox fail to start under gVisor; both error at process launch). The core journey is instead verified by the HTTP smoke test (`npm run test:smoke`), which exercises the real API and page renders.
 - Rate limiter is now PostgreSQL-backed and shared across instances (fixed-window, table `RateLimit`). In-memory store remains available for tests.
 - Custom questions now have full host management (API + UI) and are covered by the smoke test.
-- Commit `a4c78c7` pushed 2026-10-29 after `workflow` scope granted. GitHub Actions CI triggered (run 40975568009) but **job not started** due to GitHub account billing lock. CI/Playwright E2E remain **NOT RUN**.
+- Commit `a4c78c7` pushed 2026-10-29 after `workflow` scope granted. GitHub Actions CI triggered (run 40975568009) but **job not started** due to GitHub account billing lock; `gh` token scopes are `admin:public_key, gist, read:org, repo` — `workflow` scope missing, and the token is the credential for the HTTPS remote; SSH fallback unavailable (`Permission denied (publickey)`). GitHub refuses pushes that add `.github/workflows/*` without the `workflow` scope. CI has therefore not been triggered. Remedy: run `gh auth refresh -s workflow` (interactive device code), then push and run `gh workflow run ci.yml`. All audit work is now committed (`68a91a9`, `0175f21`) and pushed to `main`.
 
 ## Test Commands
 - `npm test` — 10 suites / 65 tests PASS
