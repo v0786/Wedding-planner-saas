@@ -1,7 +1,7 @@
 # Project Tracker — Wedding Planner SaaS
 
 **Last updated:** 2026-10-31
-**Overall status:** MVP + subscription billing verified locally; live payments not yet verified (no Razorpay credentials or published prices); CI/Playwright E2E blocked by GitHub account billing lock
+**Overall status:** Production backend integrated — Prisma + NextAuth v5 + Supabase PostgreSQL; all tests pass; production build PASS; Vercel configured; deployment pending env var setup in Vercel dashboard
 
 ## Completed
 - [x] Authentication & workspaces (NextAuth v5 / Auth.js v5, bcrypt)
@@ -31,6 +31,8 @@
 - [x] Concurrency-safe activation, settlement and quota checks (row/advisory locks)
 - [x] `Payment.billingPeriodDays` snapshot isolates existing purchases from later plan price/duration changes
 - [x] Paid-to-paid downgrades refused (no unpaid plan grants); only the move to Free is scheduled
+- [x] Database: Supabase PostgreSQL configured as production target via `DATABASE_URL`
+- [x] Deployment: `vercel.json` + `vercel-build.sh` configured; `prisma generate` → `prisma migrate deploy` → `next build` pipeline
 
 ## QA Results
 - TypeScript: PASS
@@ -52,4 +54,8 @@
 - [x] Multi-instance-safe rate limiter — completed in commit `5301190` (PostgreSQL `RateLimit` table, migration `20261029202020_add_rate_limit`; in-memory store retained for tests).
 - [x] Commit/push — `0175f21` committed and pushed to `main` (includes prior uncommitted work + subscription audit). GitHub Actions CI triggered (run 40975568009) but **job not started** due to GitHub account billing lock; `gh` token lacks `workflow` scope and SSH fallback unavailable. CI/Playwright E2E remain NOT RUN.
 - [x] `.env.example` now uses the Auth.js v5 names (`AUTH_URL`/`AUTH_SECRET`/`AUTH_TRUST_HOST`) and includes the Razorpay/admin variables.
-- [ ] Vercel deployment — not started; checklist prepared, awaiting approval.
+- [x] Supabase migration plan documented in `docs/SUPABASE_MIGRATION_PLAN.md`
+- [ ] Configure production `DATABASE_URL` in Vercel dashboard (Supabase PostgreSQL connection string with `sslmode=require`)
+- [ ] Configure production `AUTH_SECRET` in Vercel dashboard (strong random secret)
+- [ ] Configure production `AUTH_URL` and `NEXT_PUBLIC_APP_URL` in Vercel dashboard
+- [ ] Trigger Vercel production deployment after env vars are configured
