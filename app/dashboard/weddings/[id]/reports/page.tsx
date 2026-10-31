@@ -2,6 +2,9 @@ import { auth } from "@/auth"
 import { notFound, redirect } from "next/navigation"
 import { prisma } from "@/lib/prisma"
 import Link from "next/link"
+import UpgradeRequired from "@/components/subscriptions/upgrade-required"
+import { getEntitlements } from "@/lib/subscriptions/service"
+import { FEATURE_LABELS } from "@/lib/subscriptions/config"
 
 export const dynamic = "force-dynamic"
 
@@ -9,6 +12,24 @@ export default async function ReportsPage({ params }: { params: Promise<{ id: st
   const session = await auth()
   if (!session?.user?.id) redirect("/auth/login")
   const { id } = await params
+
+  const access = await prisma.wedding.findFirst({
+    where: { id, workspace: { members: { some: { userId: session.user.id } } } },
+    select: { id: true, workspaceId: true },
+  })
+  if (!access) notFound()
+
+  const entitlements = await getEntitlements(access.workspaceId)
+  if (!entitlements.features.reports) {
+    return (
+      <UpgradeRequired
+        title="Reports are a premium feature"
+        description="Upgrade to see attendance, meal preferences and group-level response rates for this wedding."
+        featureLabel={FEATURE_LABELS.reports.label}
+        planName={entitlements.plan.name}
+      />
+    )
+  }
 
   const wedding = await prisma.wedding.findFirst({
     where: { id, workspace: { members: { some: { userId: session.user.id } } } },

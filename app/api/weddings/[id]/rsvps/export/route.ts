@@ -3,12 +3,15 @@ import { stringify } from "csv-stringify/sync"
 import { prisma } from "@/lib/prisma"
 import { handleApiError } from "@/lib/api"
 import { requireWeddingAccess } from "@/lib/wedding-access"
+import { assertFeature } from "@/lib/subscriptions/service"
 
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const userId = await requireUserId()
     const { id } = await params
     const wedding = await requireWeddingAccess(id, userId)
+
+    await assertFeature(wedding.workspaceId, "csvExport")
 
     const [submissions, events] = await Promise.all([
       prisma.rsvpSubmission.findMany({

@@ -1,6 +1,9 @@
 "use client"
 
 import { useState } from "react"
+import { Button } from "@/components/ui/button"
+import EmptyState from "@/components/ui/empty-state"
+import { Field, FormError, Input, Textarea } from "@/components/ui/field"
 
 export type EventRecord = {
   id: string
@@ -54,6 +57,7 @@ export default function EventManager({
   const [editingId, setEditingId] = useState<string | null>(null)
   const [showForm, setShowForm] = useState(false)
   const [error, setError] = useState("")
+  const [upgradeUrl, setUpgradeUrl] = useState("")
   const [loading, setLoading] = useState(false)
 
   function update(field: keyof FormState, value: string) {
@@ -87,6 +91,7 @@ export default function EventManager({
     e.preventDefault()
     setLoading(true)
     setError("")
+    setUpgradeUrl("")
 
     try {
       const url = editingId
@@ -143,152 +148,158 @@ export default function EventManager({
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-lg font-semibold text-gray-900">Events</h2>
-        <button
-          type="button"
-          onClick={startCreate}
-          className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
-        >
+        <h2 className="font-display text-xl text-ink-800">Events</h2>
+        <Button type="button" variant="primary" onClick={startCreate}>
+          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8} aria-hidden="true">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+          </svg>
           Add event
-        </button>
+        </Button>
       </div>
 
       {error && (
-        <div role="alert" className="rounded-md bg-red-50 px-4 py-3 text-sm text-red-700">
-          {error}
-        </div>
+        <FormError>
+          <>
+            {error}
+            {upgradeUrl && (
+              <span className="mt-1 block">
+                <a href={upgradeUrl} className="font-semibold underline">
+                  See upgrade options
+                </a>
+              </span>
+            )}
+          </>
+        </FormError>
       )}
 
       {showForm && (
-        <form onSubmit={handleSubmit} className="space-y-4 rounded-lg bg-white p-5 shadow">
-          <h3 className="font-semibold text-gray-900">{editingId ? "Edit event" : "New event"}</h3>
+        <form onSubmit={handleSubmit} className="card overflow-hidden">
+          <div className="paper-texture border-b border-ivory-200 bg-champagne-100/50 px-6 py-5">
+            <p className="eyebrow">{editingId ? "Edit event" : "New event"}</p>
+          </div>
 
-          <Field label="Event name" htmlFor="event-name">
-            <input
-              id="event-name"
-              type="text"
-              required
-              maxLength={120}
-              value={form.name}
-              onChange={(e) => update("name", e.target.value)}
-              className={inputClass}
-              placeholder="e.g., Haldi, Mehendi, Wedding, Reception"
-            />
-          </Field>
+          <div className="space-y-5 px-6 py-6">
+            <Field label="Event name" htmlFor="event-name">
+              <Input
+                id="event-name"
+                type="text"
+                required
+                maxLength={120}
+                value={form.name}
+                onChange={(e) => update("name", e.target.value)}
+                placeholder="e.g., Haldi, Mehendi, Wedding, Reception"
+              />
+            </Field>
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <Field label="Date" htmlFor="event-date">
-              <input
-                id="event-date"
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+              <Field label="Date" htmlFor="event-date">
+                <Input
+                  id="event-date"
+                  type="date"
+                  value={form.date}
+                  onChange={(e) => update("date", e.target.value)}
+                />
+              </Field>
+              <Field label="Time" htmlFor="event-time">
+                <Input
+                  id="event-time"
+                  type="text"
+                  maxLength={20}
+                  value={form.time}
+                  onChange={(e) => update("time", e.target.value)}
+                  placeholder="e.g., 6:00 PM"
+                />
+              </Field>
+            </div>
+
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+              <Field label="Venue" htmlFor="event-venue">
+                <Input
+                  id="event-venue"
+                  type="text"
+                  maxLength={200}
+                  value={form.venue}
+                  onChange={(e) => update("venue", e.target.value)}
+                />
+              </Field>
+              <Field label="Display order" htmlFor="event-order">
+                <Input
+                  id="event-order"
+                  type="number"
+                  min={0}
+                  max={10000}
+                  value={form.order}
+                  onChange={(e) => update("order", e.target.value)}
+                />
+              </Field>
+            </div>
+
+            <Field label="Address" htmlFor="event-address">
+              <Textarea
+                id="event-address"
+                rows={2}
+                maxLength={1000}
+                value={form.address}
+                onChange={(e) => update("address", e.target.value)}
+              />
+            </Field>
+
+            <Field label="Description" htmlFor="event-description">
+              <Textarea
+                id="event-description"
+                rows={2}
+                maxLength={2000}
+                value={form.description}
+                onChange={(e) => update("description", e.target.value)}
+              />
+            </Field>
+
+            <Field label="RSVP deadline for this event (optional)" htmlFor="event-deadline">
+              <Input
+                id="event-deadline"
                 type="date"
-                value={form.date}
-                onChange={(e) => update("date", e.target.value)}
-                className={inputClass}
+                value={form.rsvpDeadline}
+                onChange={(e) => update("rsvpDeadline", e.target.value)}
               />
             </Field>
-            <Field label="Time" htmlFor="event-time">
-              <input
-                id="event-time"
-                type="text"
-                maxLength={20}
-                value={form.time}
-                onChange={(e) => update("time", e.target.value)}
-                className={inputClass}
-                placeholder="e.g., 6:00 PM"
-              />
-            </Field>
-          </div>
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <Field label="Venue" htmlFor="event-venue">
-              <input
-                id="event-venue"
-                type="text"
-                maxLength={200}
-                value={form.venue}
-                onChange={(e) => update("venue", e.target.value)}
-                className={inputClass}
-              />
-            </Field>
-            <Field label="Display order" htmlFor="event-order">
-              <input
-                id="event-order"
-                type="number"
-                min={0}
-                max={10000}
-                value={form.order}
-                onChange={(e) => update("order", e.target.value)}
-                className={inputClass}
-              />
-            </Field>
-          </div>
-
-          <Field label="Address" htmlFor="event-address">
-            <textarea
-              id="event-address"
-              rows={2}
-              maxLength={1000}
-              value={form.address}
-              onChange={(e) => update("address", e.target.value)}
-              className={inputClass}
-            />
-          </Field>
-
-          <Field label="Description" htmlFor="event-description">
-            <textarea
-              id="event-description"
-              rows={2}
-              maxLength={2000}
-              value={form.description}
-              onChange={(e) => update("description", e.target.value)}
-              className={inputClass}
-            />
-          </Field>
-
-          <Field label="RSVP deadline for this event (optional)" htmlFor="event-deadline">
-            <input
-              id="event-deadline"
-              type="date"
-              value={form.rsvpDeadline}
-              onChange={(e) => update("rsvpDeadline", e.target.value)}
-              className={inputClass}
-            />
-          </Field>
-
-          <div className="flex gap-2">
-            <button
-              type="submit"
-              disabled={loading}
-              className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
-            >
-              {loading ? "Saving..." : editingId ? "Save event" : "Create event"}
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setShowForm(false)
-                setEditingId(null)
-                setError("")
-              }}
-              className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-            >
-              Cancel
-            </button>
+            <div className="flex flex-col-reverse gap-3 border-t border-ivory-200 pt-5 sm:flex-row sm:justify-end">
+              <Button type="submit" variant="primary" disabled={loading}>
+                {loading ? "Saving..." : editingId ? "Save event" : "Create event"}
+              </Button>
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => {
+                  setShowForm(false)
+                  setEditingId(null)
+                  setError("")
+                }}
+              >
+                Cancel
+              </Button>
+            </div>
           </div>
         </form>
       )}
 
       {events.length === 0 ? (
-        <p className="rounded-lg bg-white p-8 text-center text-gray-500 shadow">
-          No events yet. Add Haldi, Mehendi, the wedding ceremony, and reception to build the schedule.
-        </p>
+        <EmptyState
+          icon={
+            <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.6} aria-hidden="true">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+          }
+          title="No events yet"
+          description="No events yet. Add Haldi, Mehendi, the wedding ceremony, and reception to build the schedule."
+        />
       ) : (
-        <ul className="divide-y divide-gray-200 rounded-lg bg-white shadow">
+        <ul className="stagger divide-y divide-ivory-200 overflow-hidden rounded-2xl border border-ivory-300/70 bg-white/85 shadow-soft">
           {events.map((event) => (
-            <li key={event.id} className="flex flex-wrap items-start justify-between gap-3 p-4">
-              <div>
-                <h3 className="font-medium text-gray-900">{event.name}</h3>
-                <p className="text-sm text-gray-600">
+            <li key={event.id} className="flex flex-wrap items-start justify-between gap-4 px-5 py-4">
+              <div className="min-w-0">
+                <h3 className="font-display text-lg text-ink-800">{event.name}</h3>
+                <p className="mt-0.5 text-sm text-ink-500">
                   {event.date
                     ? new Date(event.date).toLocaleDateString("en-IN", { dateStyle: "medium" })
                     : "Date not set"}
@@ -296,53 +307,23 @@ export default function EventManager({
                   {event.venue && ` · ${event.venue}`}
                 </p>
                 {event.rsvpDeadline && (
-                  <p className="text-xs text-gray-500">
+                  <p className="mt-1 text-xs text-ink-400">
                     RSVP by {new Date(event.rsvpDeadline).toLocaleDateString("en-IN")}
                   </p>
                 )}
               </div>
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => startEdit(event)}
-                  className="rounded-md border border-gray-300 px-3 py-1 text-sm text-gray-700 hover:bg-gray-50"
-                >
+              <div className="flex shrink-0 gap-2">
+                <Button type="button" variant="secondary" size="sm" onClick={() => startEdit(event)}>
                   Edit
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleDelete(event)}
-                  className="rounded-md border border-red-200 px-3 py-1 text-sm text-red-700 hover:bg-red-50"
-                >
+                </Button>
+                <Button type="button" variant="ghost" size="sm" onClick={() => handleDelete(event)} className="text-rose-600 hover:bg-rose-50 hover:text-rose-700">
                   Delete
-                </button>
+                </Button>
               </div>
             </li>
           ))}
         </ul>
       )}
-    </div>
-  )
-}
-
-const inputClass =
-  "mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-
-function Field({
-  label,
-  htmlFor,
-  children,
-}: {
-  label: string
-  htmlFor: string
-  children: React.ReactNode
-}) {
-  return (
-    <div>
-      <label htmlFor={htmlFor} className="block text-sm font-medium text-gray-700">
-        {label}
-      </label>
-      {children}
     </div>
   )
 }

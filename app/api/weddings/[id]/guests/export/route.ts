@@ -3,12 +3,15 @@ import { prisma } from "@/lib/prisma"
 import { handleApiError } from "@/lib/api"
 import { guestsToCsv } from "@/lib/csv"
 import { requireWeddingAccess } from "@/lib/wedding-access"
+import { assertFeature } from "@/lib/subscriptions/service"
 
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const userId = await requireUserId()
     const { id } = await params
     const wedding = await requireWeddingAccess(id, userId)
+
+    await assertFeature(wedding.workspaceId, "csvExport")
 
     const guests = await prisma.guest.findMany({
       where: { weddingId: id },

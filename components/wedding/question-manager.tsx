@@ -54,6 +54,7 @@ export default function QuestionManager({
   const [editingId, setEditingId] = useState<string | null>(null)
   const [showForm, setShowForm] = useState(false)
   const [error, setError] = useState("")
+  const [upgradeUrl, setUpgradeUrl] = useState("")
   const [loading, setLoading] = useState(false)
 
   function update<K extends keyof FormState>(field: K, value: FormState[K]) {
@@ -85,6 +86,7 @@ export default function QuestionManager({
     e.preventDefault()
     setLoading(true)
     setError("")
+    setUpgradeUrl("")
 
     const payload = {
       question: form.question,
@@ -107,6 +109,7 @@ export default function QuestionManager({
       const data = await res.json()
       if (!res.ok) {
         setError(data.error || "Could not save the question")
+        setUpgradeUrl(typeof data.upgradeUrl === "string" ? data.upgradeUrl : "")
         return
       }
 
@@ -165,6 +168,11 @@ export default function QuestionManager({
       {error && (
         <div role="alert" className="rounded-md bg-red-50 px-4 py-3 text-sm text-red-700">
           {error}
+          {upgradeUrl && (
+            <p className="mt-2">
+              <a href={upgradeUrl} className="font-semibold underline">See upgrade options</a>
+            </p>
+          )}
         </div>
       )}
 

@@ -3,6 +3,8 @@
 import { useState } from "react"
 import { signIn } from "next-auth/react"
 import { useRouter } from "next/navigation"
+import { Button } from "@/components/ui/button"
+import { Field, FormError, Input } from "@/components/ui/field"
 
 export default function LoginForm() {
   const [email, setEmail] = useState("")
@@ -38,54 +40,41 @@ export default function LoginForm() {
   }
 
   return (
-    <form className="space-y-5 rounded-lg bg-white p-6 shadow" onSubmit={handleSubmit}>
-      <div>
-        <label htmlFor="login-email" className="block text-sm font-medium text-gray-700">
-          Email address
-        </label>
-        <input
+    <form className="card-elevated space-y-5 p-6 sm:p-8" onSubmit={handleSubmit}>
+      <div className="text-center">
+        <h2 className="font-display text-xl text-ink-800">Welcome back</h2>
+        <p className="mt-1 text-sm text-ink-500">Sign in to pick up where you left off.</p>
+        <div className="gold-hairline mt-5" />
+      </div>
+
+      <Field label="Email address" htmlFor="login-email">
+        <Input
           id="login-email"
           type="email"
           required
           autoComplete="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className={inputClass}
           placeholder="you@example.com"
         />
-      </div>
+      </Field>
 
-      <div>
-        <label htmlFor="login-password" className="block text-sm font-medium text-gray-700">
-          Password
-        </label>
-        <input
+      <Field label="Password" htmlFor="login-password">
+        <Input
           id="login-password"
           type="password"
           required
           autoComplete="current-password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className={inputClass}
         />
-      </div>
+      </Field>
 
-      {error && (
-        <div role="alert" className="text-sm text-red-600">
-          {error}
-        </div>
-      )}
+      {error && <FormError>{error}</FormError>}
 
-      <button
-        type="submit"
-        disabled={loading}
-        className="w-full rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 disabled:opacity-50"
-      >
+      <Button type="submit" disabled={loading} size="lg" className="w-full">
         {loading ? "Signing in..." : "Sign in"}
-      </button>
+      </Button>
     </form>
   )
 }
-
-const inputClass =
-  "mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"

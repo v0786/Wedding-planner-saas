@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation"
 import { prisma } from "@/lib/prisma"
 import EventManager, { type EventRecord } from "@/components/wedding/event-manager"
 import Link from "next/link"
+import PageHeader from "@/components/ui/page-header"
 
 export default async function EventsPage({ params }: { params: Promise<{ id: string }> }) {
   const session = await auth()
@@ -31,11 +32,28 @@ export default async function EventsPage({ params }: { params: Promise<{ id: str
     <main className="mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:px-8">
       <Link
         href={`/dashboard/weddings/${wedding.id}`}
-        className="text-sm text-indigo-600 hover:text-indigo-500"
+        className="group inline-flex items-center gap-2 text-sm font-medium text-ink-500 transition-colors hover:text-gold-700"
       >
-        ← Back to wedding
+        <svg
+          className="h-4 w-4 transition-transform duration-300 group-hover:-translate-x-0.5"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+          strokeWidth={1.8}
+          aria-hidden="true"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+        </svg>
+        Back to wedding
       </Link>
-      <h1 className="mb-6 mt-3 text-2xl font-bold text-gray-900">Manage Events</h1>
+
+      <PageHeader
+        eyebrow="Schedule"
+        title="Manage Events"
+        description={`Every function of ${wedding.name}, in the order your guests will arrive.`}
+        className="mt-6"
+      />
+
       <EventManager weddingId={wedding.id} initialEvents={events} />
     </main>
   )

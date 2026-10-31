@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation"
 import { prisma } from "@/lib/prisma"
 import EditWeddingForm from "@/components/wedding/edit-wedding-form"
 import Link from "next/link"
+import PageHeader from "@/components/ui/page-header"
 
 export default async function EditWeddingPage({ params }: { params: Promise<{ id: string }> }) {
   const session = await auth()
@@ -18,11 +19,28 @@ export default async function EditWeddingPage({ params }: { params: Promise<{ id
     <main className="mx-auto max-w-2xl px-4 py-8 sm:px-6 lg:px-8">
       <Link
         href={`/dashboard/weddings/${wedding.id}`}
-        className="text-sm text-indigo-600 hover:text-indigo-500"
+        className="group inline-flex items-center gap-2 text-sm font-medium text-ink-500 transition-colors hover:text-gold-700"
       >
-        ← Back to wedding
+        <svg
+          className="h-4 w-4 transition-transform duration-300 group-hover:-translate-x-0.5"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+          strokeWidth={1.8}
+          aria-hidden="true"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+        </svg>
+        Back to wedding
       </Link>
-      <h1 className="mb-6 mt-3 text-2xl font-bold text-gray-900">Edit Wedding</h1>
+
+      <PageHeader
+        eyebrow="Wedding details"
+        title="Edit Wedding"
+        description={`Update the details for ${wedding.name}. Changes appear on the invitation your guests see.`}
+        className="mt-6"
+      />
+
       <EditWeddingForm
         wedding={{
           id: wedding.id,

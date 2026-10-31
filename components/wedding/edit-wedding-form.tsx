@@ -2,6 +2,8 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import { Button } from "@/components/ui/button"
+import { Field, FormError, FormSuccess, Input, Textarea } from "@/components/ui/field"
 
 type Wedding = {
   id: string
@@ -81,137 +83,106 @@ export default function EditWeddingForm({ wedding }: { wedding: Wedding }) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 rounded-lg bg-white p-6 shadow">
-      <Field label="Wedding Name" htmlFor="edit-name">
-        <input
-          id="edit-name"
-          type="text"
-          required
-          maxLength={200}
-          value={form.name}
-          onChange={(e) => update("name", e.target.value)}
-          className={inputClass}
-        />
-      </Field>
+    <form onSubmit={handleSubmit} className="card overflow-hidden">
+      <div className="paper-texture border-b border-ivory-200 bg-champagne-100/50 px-6 py-5 sm:px-8">
+        <p className="eyebrow">Wedding details</p>
+        <p className="mt-2 max-w-lg text-sm leading-relaxed text-ink-500">
+          Save your changes and the invitation, guest list and reports update straight away.
+        </p>
+      </div>
 
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-        <Field label="First Person Name" htmlFor="edit-couple-1">
-          <input
-            id="edit-couple-1"
+      <div className="space-y-6 px-6 py-6 sm:px-8">
+        <Field label="Wedding Name" htmlFor="edit-name">
+          <Input
+            id="edit-name"
             type="text"
             required
-            maxLength={120}
-            value={form.coupleName1}
-            onChange={(e) => update("coupleName1", e.target.value)}
-            className={inputClass}
+            maxLength={200}
+            value={form.name}
+            onChange={(e) => update("name", e.target.value)}
           />
         </Field>
-        <Field label="Second Person Name (optional)" htmlFor="edit-couple-2">
-          <input
-            id="edit-couple-2"
+
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+          <Field label="First Person Name" htmlFor="edit-couple-1">
+            <Input
+              id="edit-couple-1"
+              type="text"
+              required
+              maxLength={120}
+              value={form.coupleName1}
+              onChange={(e) => update("coupleName1", e.target.value)}
+            />
+          </Field>
+          <Field label="Second Person Name (optional)" htmlFor="edit-couple-2">
+            <Input
+              id="edit-couple-2"
+              type="text"
+              maxLength={120}
+              value={form.coupleName2}
+              onChange={(e) => update("coupleName2", e.target.value)}
+            />
+          </Field>
+        </div>
+
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+          <Field label="Wedding Date" htmlFor="edit-date">
+            <Input
+              id="edit-date"
+              type="date"
+              value={form.date}
+              onChange={(e) => update("date", e.target.value)}
+            />
+          </Field>
+          <Field label="RSVP Deadline (optional)" htmlFor="edit-deadline">
+            <Input
+              id="edit-deadline"
+              type="date"
+              value={form.rsvpDeadline}
+              onChange={(e) => update("rsvpDeadline", e.target.value)}
+            />
+          </Field>
+        </div>
+
+        <Field label="Venue (optional)" htmlFor="edit-venue">
+          <Input
+            id="edit-venue"
             type="text"
-            maxLength={120}
-            value={form.coupleName2}
-            onChange={(e) => update("coupleName2", e.target.value)}
-            className={inputClass}
+            maxLength={200}
+            value={form.venue}
+            onChange={(e) => update("venue", e.target.value)}
           />
         </Field>
-      </div>
 
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-        <Field label="Wedding Date" htmlFor="edit-date">
-          <input
-            id="edit-date"
-            type="date"
-            value={form.date}
-            onChange={(e) => update("date", e.target.value)}
-            className={inputClass}
+        <Field label="Address (optional)" htmlFor="edit-address">
+          <Textarea
+            id="edit-address"
+            rows={2}
+            maxLength={1000}
+            value={form.address}
+            onChange={(e) => update("address", e.target.value)}
           />
         </Field>
-        <Field label="RSVP Deadline (optional)" htmlFor="edit-deadline">
-          <input
-            id="edit-deadline"
-            type="date"
-            value={form.rsvpDeadline}
-            onChange={(e) => update("rsvpDeadline", e.target.value)}
-            className={inputClass}
+
+        <Field label="Invitation Message (optional)" htmlFor="edit-description">
+          <Textarea
+            id="edit-description"
+            rows={4}
+            maxLength={5000}
+            value={form.description}
+            onChange={(e) => update("description", e.target.value)}
           />
         </Field>
-      </div>
 
-      <Field label="Venue (optional)" htmlFor="edit-venue">
-        <input
-          id="edit-venue"
-          type="text"
-          maxLength={200}
-          value={form.venue}
-          onChange={(e) => update("venue", e.target.value)}
-          className={inputClass}
-        />
-      </Field>
+        {error && <FormError>{error}</FormError>}
+        {saved && <FormSuccess>Wedding details saved.</FormSuccess>}
 
-      <Field label="Address (optional)" htmlFor="edit-address">
-        <textarea
-          id="edit-address"
-          rows={2}
-          maxLength={1000}
-          value={form.address}
-          onChange={(e) => update("address", e.target.value)}
-          className={inputClass}
-        />
-      </Field>
-
-      <Field label="Invitation Message (optional)" htmlFor="edit-description">
-        <textarea
-          id="edit-description"
-          rows={4}
-          maxLength={5000}
-          value={form.description}
-          onChange={(e) => update("description", e.target.value)}
-          className={inputClass}
-        />
-      </Field>
-
-      {error && (
-        <div role="alert" className="text-sm text-red-600">
-          {error}
+        <div className="flex flex-col-reverse items-stretch gap-3 border-t border-ivory-200 pt-6 sm:flex-row sm:items-center sm:justify-end">
+          <Button type="submit" variant="primary" disabled={loading}>
+            {loading ? "Saving..." : "Save changes"}
+          </Button>
         </div>
-      )}
-      {saved && (
-        <div role="status" className="text-sm text-green-700">
-          Wedding details saved.
-        </div>
-      )}
-
-      <button
-        type="submit"
-        disabled={loading}
-        className="w-full rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 disabled:opacity-50"
-      >
-        {loading ? "Saving..." : "Save changes"}
-      </button>
+      </div>
     </form>
-  )
-}
-
-const inputClass =
-  "mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-
-function Field({
-  label,
-  htmlFor,
-  children,
-}: {
-  label: string
-  htmlFor: string
-  children: React.ReactNode
-}) {
-  return (
-    <div>
-      <label htmlFor={htmlFor} className="block text-sm font-medium text-gray-700">
-        {label}
-      </label>
-      {children}
-    </div>
   )
 }

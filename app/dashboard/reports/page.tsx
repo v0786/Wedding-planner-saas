@@ -2,12 +2,27 @@ import { auth } from "@/auth"
 import { redirect } from "next/navigation"
 import { prisma } from "@/lib/prisma"
 import Link from "next/link"
+import UpgradeRequired from "@/components/subscriptions/upgrade-required"
+import { getEntitlementsForUser } from "@/lib/subscriptions/service"
+import { FEATURE_LABELS } from "@/lib/subscriptions/config"
 
 export const metadata = { title: "Reports | Wedding Guest Manager" }
 
 export default async function AllReportsPage() {
   const session = await auth()
   if (!session?.user?.id) redirect("/auth/login")
+
+  const entitlements = await getEntitlementsForUser(session.user.id).catch(() => null)
+  if (!entitlements?.features.reports) {
+    return (
+      <UpgradeRequired
+        title="Reports are a premium feature"
+        description="See attendance, meal preferences and group-level response rates for every wedding."
+        featureLabel={FEATURE_LABELS.reports.label}
+        planName={entitlements?.plan.name ?? "Free"}
+      />
+    )
+  }
 
   const weddings = await prisma.wedding.findMany({
     where: { workspace: { members: { some: { userId: session.user.id } } } },

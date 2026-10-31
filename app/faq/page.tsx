@@ -42,28 +42,77 @@ const faqs = [
 
 export default function FaqPage() {
   return (
-    <main className="min-h-screen bg-gray-50 px-4 py-10">
-      <div className="mx-auto max-w-3xl">
-        <Link href="/" className="text-sm text-indigo-600 hover:text-indigo-500">
-          ← Back to home
-        </Link>
-        <h1 className="mb-2 mt-3 text-3xl font-bold text-gray-900">Frequently asked questions</h1>
-        <p className="mb-8 text-gray-600">Everything organisers and guests need to know.</p>
-
-        <div className="space-y-3">
-          {faqs.map((faq) => (
-            <details key={faq.question} className="rounded-lg bg-white p-5 shadow">
-              <summary className="cursor-pointer font-semibold text-gray-900">{faq.question}</summary>
-              <p className="mt-2 text-sm leading-6 text-gray-600">{faq.answer}</p>
-            </details>
-          ))}
-        </div>
-
-        <div className="mt-8 text-center text-sm text-gray-600">
-          Still need help?{" "}
-          <Link href="/dashboard" className="font-medium text-indigo-600 hover:text-indigo-500">
-            Go to your dashboard
+    <main className="min-h-screen bg-ivory-50">
+      <div className="border-b border-ivory-200/70 bg-ivory-100/60">
+        <div className="mx-auto flex max-w-3xl items-center justify-between gap-4 px-5 py-4 sm:px-8">
+          <Link
+            href="/"
+            className="text-sm font-medium text-ink-600 transition-colors hover:text-gold-700"
+          >
+            ← Back to home
           </Link>
+          <Link
+            href="/pricing"
+            className="text-sm font-medium text-ink-600 transition-colors hover:text-gold-700"
+          >
+            Pricing
+          </Link>
+        </div>
+      </div>
+
+      <div className="paper-texture">
+        <div className="mx-auto max-w-3xl px-5 py-14 sm:px-8 sm:py-20">
+          <header className="text-center">
+            <p className="eyebrow">Answers</p>
+            <h1 className="mt-4 font-display text-display-xs text-ink-800 sm:text-display-sm">
+              Frequently asked questions
+            </h1>
+            <p className="lede mx-auto mt-4 max-w-xl">
+              Everything organisers and guests need to know.
+            </p>
+            <div className="mx-auto mt-9 max-w-xs">
+              <div className="gold-hairline" />
+            </div>
+          </header>
+
+          <div className="mt-12 space-y-4">
+            {faqs.map((faq) => (
+              <details
+                key={faq.question}
+                className="group card overflow-hidden transition-all duration-300 ease-refined open:border-gold-300 open:shadow-lift"
+              >
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-5 text-left [&::-webkit-details-marker]:hidden sm:px-7 sm:py-6">
+                  <span className="font-display text-lg leading-snug text-ink-800 sm:text-xl">
+                    {faq.question}
+                  </span>
+                  <span
+                    aria-hidden="true"
+                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-ivory-300 text-gold-600 transition-transform duration-300 ease-refined group-open:rotate-45 group-open:border-gold-300 group-open:bg-champagne-100"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="h-4 w-4">
+                      <path strokeLinecap="round" d="M12 5v14M5 12h14" />
+                    </svg>
+                  </span>
+                </summary>
+                <div className="px-5 pb-6 sm:px-7 sm:pb-7">
+                  <div className="gold-hairline mb-4 opacity-70" aria-hidden="true" />
+                  <p className="text-sm leading-7 text-ink-500">{faq.answer}</p>
+                </div>
+              </details>
+            ))}
+          </div>
+
+          <div className="mt-12 rounded-3xl border border-ivory-300/70 bg-white/80 px-6 py-8 text-center shadow-soft">
+            <p className="text-sm text-ink-600">
+              Still need help?{" "}
+              <Link
+                href="/dashboard"
+                className="font-medium text-gold-700 underline-offset-4 transition-colors hover:text-gold-600 hover:underline"
+              >
+                Go to your dashboard
+              </Link>
+            </p>
+          </div>
         </div>
       </div>
     </main>

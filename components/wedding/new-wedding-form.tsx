@@ -2,6 +2,8 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import { Button } from "@/components/ui/button"
+import { Field, FormError, Input, Textarea } from "@/components/ui/field"
 
 type FormState = {
   name: string
@@ -28,6 +30,7 @@ const emptyForm: FormState = {
 export default function NewWeddingForm() {
   const [form, setForm] = useState<FormState>(emptyForm)
   const [error, setError] = useState("")
+  const [upgradeUrl, setUpgradeUrl] = useState("")
   const [loading, setLoading] = useState(false)
   const router = useRouter()
 
@@ -39,6 +42,7 @@ export default function NewWeddingForm() {
     e.preventDefault()
     setLoading(true)
     setError("")
+    setUpgradeUrl("")
 
     try {
       const res = await fetch("/api/weddings", {
@@ -53,6 +57,7 @@ export default function NewWeddingForm() {
         router.refresh()
       } else {
         setError(data.error || "Something went wrong")
+        setUpgradeUrl(typeof data.upgradeUrl === "string" ? data.upgradeUrl : "")
       }
     } catch (err) {
       console.error(err)
@@ -63,134 +68,120 @@ export default function NewWeddingForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 rounded-lg bg-white p-6 shadow">
-      <Field label="Wedding Name" htmlFor="wedding-name">
-        <input
-          id="wedding-name"
-          type="text"
-          required
-          maxLength={200}
-          value={form.name}
-          onChange={(e) => update("name", e.target.value)}
-          className={inputClass}
-          placeholder="e.g., Rahul & Priya Wedding"
-        />
-      </Field>
+    <form onSubmit={handleSubmit} className="card overflow-hidden">
+      <div className="paper-texture border-b border-ivory-200 bg-champagne-100/50 px-6 py-5 sm:px-8">
+        <p className="eyebrow">Wedding details</p>
+        <p className="mt-2 max-w-lg text-sm leading-relaxed text-ink-500">
+          Tell us about the celebration. You can refine every detail later from the wedding page.
+        </p>
+      </div>
 
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-        <Field label="First Person Name" htmlFor="couple-name-1">
-          <input
-            id="couple-name-1"
+      <div className="space-y-6 px-6 py-6 sm:px-8">
+        <Field label="Wedding Name" htmlFor="wedding-name">
+          <Input
+            id="wedding-name"
             type="text"
             required
-            maxLength={120}
-            value={form.coupleName1}
-            onChange={(e) => update("coupleName1", e.target.value)}
-            className={inputClass}
+            maxLength={200}
+            value={form.name}
+            onChange={(e) => update("name", e.target.value)}
+            placeholder="e.g., Rahul & Priya Wedding"
           />
         </Field>
-        <Field label="Second Person Name (optional)" htmlFor="couple-name-2">
-          <input
-            id="couple-name-2"
-            type="text"
-            maxLength={120}
-            value={form.coupleName2}
-            onChange={(e) => update("coupleName2", e.target.value)}
-            className={inputClass}
-          />
-        </Field>
-      </div>
 
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-        <Field label="Wedding Date" htmlFor="wedding-date">
-          <input
-            id="wedding-date"
-            type="date"
-            value={form.date}
-            onChange={(e) => update("date", e.target.value)}
-            className={inputClass}
-          />
-        </Field>
-        <Field label="RSVP Deadline (optional)" htmlFor="rsvp-deadline">
-          <input
-            id="rsvp-deadline"
-            type="date"
-            value={form.rsvpDeadline}
-            onChange={(e) => update("rsvpDeadline", e.target.value)}
-            className={inputClass}
-          />
-        </Field>
-      </div>
-
-      <Field label="Venue (optional)" htmlFor="wedding-venue">
-        <input
-          id="wedding-venue"
-          type="text"
-          maxLength={200}
-          value={form.venue}
-          onChange={(e) => update("venue", e.target.value)}
-          className={inputClass}
-        />
-      </Field>
-
-      <Field label="Address (optional)" htmlFor="wedding-address">
-        <textarea
-          id="wedding-address"
-          rows={2}
-          maxLength={1000}
-          value={form.address}
-          onChange={(e) => update("address", e.target.value)}
-          className={inputClass}
-        />
-      </Field>
-
-      <Field label="Invitation Message (optional)" htmlFor="wedding-description">
-        <textarea
-          id="wedding-description"
-          rows={4}
-          maxLength={5000}
-          value={form.description}
-          onChange={(e) => update("description", e.target.value)}
-          className={inputClass}
-          placeholder="A short welcome message for your guests"
-        />
-      </Field>
-
-      {error && (
-        <div role="alert" className="text-sm text-red-600">
-          {error}
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+          <Field label="First Person Name" htmlFor="couple-name-1">
+            <Input
+              id="couple-name-1"
+              type="text"
+              required
+              maxLength={120}
+              value={form.coupleName1}
+              onChange={(e) => update("coupleName1", e.target.value)}
+            />
+          </Field>
+          <Field label="Second Person Name (optional)" htmlFor="couple-name-2">
+            <Input
+              id="couple-name-2"
+              type="text"
+              maxLength={120}
+              value={form.coupleName2}
+              onChange={(e) => update("coupleName2", e.target.value)}
+            />
+          </Field>
         </div>
-      )}
 
-      <button
-        type="submit"
-        disabled={loading}
-        className="w-full rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 disabled:opacity-50"
-      >
-        {loading ? "Creating..." : "Create Wedding"}
-      </button>
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+          <Field label="Wedding Date" htmlFor="wedding-date">
+            <Input
+              id="wedding-date"
+              type="date"
+              value={form.date}
+              onChange={(e) => update("date", e.target.value)}
+            />
+          </Field>
+          <Field label="RSVP Deadline (optional)" htmlFor="rsvp-deadline">
+            <Input
+              id="rsvp-deadline"
+              type="date"
+              value={form.rsvpDeadline}
+              onChange={(e) => update("rsvpDeadline", e.target.value)}
+            />
+          </Field>
+        </div>
+
+        <Field label="Venue (optional)" htmlFor="wedding-venue">
+          <Input
+            id="wedding-venue"
+            type="text"
+            maxLength={200}
+            value={form.venue}
+            onChange={(e) => update("venue", e.target.value)}
+          />
+        </Field>
+
+        <Field label="Address (optional)" htmlFor="wedding-address">
+          <Textarea
+            id="wedding-address"
+            rows={2}
+            maxLength={1000}
+            value={form.address}
+            onChange={(e) => update("address", e.target.value)}
+          />
+        </Field>
+
+        <Field label="Invitation Message (optional)" htmlFor="wedding-description">
+          <Textarea
+            id="wedding-description"
+            rows={4}
+            maxLength={5000}
+            value={form.description}
+            onChange={(e) => update("description", e.target.value)}
+            placeholder="A short welcome message for your guests"
+          />
+        </Field>
+
+        {error && (
+          <FormError>
+            <>
+              {error}
+              {upgradeUrl && (
+                <span className="mt-1 block">
+                  <a href={upgradeUrl} className="font-semibold underline">
+                    See upgrade options
+                  </a>
+                </span>
+              )}
+            </>
+          </FormError>
+        )}
+
+        <div className="flex flex-col-reverse items-stretch gap-3 border-t border-ivory-200 pt-6 sm:flex-row sm:items-center sm:justify-end">
+          <Button type="submit" variant="primary" disabled={loading}>
+            {loading ? "Creating..." : "Create Wedding"}
+          </Button>
+        </div>
+      </div>
     </form>
-  )
-}
-
-const inputClass =
-  "mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-
-function Field({
-  label,
-  htmlFor,
-  children,
-}: {
-  label: string
-  htmlFor: string
-  children: React.ReactNode
-}) {
-  return (
-    <div>
-      <label htmlFor={htmlFor} className="block text-sm font-medium text-gray-700">
-        {label}
-      </label>
-      {children}
-    </div>
   )
 }

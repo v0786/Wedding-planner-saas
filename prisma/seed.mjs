@@ -4,6 +4,65 @@ import bcrypt from "bcryptjs"
 const prisma = new PrismaClient()
 
 async function main() {
+  // Default plan rows. Prices stay null/Coming Soon until an admin sets them.
+  // Keep these defaults in sync with lib/subscriptions/config.ts; the app also
+  // fills any missing row at runtime.
+  const freeFeatures = {
+    whatsappSharing: true,
+    customQuestions: false,
+    csvImport: false,
+    csvExport: false,
+    reports: false,
+    customBranding: false,
+    prioritySupport: false,
+  }
+  const proFeatures = {
+    ...freeFeatures,
+    customQuestions: true,
+    csvImport: true,
+    csvExport: true,
+    reports: true,
+    customBranding: true,
+  }
+  const planRows = [
+    {
+      code: "FREE",
+      name: "Free",
+      description: "Everything you need to collect RSVPs for one intimate wedding.",
+      priceInPaise: null,
+      billingPeriodDays: 0,
+      features: freeFeatures,
+      limits: { weddings: 1, guestsPerWedding: 50, eventsPerWedding: 2, customQuestionsPerWedding: 0 },
+      isActive: true,
+      sortOrder: 0,
+    },
+    {
+      code: "PRO",
+      name: "Pro",
+      description: "More weddings, a bigger guest list and rich RSVP collection.",
+      priceInPaise: null,
+      billingPeriodDays: 30,
+      features: proFeatures,
+      limits: { weddings: 3, guestsPerWedding: 500, eventsPerWedding: 5, customQuestionsPerWedding: 10 },
+      isActive: false,
+      sortOrder: 1,
+    },
+    {
+      code: "PRIME",
+      name: "Prime",
+      description: "Unlimited weddings and guests, every feature, priority support.",
+      priceInPaise: null,
+      billingPeriodDays: 30,
+      features: { ...proFeatures, prioritySupport: true },
+      limits: { weddings: null, guestsPerWedding: null, eventsPerWedding: null, customQuestionsPerWedding: null },
+      isActive: false,
+      sortOrder: 2,
+    },
+  ]
+  for (const plan of planRows) {
+    await prisma.plan.upsert({ where: { code: plan.code }, update: {}, create: plan })
+  }
+
   const email = "demo@example.com"
   const passwordHash = await bcrypt.hash("demo1234", 12)
 

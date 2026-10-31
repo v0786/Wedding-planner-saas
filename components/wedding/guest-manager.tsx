@@ -67,6 +67,7 @@ export default function GuestManager({
   const [pageSize, setPageSize] = useState(25)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
+  const [upgradeUrl, setUpgradeUrl] = useState("")
   const [notice, setNotice] = useState("")
 
   const [showForm, setShowForm] = useState(false)
@@ -143,6 +144,7 @@ export default function GuestManager({
     e.preventDefault()
     setSaving(true)
     setError("")
+    setUpgradeUrl("")
     try {
       const url = editingId
         ? `/api/weddings/${weddingId}/guests/${editingId}`
@@ -155,6 +157,7 @@ export default function GuestManager({
       const data = await res.json()
       if (!res.ok) {
         setError(data.error || "Could not save the guest")
+        setUpgradeUrl(typeof data.upgradeUrl === "string" ? data.upgradeUrl : "")
         return
       }
       setShowForm(false)
@@ -199,6 +202,7 @@ export default function GuestManager({
     setError("")
     setNotice("")
     setImportIssues([])
+    setUpgradeUrl("")
     try {
       const formData = new FormData()
       formData.append("file", file)
@@ -209,6 +213,7 @@ export default function GuestManager({
       const data = await res.json()
       if (!res.ok) {
         setError(data.error || "Could not import the CSV file")
+        setUpgradeUrl(typeof data.upgradeUrl === "string" ? data.upgradeUrl : "")
         setImportIssues(Array.isArray(data.issues) ? data.issues : [])
         return
       }
@@ -341,6 +346,13 @@ export default function GuestManager({
       {error && (
         <div role="alert" className="rounded-md bg-red-50 px-4 py-3 text-sm text-red-700">
           <p>{error}</p>
+          {upgradeUrl && (
+            <p className="mt-2">
+              <a href={upgradeUrl} className="font-semibold underline">
+                See upgrade options
+              </a>
+            </p>
+          )}
           {importIssues.length > 0 && (
             <ul className="mt-2 list-inside list-disc">
               {importIssues.map((issue) => (

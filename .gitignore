@@ -5,6 +5,13 @@
 
 # testing
 /coverage
+/test-results/
+/playwright-report/
+/blob-report/
+
+# packaging / device-transfer artifacts (never committed)
+*.zip
+/Projects/
 
 # next.js
 /.next/

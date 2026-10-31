@@ -2,6 +2,8 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import { Button } from "@/components/ui/button"
+import { Field, FormError, Input } from "@/components/ui/field"
 
 export default function RegisterForm() {
   const [name, setName] = useState("")
@@ -44,12 +46,15 @@ export default function RegisterForm() {
   }
 
   return (
-    <form className="space-y-5 rounded-lg bg-white p-6 shadow" onSubmit={handleSubmit}>
-      <div>
-        <label htmlFor="register-name" className="block text-sm font-medium text-gray-700">
-          Full name
-        </label>
-        <input
+    <form className="card-elevated space-y-5 p-6 sm:p-8" onSubmit={handleSubmit}>
+      <div className="text-center">
+        <h2 className="font-display text-xl text-ink-800">Begin your wedding workspace</h2>
+        <p className="mt-1 text-sm text-ink-500">A couple of details and you are ready to invite guests.</p>
+        <div className="gold-hairline mt-5" />
+      </div>
+
+      <Field label="Full name" htmlFor="register-name">
+        <Input
           id="register-name"
           type="text"
           required
@@ -57,16 +62,12 @@ export default function RegisterForm() {
           autoComplete="name"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          className={inputClass}
           placeholder="Your name"
         />
-      </div>
+      </Field>
 
-      <div>
-        <label htmlFor="register-email" className="block text-sm font-medium text-gray-700">
-          Email address
-        </label>
-        <input
+      <Field label="Email address" htmlFor="register-email">
+        <Input
           id="register-email"
           type="email"
           required
@@ -74,16 +75,12 @@ export default function RegisterForm() {
           autoComplete="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className={inputClass}
           placeholder="you@example.com"
         />
-      </div>
+      </Field>
 
-      <div>
-        <label htmlFor="register-password" className="block text-sm font-medium text-gray-700">
-          Password
-        </label>
-        <input
+      <Field label="Password" htmlFor="register-password">
+        <Input
           id="register-password"
           type="password"
           required
@@ -91,16 +88,12 @@ export default function RegisterForm() {
           autoComplete="new-password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className={inputClass}
           placeholder="At least 8 characters"
         />
-      </div>
+      </Field>
 
-      <div>
-        <label htmlFor="register-confirm-password" className="block text-sm font-medium text-gray-700">
-          Confirm password
-        </label>
-        <input
+      <Field label="Confirm password" htmlFor="register-confirm-password">
+        <Input
           id="register-confirm-password"
           type="password"
           required
@@ -108,26 +101,14 @@ export default function RegisterForm() {
           autoComplete="new-password"
           value={confirmPassword}
           onChange={(e) => setConfirmPassword(e.target.value)}
-          className={inputClass}
         />
-      </div>
+      </Field>
 
-      {error && (
-        <div role="alert" className="text-sm text-red-600">
-          {error}
-        </div>
-      )}
+      {error && <FormError>{error}</FormError>}
 
-      <button
-        type="submit"
-        disabled={loading}
-        className="w-full rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 disabled:opacity-50"
-      >
+      <Button type="submit" disabled={loading} size="lg" className="w-full">
         {loading ? "Creating account..." : "Create account"}
-      </button>
+      </Button>
     </form>
   )
 }
-
-const inputClass =
-  "mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"

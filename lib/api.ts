@@ -46,7 +46,7 @@ export function handleApiError(error: unknown) {
     })
   }
   if (error instanceof ApiError) {
-    return jsonError(error.message, error.status)
+    return jsonError(error.message, error.status, error.details)
   }
   console.error(error)
   return jsonError("Something went wrong", 500)
