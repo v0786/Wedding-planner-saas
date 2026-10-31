@@ -1,0 +1,15 @@
+{
+  "$schema": "https://vercel.schema.org/vercel.json",
+  "buildCommand": "bash vercel-build.sh",
+  "devCommand": "npm run dev",
+  "installCommand": "npm install",
+  "framework": "nextjs",
+  "regions": ["iad1"],
+  "env": {
+    "DATABASE_URL": "@wedding-database-url",
+    "AUTH_SECRET": "@wedding-auth-secret",
+    "AUTH_URL": "@wedding-auth-url",
+    "NEXT_PUBLIC_APP_URL": "@wedding-app-url"
+  },
+  "crons": []
+}
