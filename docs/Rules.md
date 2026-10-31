@@ -1,9 +1,9 @@
-# Project Rules --- Wedding Planner SaaS
+# Project Rules --- Wedding Guest Manager
 
 - Mobile-first responsive web app
-- One shared invitation/RSVP link per wedding
+- Shared and unique invitation/RSVP links per wedding
 - No guest-category-specific forms or links
-- Guest flow: link → fill form → submit
-- No OTP requirement
+- Guest flow: link → phone OTP (or enabled Google path) → form → submit
+- OTP required for phone-based RSVP; never stored/logged in plaintext
 - Server-side authorization on every protected operation
 - Tenant isolation enforced

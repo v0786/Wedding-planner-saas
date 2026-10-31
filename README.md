@@ -1,51 +1,72 @@
 # Wedding Guest Manager
 
-A mobile-first SaaS for Indian families, couples, and professional wedding planners to manage wedding guests, invitations, RSVPs, family members, and event attendance.
+A wedding guest-management platform for families, wedding planners, and
+event-management companies. Manage multiple weddings, guests and groups,
+digital invitations, verified RSVPs, event attendance, reports, and QR
+group check-in.
 
-## Features
+> **Status:** Documentation and product definition only. No
+> implementation, repository scaffold, deployment, or tests are
+> confirmed by this pack.
 
-- **Authentication & Workspaces**: Secure registration, login, workspace management with strict tenant isolation
-- **Wedding & Event Management**: Create weddings with multiple events (Haldi, Mehendi, Wedding, Reception)
-- **Guest Management**: Add guests, organize by groups, search and filter
-- **One Shared Invitation Link**: Single shareable link per wedding, no category-specific links
-- **Public RSVP**: Mobile-friendly RSVP without account creation, add family members individually
-- **Event Selection**: Guests can select which events they'll attend
-- **Dashboard & Reports**: Track RSVPs, event-wise attendance, dietary preferences
-- **WhatsApp Sharing**: Easy sharing via WhatsApp
+## Capabilities
 
-## Tech Stack
+-   Multiple weddings per account; one independent subscription per
+    wedding.
+-   Basic ₹499, Pro ₹999, Prime ₹1,999, one-time per wedding; unlimited
+    guests on every plan.
+-   Individual guests, families/groups, bride/groom sides, categories,
+    imports, dietary/accommodation/transport data.
+-   Shared and unique invitation links; one wedding-wide design;
+    PDF/image downloads.
+-   Guest phone OTP, optional Google path, name/email/party size/diet,
+    Accept/Decline/Maybe and event selection.
+-   RSVP deadlines, updates, dashboard, event/family reports, custom
+    exports.
+-   One QR per invitation/group; group-level arrival check-in.
+-   Email and official WhatsApp notifications in phases.
+-   Read-only after expiry; deletion scheduled seven days after wedding.
+-   Separate platform-owner super-admin dashboard.
 
-- **Frontend**: Next.js 15 (App Router), React 19, TypeScript, Tailwind CSS
-- **Backend**: Next.js API routes
-- **Database**: PostgreSQL with Prisma ORM
-- **Authentication**: NextAuth.js v5
-- **Validation**: Zod
+## Technology direction
 
-## Getting Started
-
-1. Copy `.env.example` to `.env` and configure your database and auth secrets
-2. Install dependencies: `npm install`
-3. Generate Prisma client: `npm run db:generate`
-4. Apply migrations: `npm run db:deploy` (creates the schema; run `npm run db:migrate` during development)
-5. Seed demo data: `npm run db:seed` (optional; creates `demo@example.com` / `demo1234`)
-6. Run development server: `npm run dev`
-
-## Scripts
-
-- `npm run dev` — development server
-- `npm run build` — production build (use `NODE_OPTIONS=--max-old-space-size=4096` in small containers)
-- `npm run start` — serve the production build
-- `npm run lint` — ESLint
-- `npm test` — unit tests
-- `npm run test:integration` — integration tests against `TEST_DATABASE_URL`/`wedding_guest_manager_test`
-- `npm run test:smoke` — real HTTP end-to-end smoke test against a running server
-- `npm run test:e2e` — Playwright (browser automation is environment-limited in this container)
-- `npm run db:seed` — demo seed
-
-## Environment Variables
-
-See `.env.example` for required variables. `AUTH_SECRET` (Auth.js v5) is required; generate with `npx auth secret`.
+Next.js + TypeScript web; React Native + Expo mobile; Supabase
+PostgreSQL/Auth/Storage; Razorpay and Cashfree adapters; hybrid managed
+hosting. See `ARCHITECTURE.md`.
 
 ## Documentation
 
-See `docs/` folder for architecture, PRD, design, and other documentation.
+`PRD.md`, `DESIGN.md`, `ARCHITECTURE.md`, `DATABASE.md`, `API.md`,
+`AGENTS.md`, `README.md`, `PLAN.md`, `SETUP.md`, `FEATURES.md`,
+`AUTH_SECURITY.md`, `MCP.md`, `INTEGRATIONS.md`, `TESTING.md`,
+`DEBUGGING.md`.
+
+## Quick start
+
+No verified package manifest, lockfile, migrations, or app scaffold was
+supplied. Do not run invented commands. Once scaffold exists: (1)
+inspect actual manifests; (2) pin runtimes/package manager; (3)
+configure `.env` from `.env.example`; (4) apply reviewed Supabase
+migrations; (5) run only scripts verified in manifests.
+
+## Environment variables
+
+See `INTEGRATIONS.md`. Use placeholders in `.env.example`; never commit
+real credentials.
+
+## Scripts and folder structure
+
+Not yet available because implementation has not been scaffolded. See
+proposed target structure in `ARCHITECTURE.md`; inspect any existing
+repo before modifying it. Add actual scripts after verifying
+`package.json` and native manifests.
+
+## Contribution
+
+Read `AGENTS.md`, follow source-of-truth docs, work in small reviewed
+changes, add tests, update migrations/docs, and never commit secrets or
+real guest data.
+
+## License
+
+Not selected. Add approved license before public distribution.

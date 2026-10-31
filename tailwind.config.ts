@@ -64,6 +64,24 @@ const config: Config = {
           600: "#9A463D",
           700: "#7D3830",
         },
+        /* design.md §2.2 — Modern Luxury Wedding Editorial design tokens.
+           Authoritative palette for the redesign; mapped to CSS variables
+           defined in app/globals.css. */
+        brand: {
+          background: "var(--color-background)",
+          surface: "var(--color-surface)",
+          "surface-muted": "var(--color-surface-muted)",
+          primary: "var(--color-primary)",
+          "primary-hover": "var(--color-primary-hover)",
+          accent: "var(--color-accent)",
+          text: "var(--color-text)",
+          "text-muted": "var(--color-text-muted)",
+          border: "var(--color-border)",
+          success: "var(--color-success)",
+          warning: "var(--color-warning)",
+          danger: "var(--color-danger)",
+          info: "var(--color-info)",
+        },
       },
       fontFamily: {
         display: ["var(--font-display)", "Cormorant Garamond", "Georgia", "serif"],

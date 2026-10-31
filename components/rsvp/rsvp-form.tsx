@@ -253,11 +253,11 @@ export default function RsvpForm({
   const progress = ((activeSection + 1) / sections.length) * 100
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-pink-50 via-white to-indigo-50">
+    <div className="min-h-screen bg-ivory-50">
       {/* Progress Bar */}
-      <div className="fixed top-0 left-0 right-0 h-1 bg-gray-200 z-50">
+      <div className="fixed top-0 left-0 right-0 h-1 bg-ivory-200/60 z-50">
         <div 
-          className="h-full bg-gradient-to-r from-pink-500 to-indigo-600 transition-all duration-300"
+          className="h-full bg-brand-primary transition-all duration-300"
           style={{ width: `${progress}%` }}
         />
       </div>
@@ -268,16 +268,16 @@ export default function RsvpForm({
           <div className="flex items-center justify-between mb-4">
             <button
               onClick={() => router.back()}
-              className="p-2 rounded-xl bg-white/80 backdrop-blur shadow-sm text-gray-600 hover:bg-gray-100 transition-colors"
+              className="btn btn-ghost btn-sm"
             >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.7}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
               </svg>
             </button>
             <div className="flex items-center gap-2">
-              <span className="text-sm font-medium text-gray-700">{wedding.name}</span>
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-pink-500 to-indigo-600 flex items-center justify-center">
-                <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+              <span className="font-display text-base text-ink-800">{wedding.name}</span>
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gold-sheen text-sm font-semibold text-white shadow-glow">
+                <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
                   <path d="M2 5a2 2 0 012-2h7a2 2 0 012 2v4a2 2 0 01-2 2H9v2a1 1 0 100 2h2a1 1 0 100-2H9V7a2 2 0 012-2h7a2 2 0 012 2v4a2 2 0 01-2 2H4a2 2 0 01-2-2V5z" />
                 </svg>
               </div>
@@ -285,7 +285,7 @@ export default function RsvpForm({
             <div className="flex items-center gap-2">
               <button
                 onClick={shareViaNative}
-                className="p-2 rounded-xl bg-white/80 backdrop-blur shadow-sm text-gray-600 hover:bg-gray-100 transition-colors"
+                className="btn btn-ghost btn-sm"
                 aria-label="Share"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -294,7 +294,7 @@ export default function RsvpForm({
               </button>
               <button
                 onClick={shareOnWhatsApp}
-                className="p-2 rounded-xl bg-green-500 text-white shadow-lg hover:bg-green-600 transition-all active:scale-95"
+                className="btn btn-primary btn-sm"
                 aria-label="Share on WhatsApp"
               >
                 <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
@@ -314,10 +314,10 @@ export default function RsvpForm({
                 <div 
                   className={`w-10 h-10 rounded-2xl flex items-center justify-center text-sm font-semibold transition-all duration-300 ${
                     index < activeSection
-                      ? "bg-gradient-to-br from-pink-500 to-indigo-600 text-white"
+                      ? "bg-brand-primary text-white"
                       : index === activeSection
-                      ? "bg-gradient-to-br from-pink-100 to-indigo-100 text-pink-600 ring-4 ring-pink-100"
-                      : "bg-gray-100 text-gray-400"
+                      ? "bg-brand-accent/20 text-brand-primary ring-2 ring-brand-primary/30"
+                      : "bg-brand-surface-muted text-brand-text-muted"
                     }`}
                 >
                   {index < activeSection ? (
@@ -330,19 +330,19 @@ export default function RsvpForm({
                 </div>
                 {index < sections.length - 1 && (
                   <div className={`w-16 h-0.5 mx-2 transition-all duration-300 ${
-                    index < activeSection ? "bg-gradient-to-r from-pink-500 to-indigo-600" : "bg-gray-200"
+                    index < activeSection ? "bg-brand-primary" : "bg-brand-surface-muted"
                   }`} />
                 )}
               </div>
             ))}
           </div>
-          <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden mt-2">
+          <div className="h-1.5 bg-brand-surface-muted rounded-full overflow-hidden mt-2">
             <div 
-              className="h-full bg-gradient-to-r from-pink-500 to-indigo-600 transition-all duration-500"
+              className="h-full bg-brand-primary transition-all duration-500"
               style={{ width: `${progress}%` }}
             />
           </div>
-          <p className="text-center text-sm text-gray-500 mt-2">
+          <p className="text-center text-sm text-brand-text-muted mt-2">
             Step {activeSection + 1} of {sections.length}: {sections[activeSection].title}
           </p>
         </div>
@@ -362,13 +362,13 @@ export default function RsvpForm({
             {activeSection === 0 && (
               <section className="space-y-6 animate-fade-in">
                 <div className="text-center mb-8">
-                  <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-pink-100 to-indigo-100 rounded-2xl flex items-center justify-center">
-                    <svg className="w-8 h-8 text-pink-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="w-16 h-16 mx-auto mb-4 bg-brand-accent/20 rounded-2xl flex items-center justify-center">
+                    <svg className="w-8 h-8 text-brand-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h18a7 7 0 00-7-7z" />
                     </svg>
                   </div>
-                  <h2 className="text-2xl font-bold text-gray-900 mb-2">Tell us about yourself</h2>
-                  <p className="text-gray-600">We&apos;d love to know who&apos;s coming!</p>
+                  <h2 className="text-2xl font-display font-bold text-ink-900 mb-2">Tell us about yourself</h2>
+                  <p className="text-brand-text-muted">We&apos;d love to know who&apos;s coming!</p>
                 </div>
 
                 <div className="space-y-5">
@@ -423,11 +423,11 @@ export default function RsvpForm({
                   <button
                     type="button"
                     onClick={() => setActiveSection(1)}
-                    className="flex-1 py-3 px-6 rounded-xl bg-gradient-to-r from-pink-500 to-indigo-600 text-white font-semibold text-lg shadow-lg hover:from-pink-600 hover:to-indigo-700 transition-all active:scale-[0.98]"
+                    className="btn btn-primary flex-1 text-lg"
                   >
                     Continue
-                    <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    <svg className="h-4 w-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.7}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                     </svg>
                   </button>
                 </div>
@@ -438,30 +438,30 @@ export default function RsvpForm({
             {activeSection === 1 && wedding.events.length > 0 && (
               <section className="space-y-6 animate-fade-in">
                 <div className="text-center mb-8">
-                  <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-2xl flex items-center justify-center">
-                    <svg className="w-8 h-8 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="w-16 h-16 mx-auto mb-4 bg-brand-accent/20 rounded-2xl flex items-center justify-center">
+                    <svg className="w-8 h-8 text-brand-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
                   </div>
-                  <h2 className="text-2xl font-bold text-gray-900 mb-2">Which events will you attend?</h2>
-                  <p className="text-gray-600">Let us know for each celebration</p>
+                  <h2 className="text-2xl font-display font-bold text-ink-900 mb-2">Which events will you attend?</h2>
+                  <p className="text-brand-text-muted">Let us know for each celebration</p>
                 </div>
 
                 <div className="space-y-4">
                   {wedding.events.map((event) => (
                     <div
                       key={event.id}
-                      className="group relative rounded-2xl border border-gray-100 bg-white p-5 hover:border-indigo-200 hover:shadow-lg hover:-translate-y-1 transition-all duration-300"
+                      className="group relative rounded-2xl border border-brand-border bg-brand-surface p-5 hover:border-brand-accent hover:shadow-soft hover:-translate-y-1 transition-all duration-300"
                     >
                       <div className="flex items-start gap-4">
-                        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center flex-shrink-0">
-                          <svg className="w-8 h-8 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div className="w-16 h-16 rounded-2xl bg-brand-accent/20 flex items-center justify-center flex-shrink-0">
+                          <svg className="w-8 h-8 text-brand-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                           </svg>
                         </div>
                         <div className="flex-1">
-                          <h3 className="text-lg font-semibold text-gray-900 mb-1">{event.name}</h3>
-                          <div className="flex flex-wrap items-center gap-3 text-sm text-gray-500">
+                          <h3 className="text-lg font-semibold text-ink-900 mb-1">{event.name}</h3>
+                          <div className="flex flex-wrap items-center gap-3 text-sm text-brand-text-muted">
                             {event.date && (
                               <span className="flex items-center gap-1">
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -489,21 +489,21 @@ export default function RsvpForm({
                             )}
                           </div>
                           {event.description && (
-                            <p className="mt-2 text-sm text-gray-500 line-clamp-2">{event.description}</p>
+                            <p className="mt-2 text-sm text-brand-text-muted line-clamp-2">{event.description}</p>
                           )}
                         </div>
                       </div>
 
-                      <div className="mt-4 pt-4 border-t border-gray-100">
-                        <label className="block text-sm font-medium text-gray-700 mb-3">Will you attend?</label>
+                      <div className="mt-4 pt-4 border-t border-brand-border">
+                        <label className="block text-sm font-medium text-brand-text mb-3">Will you attend?</label>
                         <div className="grid grid-cols-3 gap-3">
                           {["yes", "pending", "no"].map((option) => (
                             <label
                               key={option}
                               className={`relative flex flex-col items-center p-4 rounded-xl border-2 transition-all duration-200 cursor-pointer ${
                                 eventResponses[event.id] === option
-                                  ? "border-pink-500 bg-pink-50"
-                                  : "border-gray-200 hover:border-pink-200 hover:bg-pink-50"
+                                  ? "border-brand-primary bg-brand-accent/20"
+                                  : "border-brand-border hover:border-brand-accent hover:bg-brand-surface-muted"
                               }`}
                             >
                               <input
@@ -516,8 +516,8 @@ export default function RsvpForm({
                               />
                               <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-2 transition-colors ${
                                 eventResponses[event.id] === option
-                                  ? "bg-pink-500 text-white"
-                                  : "bg-gray-100 text-gray-400 group-hover:bg-pink-50 group-hover:text-pink-600"
+                                  ? "bg-brand-primary text-white"
+                                  : "bg-brand-surface-muted text-brand-text-muted group-hover:bg-brand-accent/20 group-hover:text-brand-primary"
                               }`}>
                                 {option === "yes" && (
                                   <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
@@ -537,8 +537,8 @@ export default function RsvpForm({
                               </div>
                               <span className={`mt-2 text-sm font-medium ${
                                 eventResponses[event.id] === option
-                                  ? "text-pink-600"
-                                  : "text-gray-600"
+                                  ? "text-brand-primary"
+                                  : "text-brand-text-muted"
                               }`}>
                                 {option === "yes" ? "✓ Yes" : option === "no" ? "✗ No" : "? Not sure"}
                               </span>
@@ -554,21 +554,21 @@ export default function RsvpForm({
                   <button
                     type="button"
                     onClick={() => setActiveSection(0)}
-                    className="flex-1 py-3 px-6 rounded-xl bg-white border border-gray-200 text-gray-700 font-semibold text-lg shadow-sm hover:bg-gray-50 transition-all"
+                    className="btn btn-secondary flex-1 text-lg"
                   >
-                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                    <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.7}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
                     </svg>
                     Back
                   </button>
                   <button
                     type="button"
                     onClick={() => setActiveSection(2)}
-                    className="flex-1 py-3 px-6 rounded-xl bg-gradient-to-r from-pink-500 to-indigo-600 text-white font-semibold text-lg shadow-lg hover:from-pink-600 hover:to-indigo-700 transition-all active:scale-[0.98]"
+                    className="btn btn-primary flex-1 text-lg"
                   >
                     Continue
-                    <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    <svg className="h-4 w-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.7}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                     </svg>
                   </button>
                 </div>
@@ -579,31 +579,31 @@ export default function RsvpForm({
             {activeSection === (wedding.events.length > 0 ? 2 : 1) && (
               <section className="space-y-6 animate-fade-in">
                 <div className="text-center mb-8">
-                  <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-green-100 to-emerald-100 rounded-2xl flex items-center justify-center">
-                    <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="w-16 h-16 mx-auto mb-4 bg-brand-accent/20 rounded-2xl flex items-center justify-center">
+                    <svg className="w-8 h-8 text-brand-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0v6v1h18v-1a6 6 0 00-12 0v-1z" />
                     </svg>
                   </div>
-                  <h2 className="text-2xl font-bold text-gray-900 mb-2">Family Members</h2>
-                  <p className="text-gray-600">Add everyone attending with you</p>
+                  <h2 className="text-2xl font-display font-bold text-ink-900 mb-2">Family Members</h2>
+                  <p className="text-brand-text-muted">Add everyone attending with you</p>
                 </div>
 
                 <div className="space-y-4">
                   {familyMembers.length === 0 ? (
                     <div className="text-center py-12">
-                      <div className="w-20 h-20 mx-auto mb-4 bg-green-50 rounded-2xl flex items-center justify-center">
-                        <svg className="w-10 h-10 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <div className="w-20 h-20 mx-auto mb-4 bg-brand-accent/20 rounded-2xl flex items-center justify-center">
+                        <svg className="w-10 h-10 text-brand-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M18 9v3m0 0v6m0-6h6m-6 0H6" />
                         </svg>
                       </div>
-                      <p className="text-gray-500 mb-4">No family members added yet</p>
+                      <p className="text-brand-text-muted mb-4">No family members added yet</p>
                       <button
                         type="button"
                         onClick={addFamilyMember}
-                        className="px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white font-semibold rounded-xl shadow-lg hover:from-green-600 hover:to-emerald-700 transition-all"
+                        className="btn btn-primary px-6 py-3"
                       >
-                        <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                        <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.7}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
                         </svg>
                         Add First Family Member
                       </button>
@@ -613,12 +613,12 @@ export default function RsvpForm({
                       {familyMembers.map((member) => (
                         <div
                           key={member.id}
-                          className="group relative rounded-2xl border border-gray-100 bg-white p-5 hover:border-green-200 hover:shadow-lg transition-all duration-300"
+                          className="group relative rounded-2xl border border-brand-border bg-brand-surface p-5 hover:border-brand-accent hover:shadow-soft transition-all duration-300"
                         >
                           <button
                             type="button"
                             onClick={() => removeFamilyMember(member.id)}
-                            className="absolute top-3 right-3 p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors opacity-0 group-hover:opacity-100"
+                            className="absolute top-3 right-3 p-1.5 rounded-lg text-brand-text-muted hover:bg-brand-danger hover:text-white transition-colors opacity-0 group-hover:opacity-100"
                             aria-label="Remove family member"
                           >
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -678,7 +678,7 @@ export default function RsvpForm({
                   <button
                     type="button"
                     onClick={addFamilyMember}
-                    className="w-full py-3 px-6 rounded-xl border-2 border-dashed border-green-300 text-green-600 font-semibold hover:bg-green-50 transition-colors"
+                    className="w-full py-3 px-6 rounded-xl border-2 border-dashed border-brand-accent text-brand-primary font-semibold hover:bg-brand-surface-muted transition-colors"
                   >
                     <svg className="w-5 h-5 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -690,10 +690,10 @@ export default function RsvpForm({
                     <button
                       type="button"
                       onClick={() => setActiveSection(wedding.events.length > 0 ? 1 : 0)}
-                      className="flex-1 py-3 px-6 rounded-xl bg-white border border-gray-200 text-gray-700 font-semibold text-lg shadow-sm hover:bg-gray-50 transition-all"
+                      className="btn btn-secondary flex-1 text-lg"
                     >
-                      <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                      <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.7}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
                       </svg>
                       Back
                     </button>
@@ -705,7 +705,7 @@ export default function RsvpForm({
                           ? () => setActiveSection(wedding.events.length > 0 ? 3 : 2)
                           : undefined
                       }
-                      className="flex-1 py-3 px-6 rounded-xl bg-gradient-to-r from-pink-500 to-indigo-600 text-white font-semibold text-lg shadow-lg hover:from-pink-600 hover:to-indigo-700 transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="btn btn-primary flex-1 text-lg disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {wedding.customQuestions.length > 0 ? (
                         <>
@@ -740,13 +740,13 @@ export default function RsvpForm({
               {wedding.customQuestions.length > 0 && activeSection === (wedding.events.length > 0 ? 3 : 2) && (
                 <section className="space-y-6 animate-fade-in">
                   <div className="text-center mb-8">
-                    <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-yellow-100 to-orange-100 rounded-2xl flex items-center justify-center">
-                      <svg className="w-8 h-8 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div className="w-16 h-16 mx-auto mb-4 bg-brand-accent/20 rounded-2xl flex items-center justify-center">
+                      <svg className="w-8 h-8 text-brand-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.5-4 3-2.093 0-3.772-1-3.772-2V7.5a1 1 0 10-2 0v2.5c0 1.1.9 2 2 2h.08a2.008 2.008 0 00.766-.24l1.415-1.415a1 1 0 011.414 1.414l-2 2a1 1 0 01-1.414 0l-2-2a1 1 0 011.414-1.414L11 9.586a2.014 2.014 0 01.766.24l1.415 1.415a1 1 0 011.414 1.414l-2 2a1 1 0 01-1.414 0l-2-2a1 1 0 011.414-1.414L11 7.586a2.014 2.014 0 01.766.24l1.415 1.415a1 1 0 011.414 1.414l-2 2a1 1 0 01-1.414 0l-2-2a1 1 0 011.414-1.414L11 5.586a2.014 2.014 0 01.766.24l1.415 1.415a1 1 0 011.414 1.414l-2 2a1 1 0 01-1.414 0l-2-2a1 1 0 011.414-1.414L11 3.586A2.014 2.014 0 0113 3.24H11a1 1 0 100 2h.08a2.008 2.008 0 00.766.24l1.415 1.415a1 1 0 011.414 1.414l-2 2a1 1 0 01-1.414 0l-2-2a1 1 0 011.414-1.414L11 1.586A2.014 2.014 0 0113 1.24H11a1 1 0 100 2H7a5 5 0 000 10h.08a2 2 0 00-.766.24l-1.415 1.415a1 1 0 01-.766-.24l-1.415-1.415a1 1 0 01-.766-.24l-1.415 1.415a1 1 0 011.414 1.414l-2 2a1 1 0 01-1.414 0l-2-2a1 1 0 011.414-1.414z" />
                       </svg>
                   </div>
-                  <h2 className="text-2xl font-bold text-gray-900 mb-2">A few questions</h2>
-                  <p className="text-gray-600">The hosts would like to know a bit more</p>
+                  <h2 className="text-2xl font-display font-bold text-ink-900 mb-2">A few questions</h2>
+                  <p className="text-brand-text-muted">The hosts would like to know a bit more</p>
                 </div>
 
                   <div className="space-y-5">
@@ -785,7 +785,7 @@ export default function RsvpForm({
                           ) : question.type === "checkbox" ? (
                             <div className="space-y-3">
                               {(questionOptions.length > 0 ? questionOptions : ["Yes", "No"]).map((option) => (
-                                <label key={option} className="flex items-center gap-3 p-3 rounded-xl border border-gray-200 hover:border-indigo-200 hover:bg-indigo-50 cursor-pointer transition-colors">
+                                <label key={option} className="flex items-center gap-3 p-3 rounded-xl border border-brand-border hover:border-brand-accent hover:bg-brand-surface-muted cursor-pointer transition-colors">
                                   <input
                                     type="checkbox"
                                     value={option}
@@ -799,9 +799,9 @@ export default function RsvpForm({
                                         setAnswers((prev) => ({ ...prev, [question.id]: values.filter(v => v !== option).join(",") }))
                                       }
                                     }}
-                                    className="w-5 h-5 text-pink-600 border-gray-300 rounded focus:ring-pink-500 focus:ring-2"
+                                    className="w-5 h-5 text-brand-primary border-brand-border rounded focus:ring-brand-primary focus:ring-2"
                                   />
-                                  <span className="text-gray-700">{option}</span>
+                                  <span className="text-brand-text">{option}</span>
                                 </label>
                               ))}
                             </div>
@@ -825,17 +825,17 @@ export default function RsvpForm({
                     <button
                       type="button"
                       onClick={() => setActiveSection(2)}
-                      className="flex-1 py-3 px-6 rounded-xl bg-white border border-gray-200 text-gray-700 font-semibold text-lg shadow-sm hover:bg-gray-50 transition-all"
+                      className="btn btn-secondary flex-1 text-lg"
                     >
-                      <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                      <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.7}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
                       </svg>
                       Back
                     </button>
                     <button
                       type="submit"
                       disabled={loading}
-                      className="flex-1 py-3 px-6 rounded-xl bg-gradient-to-r from-pink-500 to-indigo-600 text-white font-semibold text-lg shadow-lg hover:from-pink-600 hover:to-indigo-700 transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="btn btn-primary flex-1 text-lg disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {loading ? (
                         <>
@@ -866,7 +866,7 @@ export default function RsvpForm({
           {/* Floating WhatsApp Share Button */}
           <button
             onClick={shareOnWhatsApp}
-            className="fixed bottom-6 right-4 md:bottom-8 md:right-8 z-40 p-4 bg-green-500 text-white rounded-2xl shadow-xl hover:bg-green-600 hover:scale-105 transition-all active:scale-95 animate-bounce-subtle"
+            className="fixed bottom-6 right-4 md:bottom-8 md:right-8 z-40 p-4 bg-brand-primary text-white rounded-2xl shadow-lift hover:bg-brand-primary-hover hover:scale-105 transition-all active:scale-[0.98]"
             aria-label="Share on WhatsApp"
           >
             <svg className="w-7 h-7" fill="currentColor" viewBox="0 0 24 24">
@@ -878,7 +878,7 @@ export default function RsvpForm({
 }
 
 const inputClass =
-  "mt-1 block w-full rounded-xl border border-gray-200 px-4 py-3.5 text-base shadow-sm focus:border-pink-500 focus:outline-none focus:ring-2 focus:ring-pink-500/20 transition-all disabled:bg-gray-50 disabled:text-gray-400"
+  "mt-1 block w-full rounded-xl border border-brand-border bg-brand-surface px-4 py-3.5 text-base text-brand-text shadow-sm transition-colors placeholder:text-brand-text-muted hover:border-brand-accent focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/20 disabled:bg-brand-surface-muted disabled:text-brand-text-muted"
 
 function Field({
   label,
@@ -891,9 +891,9 @@ function Field({
 }) {
   return (
     <div>
-      <label className="block text-sm font-semibold text-gray-700 mb-2">
+      <label className="block text-sm font-semibold text-brand-text mb-2">
         {label}
-        {required && <span className="text-pink-500 ml-1">*</span>}
+        {required && <span className="text-brand-primary ml-1">*</span>}
       </label>
       {children}
     </div>

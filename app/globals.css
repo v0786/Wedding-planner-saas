@@ -4,6 +4,7 @@
 
 @layer base {
   :root {
+    /* Existing tokens (kept for backward compatibility). */
     --paper: #fdfcf9;
     --paper-raised: #ffffff;
     --ink: #24201c;
@@ -11,6 +12,22 @@
     --gold: #b28f4c;
     --gold-soft: #efe0c4;
     --rule: #ede4d2;
+
+    /* design.md §2.2 design tokens — Modern Luxury Wedding Editorial.
+       Authoritative single source of truth for the palette. */
+    --color-background: #faf8f4;
+    --color-surface: #ffffff;
+    --color-surface-muted: #f2eee7;
+    --color-primary: #8b7355;
+    --color-primary-hover: #735d43;
+    --color-accent: #c5a46d;
+    --color-text: #292722;
+    --color-text-muted: #77736b;
+    --color-border: #e8e1d7;
+    --color-success: #397653;
+    --color-warning: #a66b22;
+    --color-danger: #b54745;
+    --color-info: #456b87;
   }
 
   html {
@@ -123,19 +140,19 @@
   }
 
   .btn-primary {
-    @apply bg-gold-sheen text-white shadow-glow hover:brightness-[1.06] hover:shadow-lift active:scale-[0.985];
+    @apply bg-brand-primary text-white shadow-glow hover:bg-brand-primary-hover hover:shadow-lift active:scale-[0.985];
   }
 
   .btn-secondary {
-    @apply border border-ivory-400 bg-white text-ink-700 shadow-soft hover:border-gold-300 hover:bg-ivory-50;
+    @apply border border-brand-border bg-brand-surface text-ink-700 shadow-soft hover:border-brand-accent hover:bg-brand-surface-muted;
   }
 
   .btn-ghost {
-    @apply text-ink-600 hover:bg-ivory-100 hover:text-ink-800;
+    @apply text-ink-600 hover:bg-brand-surface-muted hover:text-ink-800;
   }
 
   .btn-danger {
-    @apply bg-rose-500 text-white shadow-soft hover:bg-rose-600;
+    @apply bg-brand-danger text-white shadow-soft hover:bg-rose-600;
   }
 
   .btn-sm {
@@ -149,13 +166,13 @@
   /* ---------- Form controls ---------- */
 
   .label {
-    @apply mb-1.5 block text-sm font-medium text-ink-700;
+    @apply mb-1.5 block text-sm font-medium text-brand-text;
   }
 
   .input {
-    @apply w-full rounded-xl border border-ivory-300 bg-white px-4 py-2.5 text-sm text-ink-800 shadow-sm
-      transition-colors placeholder:text-ink-300 hover:border-ivory-400
-      focus:border-gold-400 focus:outline-none focus:ring-2 focus:ring-gold-200;
+    @apply w-full rounded-xl border border-brand-border bg-brand-surface px-4 py-2.5 text-sm text-brand-text shadow-sm
+      transition-colors placeholder:text-ink-300 hover:border-brand-accent
+      focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-gold-200;
   }
 
   .textarea {
@@ -174,23 +191,23 @@
   }
 
   .pill-neutral {
-    @apply pill bg-ivory-200 text-ink-600;
+    @apply pill bg-brand-surface-muted text-brand-text-muted;
   }
 
   .pill-success {
-    @apply pill bg-sage-100 text-sage-700;
+    @apply pill bg-sage-100 text-brand-success;
   }
 
   .pill-warning {
-    @apply pill bg-champagne-200 text-gold-700;
+    @apply pill bg-champagne-200 text-brand-warning;
   }
 
   .pill-danger {
-    @apply pill bg-rose-100 text-rose-700;
+    @apply pill bg-rose-100 text-brand-danger;
   }
 
   .pill-info {
-    @apply pill bg-ivory-100 text-ink-600;
+    @apply pill bg-brand-surface-muted text-brand-info;
   }
 
   /* ---------- Tables ---------- */
