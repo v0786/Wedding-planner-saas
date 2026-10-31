@@ -31,7 +31,7 @@
 - [x] Concurrency-safe activation, settlement and quota checks (row/advisory locks)
 - [x] `Payment.billingPeriodDays` snapshot isolates existing purchases from later plan price/duration changes
 - [x] Paid-to-paid downgrades refused (no unpaid plan grants); only the move to Free is scheduled
-- [x] Database: Supabase PostgreSQL configured as production target via `DATABASE_URL`
+- [x] Database: Supabase PostgreSQL configured via `DATABASE_URL` in `.env` (connection string with `sslmode=require`); not reachable from this container due to network restrictions — will be configured in Vercel dashboard for production.
 - [x] Deployment: `vercel.json` + `vercel-build.sh` configured; `prisma generate` → `prisma migrate deploy` → `next build` pipeline
 
 ## QA Results
@@ -59,3 +59,4 @@
 - [ ] Configure production `AUTH_SECRET` in Vercel dashboard (strong random secret)
 - [ ] Configure production `AUTH_URL` and `NEXT_PUBLIC_APP_URL` in Vercel dashboard
 - [ ] Trigger Vercel production deployment after env vars are configured
+- [ ] Test production endpoints after deployment (registration, login, dashboard, wedding management, guest management, RSVP, subscription plans, Razorpay webhooks, wedding expiry)
