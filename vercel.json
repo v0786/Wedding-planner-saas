@@ -4,12 +4,13 @@
   "devCommand": "npm run dev",
   "installCommand": "npm install",
   "framework": "nextjs",
-  "regions": ["iad1"],
-  "env": {
-    "DATABASE_URL": "@wedding-database-url",
-    "AUTH_SECRET": "@wedding-auth-secret",
-    "AUTH_URL": "@wedding-auth-url",
-    "NEXT_PUBLIC_APP_URL": "@wedding-app-url"
-  },
-  "crons": []
+  "regions": [
+    "iad1"
+  ],
+  "crons": [
+    {
+      "path": "/api/cron/wedding-retention",
+      "schedule": "35 18 * * *"
+    }
+  ]
 }

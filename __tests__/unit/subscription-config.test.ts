@@ -14,16 +14,17 @@ import {
 } from "@/lib/subscriptions/config"
 
 describe("subscription config", () => {
-  it("defines exactly the three supported plans", () => {
-    expect([...PLAN_CODES]).toEqual(["FREE", "PRO", "PRIME"])
+  it("defines the paid plans and the free workspace fallback", () => {
+    expect([...PLAN_CODES]).toEqual(["FREE", "BASIC", "PRO", "PRIME"])
   })
 
-  it("never invents prices: defaults are Coming Soon", () => {
+  it("defaults to the approved launch prices", () => {
     expect(PLAN_DEFINITIONS.FREE.priceInPaise).toBeNull()
-    expect(PLAN_DEFINITIONS.PRO.priceInPaise).toBeNull()
-    expect(PLAN_DEFINITIONS.PRIME.priceInPaise).toBeNull()
-    expect(priceLabel(PLAN_DEFINITIONS.PRO)).toBe("Coming Soon")
-    expect(priceLabel(PLAN_DEFINITIONS.PRIME)).toBe("Coming Soon")
+    expect(PLAN_DEFINITIONS.BASIC.priceInPaise).toBe(49900)
+    expect(PLAN_DEFINITIONS.PRO.priceInPaise).toBe(99900)
+    expect(PLAN_DEFINITIONS.PRIME.priceInPaise).toBe(199900)
+    expect(priceLabel(PLAN_DEFINITIONS.PRO)).toBe("₹999")
+    expect(priceLabel(PLAN_DEFINITIONS.PRIME)).toBe("₹1,999")
   })
 
   it("formats a configured INR price", () => {

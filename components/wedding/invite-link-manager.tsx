@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import Link from "next/link"
 
 type InviteWedding = {
   id: string
@@ -9,7 +10,17 @@ type InviteWedding = {
   published: boolean
 }
 
-export default function InviteLinkManager({ wedding }: { wedding: InviteWedding }) {
+export default function InviteLinkManager({
+  wedding,
+  canPublish,
+  readOnly,
+  whatsappSharing,
+}: {
+  wedding: InviteWedding
+  canPublish: boolean
+  readOnly: boolean
+  whatsappSharing: boolean
+}) {
   const [published, setPublished] = useState(wedding.published)
   const [origin, setOrigin] = useState("")
   const [loading, setLoading] = useState(false)
@@ -67,7 +78,7 @@ export default function InviteLinkManager({ wedding }: { wedding: InviteWedding 
           <button
             type="button"
             onClick={togglePublish}
-            disabled={loading}
+            disabled={loading || readOnly || (!published && !canPublish)}
             className={`rounded-md px-4 py-2 text-sm font-medium disabled:opacity-50 ${
               published
                 ? "bg-red-100 text-red-700 hover:bg-red-200"
@@ -80,14 +91,21 @@ export default function InviteLinkManager({ wedding }: { wedding: InviteWedding 
         <p className="text-sm text-gray-600">
           Status:{" "}
           <span className={published ? "font-medium text-green-700" : "font-medium text-gray-700"}>
-            {published ? "Published" : "Draft"}
+            {readOnly ? "Expired" : published ? "Published" : "Draft"}
           </span>
         </p>
         <p className="mt-1 text-sm text-gray-500">
-          {published
-            ? "Anyone with the link can view the invitation and submit an RSVP."
-            : "Unpublished invitations show a friendly “not available” page to guests."}
+          {readOnly
+            ? "Guests can no longer open this invitation."
+            : published
+              ? "Anyone with the link can view the invitation and submit an RSVP."
+              : "Guests can open the invitation after you publish it."}
         </p>
+        {!readOnly && !published && !canPublish && (
+          <Link href={`/dashboard/billing?weddingId=${encodeURIComponent(wedding.id)}`} className="btn btn-primary mt-4">
+            Choose a wedding plan
+          </Link>
+        )}
       </div>
 
       {error && (
@@ -101,12 +119,12 @@ export default function InviteLinkManager({ wedding }: { wedding: InviteWedding 
         </div>
       )}
 
-      {published && (
+      {published && !readOnly && (
         <>
           <LinkField label="Invitation page" value={inviteUrl} onCopy={copyLink} />
           <LinkField label="RSVP form" value={rsvpUrl} onCopy={copyLink} />
 
-          <div>
+          {whatsappSharing && <div>
             <a
               href={`https://wa.me/?text=${encodeURIComponent(
                 `You're invited to ${wedding.name}! RSVP here: ${rsvpUrl}`,
@@ -117,7 +135,7 @@ export default function InviteLinkManager({ wedding }: { wedding: InviteWedding 
             >
               Share on WhatsApp
             </a>
-          </div>
+          </div>}
         </>
       )}
     </div>

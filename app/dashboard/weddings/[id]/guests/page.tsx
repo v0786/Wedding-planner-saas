@@ -1,6 +1,8 @@
 import { auth } from "@/auth"
 import { notFound, redirect } from "next/navigation"
 import { prisma } from "@/lib/prisma"
+import { contactsAreVisible } from "@/lib/wedding-settings"
+import { isWeddingExpired } from "@/lib/wedding-lifecycle"
 import GuestManager, { type GuestRecord } from "@/components/wedding/guest-manager"
 import Link from "next/link"
 import PageHeader from "@/components/ui/page-header"
@@ -12,7 +14,7 @@ export default async function GuestsPage({ params }: { params: Promise<{ id: str
 
   const wedding = await prisma.wedding.findFirst({
     where: { id, workspace: { members: { some: { userId: session.user.id } } } },
-    select: { id: true, name: true },
+    select: { id: true, name: true, contactVisibility: true, date: true, timezone: true },
   })
   if (!wedding) notFound()
 
@@ -40,15 +42,20 @@ export default async function GuestsPage({ params }: { params: Promise<{ id: str
     id: guest.id,
     firstName: guest.firstName,
     lastName: guest.lastName,
-    mobile: guest.mobile,
-    email: guest.email,
+    mobile: contactsAreVisible(wedding) ? guest.mobile : null,
+    email: contactsAreVisible(wedding) ? guest.email : null,
     group: guest.group,
+    side: guest.side,
+    category: guest.category,
+    accommodationNeeds: guest.accommodationNeeds,
+    transportNeeds: guest.transportNeeds,
     notes: guest.notes,
     dietaryPrefs: guest.dietaryPrefs,
     rsvpSubmission: guest.rsvpSubmission
       ? {
           id: guest.rsvpSubmission.id,
           status: guest.rsvpSubmission.status,
+          partySize: guest.rsvpSubmission.partySize,
           familyMembers: guest.rsvpSubmission.familyMembers,
           eventResponses: guest.rsvpSubmission.eventResponses,
           dietaryPrefs: guest.rsvpSubmission.dietaryPrefs,
@@ -91,6 +98,8 @@ export default async function GuestsPage({ params }: { params: Promise<{ id: str
         initialGuests={initialGuests}
         initialPagination={{ page: 1, pageSize: 25, total, totalPages: Math.max(1, Math.ceil(total / 25)) }}
         groups={groups}
+        contactsVisible={contactsAreVisible(wedding)}
+        readOnly={isWeddingExpired(wedding)}
       />
     </main>
   )

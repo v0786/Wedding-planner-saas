@@ -8,7 +8,9 @@ import {
   ApiError,
 } from "@/lib/api"
 import { guestSchema } from "@/lib/validation"
-import { getGuestAccess, requireWeddingAccess } from "@/lib/wedding-access"
+import { getGuestAccess, requireOpenWeddingAccess } from "@/lib/wedding-access"
+import { guestPhoneVariants } from "@/lib/guest-phone"
+import { withWorkspaceLimitLock } from "@/lib/subscriptions/service"
 import { logAudit } from "@/lib/audit"
 
 type Params = { params: Promise<{ id: string; guestId: string }> }
@@ -18,7 +20,7 @@ export async function PATCH(req: Request, { params }: Params) {
     assertSameOrigin(req)
     const userId = await requireUserId()
     const { id, guestId } = await params
-    await requireWeddingAccess(id, userId)
+    const wedding = await requireOpenWeddingAccess(id, userId)
 
     const guest = await getGuestAccess(id, guestId, userId)
     if (!guest) throw new ApiError("Guest not found", 404)
@@ -26,15 +28,16 @@ export async function PATCH(req: Request, { params }: Params) {
     const body = await readJson(req)
     const data = guestSchema.partial().parse(body)
 
-    if (data.mobile) {
-      const conflict = await prisma.guest.findFirst({
-        where: { weddingId: id, mobile: data.mobile, NOT: { id: guestId } },
-        select: { id: true },
-      })
-      if (conflict) throw new ApiError("A guest with this mobile number already exists", 409)
-    }
-
-    const updated = await prisma.guest.update({ where: { id: guestId }, data })
+    const updated = await withWorkspaceLimitLock(wedding.workspaceId, "guests", async (tx) => {
+      if (data.mobile) {
+        const conflict = await tx.guest.findFirst({
+          where: { weddingId: id, mobile: { in: guestPhoneVariants(data.mobile) }, NOT: { id: guestId } },
+          select: { id: true },
+        })
+        if (conflict) throw new ApiError("A guest with this mobile number already exists", 409)
+      }
+      return tx.guest.update({ where: { id: guestId }, data })
+    })
     await logAudit(id, userId, "guest.updated", { guestId })
     return NextResponse.json({ guest: updated })
   } catch (error) {
@@ -47,7 +50,7 @@ export async function DELETE(req: Request, { params }: Params) {
     assertSameOrigin(req)
     const userId = await requireUserId()
     const { id, guestId } = await params
-    await requireWeddingAccess(id, userId)
+    await requireOpenWeddingAccess(id, userId)
 
     const guest = await getGuestAccess(id, guestId, userId)
     if (!guest) throw new ApiError("Guest not found", 404)

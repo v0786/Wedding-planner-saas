@@ -1,4 +1,6 @@
 import { z } from "zod"
+import { EVENT_PUBLIC_FIELDS, WEDDING_PUBLIC_FIELDS } from "@/lib/wedding-settings"
+import { policyAcceptanceSchema } from "@/lib/policies"
 
 /** Trimmed string with explicit bounds. */
 const text = (min: number, max: number) =>
@@ -43,12 +45,31 @@ export const registerSchema = z.object({
   name: text(1, 120),
   email: emailSchema,
   password: z.string().min(8, "Password must be at least 8 characters").max(200),
-})
+}).merge(policyAcceptanceSchema)
 
 export const loginSchema = z.object({
   email: emailSchema,
   password: z.string().min(1).max(200),
 })
+
+const timezoneSchema = z.string().trim().max(100).refine((timezone) => {
+  try {
+    new Intl.DateTimeFormat("en-IN", { timeZone: timezone })
+    return true
+  } catch {
+    return false
+  }
+}, "Enter a valid IANA timezone")
+
+const optionalHttpsUrl = z.preprocess(
+  value => value === "" ? null : value,
+  z.string().trim().url("Enter a valid HTTPS URL").max(2048).refine(
+    value => new URL(value).protocol === "https:", "Use an HTTPS URL",
+  ).optional().nullable(),
+)
+const localeSchema = z.string().trim().max(40).refine(value => {
+  try { return Intl.DateTimeFormat.supportedLocalesOf([value]).length === 1 } catch { return false }
+}, "Enter a supported formatting locale")
 
 export const weddingCreateSchema = z.object({
   name: text(1, 200),
@@ -58,12 +79,21 @@ export const weddingCreateSchema = z.object({
   venue: optionalText(200),
   address: optionalText(1000),
   description: optionalText(5000),
-  timezone: z.string().trim().max(100).default("Asia/Kolkata"),
+  timezone: timezoneSchema.default("Asia/Kolkata"),
+  locale: localeSchema.default("en-IN"),
+  contactVisibility: z.enum(["hidden", "visible"]).default("hidden"),
+  publicFields: z.array(z.enum(WEDDING_PUBLIC_FIELDS)).max(WEDDING_PUBLIC_FIELDS.length).default([...WEDDING_PUBLIC_FIELDS]),
   rsvpDeadline: optionalDate,
 })
 
 export const weddingUpdateSchema = weddingCreateSchema.partial().extend({
   id: z.string().min(1).optional(),
+  mapUrl: optionalHttpsUrl,
+  coverImageUrl: optionalHttpsUrl,
+  couplePhotoUrl: optionalHttpsUrl,
+  invitationTheme: z.enum(["classic", "floral", "minimal"]).optional(),
+  themeColor: z.preprocess(value => value === "" ? null : value,
+    z.string().regex(/^#[0-9a-f]{6}$/i, "Choose a six-digit hex colour").optional().nullable()),
 })
 
 export const publishSchema = z.object({
@@ -77,6 +107,10 @@ export const eventSchema = z.object({
   venue: optionalText(200),
   address: optionalText(1000),
   description: optionalText(2000),
+  mapUrl: optionalHttpsUrl,
+  dressCode: optionalText(200),
+  imageUrl: optionalHttpsUrl,
+  publicFields: z.array(z.enum(EVENT_PUBLIC_FIELDS)).max(EVENT_PUBLIC_FIELDS.length).default([...EVENT_PUBLIC_FIELDS]),
   order: z.coerce.number().int().min(0).max(10000).default(0),
   rsvpDeadline: optionalDate,
 })
@@ -90,6 +124,10 @@ export const guestSchema = z.object({
     emailSchema.nullable(),
   ),
   group: optionalText(120),
+  side: optionalText(120),
+  category: optionalText(120),
+  accommodationNeeds: optionalText(1000),
+  transportNeeds: optionalText(1000),
   notes: optionalText(2000),
   dietaryPrefs: optionalText(1000),
 })
@@ -97,7 +135,10 @@ export const guestSchema = z.object({
 export const guestQuerySchema = z.object({
   search: z.string().trim().max(120).optional().default(""),
   group: z.string().trim().max(120).optional().default(""),
-  status: z.enum(["all", "pending", "confirmed", "declined", "none"]).optional().default("all"),
+  side: z.string().trim().max(120).optional().default(""),
+  category: z.string().trim().max(120).optional().default(""),
+  status: z.enum(["all", "pending", "confirmed", "declined", "maybe", "none"]).optional().default("all"),
+  sort: z.enum(["newest", "oldest", "name"]).optional().default("newest"),
   page: z.coerce.number().int().min(1).max(100000).optional().default(1),
   pageSize: z.coerce.number().int().min(1).max(100).optional().default(25),
 })
@@ -115,9 +156,13 @@ export const familyMemberSchema = z.object({
 export const eventResponseSchema = z.enum(["yes", "no", "pending"])
 
 export const rsvpSchema = z.object({
+  status: z.enum(["confirmed", "declined", "maybe"]).default("confirmed"),
+  partySize: z.number().int().min(1).max(1000).nullable().optional(),
   token: z.string().trim().min(1, "Invitation token is required"),
   fullName: text(1, 200),
   mobile: mobileSchema,
+  email: z.preprocess((value) => value === "" || value === undefined ? null : value, emailSchema.nullable()),
+  phoneProof: z.string().max(2048).optional(),
   dietaryPrefs: optionalText(1000),
   familyMembers: z.array(familyMemberSchema).max(50).optional().default([]),
   eventResponses: z.record(z.string(), eventResponseSchema).optional().default({}),
@@ -132,6 +177,10 @@ export const rsvpSchema = z.object({
     .optional()
     .default([]),
   editToken: z.string().min(10).max(200).optional(),
+}).superRefine((response, context) => {
+  if (response.status !== "declined" && response.partySize != null && response.partySize < 1 + response.familyMembers.length) {
+    context.addIssue({ code: z.ZodIssueCode.custom, path: ["partySize"], message: "Party size must include you and every named family member" })
+  }
 })
 
 export const customQuestionSchema = z.object({

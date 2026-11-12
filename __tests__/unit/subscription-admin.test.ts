@@ -10,8 +10,13 @@ describe("admin authorization policy", () => {
   it("matches allowlisted emails case-insensitively and trims whitespace", () => {
     const allowlist = " admin@example.com , Ops@Example.com ,, "
     expect(parseAdminEmails(allowlist)).toEqual(["admin@example.com", "ops@example.com"])
-    expect(isAdminAllowed({ email: "ADMIN@example.com", isAdmin: false }, allowlist)).toBe(true)
-    expect(isAdminAllowed({ email: " ops@example.com ", isAdmin: false }, allowlist)).toBe(true)
+    expect(isAdminAllowed({ email: "ADMIN@example.com", isAdmin: false, emailVerified: new Date() }, allowlist)).toBe(true)
+    expect(isAdminAllowed({ email: " ops@example.com ", isAdmin: false, emailVerified: new Date() }, allowlist)).toBe(true)
+  })
+
+  it("rejects an unverified account even when its email is allowlisted", () => {
+    expect(isAdminAllowed({ email: "admin@example.com", isAdmin: false }, "admin@example.com")).toBe(false)
+    expect(isAdminAllowed({ email: "admin@example.com", isAdmin: false, emailVerified: null }, "admin@example.com")).toBe(false)
   })
 
   it("rejects non-admin accounts that are not on the allowlist", () => {

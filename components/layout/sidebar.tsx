@@ -33,7 +33,7 @@ const groups: NavGroup[] = [
       },
       {
         label: "Weddings",
-        href: "/dashboard/weddings/new",
+        href: "/dashboard/weddings",
         icon: (
           <svg className="h-[18px] w-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.6}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 21s-7.5-4.35-9.33-8.36A5.42 5.42 0 0 1 12 6.1a5.42 5.42 0 0 1 9.33 6.54C19.5 16.65 12 21 12 21Z" />
@@ -87,16 +87,17 @@ function Monogram() {
 
 export default function Sidebar({
   onNavigate,
+  isAdmin = false,
   variant = "desktop",
 }: {
   onNavigate?: () => void;
+  isAdmin?: boolean;
   variant?: "desktop" | "drawer";
 }) {
   const pathname = usePathname();
 
   const isActive = (item: NavItem) => {
     if (item.exact) return pathname === item.href;
-    if (item.href === "/dashboard/weddings/new") return pathname.startsWith("/dashboard/weddings");
     return pathname.startsWith(item.href);
   };
 
@@ -114,6 +115,11 @@ export default function Sidebar({
         </Link>
       </div>
 
+      {isAdmin && (
+        <Link href="/dashboard/admin" onClick={onNavigate} className="mx-4 mb-3 rounded-xl border border-gold-200 px-4 py-3 text-sm font-medium text-ink-700">
+          Platform administration
+        </Link>
+      )}
       <nav className="flex-1 space-y-7 overflow-y-auto px-4 pb-6" aria-label="Main navigation">
         {groups.map((group) => (
           <div key={group.title}>

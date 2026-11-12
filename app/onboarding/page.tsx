@@ -1,10 +1,14 @@
 import Link from "next/link"
 import { auth } from "@/auth"
 import { redirect } from "next/navigation"
+import { currentPolicyAcceptance } from "@/lib/policy-service"
 
 export default async function OnboardingPage() {
   const session = await auth()
-  if (session?.user?.id) redirect("/dashboard")
+  if (session?.user?.id) {
+    if (!await currentPolicyAcceptance(session.user.id)) redirect("/onboarding/policies")
+    redirect("/dashboard")
+  }
 
   return (
     <div className="paper-texture relative flex min-h-screen items-center justify-center overflow-hidden bg-ivory-50 px-4 py-12 sm:px-6">

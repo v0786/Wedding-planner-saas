@@ -4,6 +4,8 @@ import { prisma } from "@/lib/prisma"
 import InviteLinkManager from "@/components/wedding/invite-link-manager"
 import Link from "next/link"
 import PageHeader from "@/components/ui/page-header"
+import { isWeddingExpired } from "@/lib/wedding-lifecycle"
+import { getWeddingEntitlements } from "@/lib/subscriptions/service"
 
 export default async function InvitePage({ params }: { params: Promise<{ id: string }> }) {
   const session = await auth()
@@ -12,9 +14,11 @@ export default async function InvitePage({ params }: { params: Promise<{ id: str
 
   const wedding = await prisma.wedding.findFirst({
     where: { id, workspace: { members: { some: { userId: session.user.id } } } },
-    select: { id: true, name: true, invitationToken: true, published: true },
+    select: { id: true, name: true, invitationToken: true, published: true, workspaceId: true, date: true, timezone: true },
   })
   if (!wedding) notFound()
+  const expired = isWeddingExpired(wedding)
+  const entitlements = await getWeddingEntitlements(wedding.workspaceId, wedding.id)
 
   return (
     <main className="mx-auto max-w-2xl px-4 py-8 sm:px-6 lg:px-8">
@@ -42,7 +46,15 @@ export default async function InvitePage({ params }: { params: Promise<{ id: str
         className="mt-6"
       />
 
-      <InviteLinkManager wedding={wedding} />
+      <InviteLinkManager
+        wedding={{ id: wedding.id, name: wedding.name, invitationToken: wedding.invitationToken, published: wedding.published }}
+        canPublish={entitlements.planCode !== "FREE"}
+        readOnly={expired}
+        whatsappSharing={entitlements.features.whatsappSharing}
+      />
+      <Link href={`/dashboard/weddings/${wedding.id}/invite/print`} className="btn btn-secondary mt-4">
+        Download or print invitation
+      </Link>
     </main>
   )
 }

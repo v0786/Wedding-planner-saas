@@ -1,11 +1,12 @@
 "use client"
 
 import { useState } from "react"
+import WeddingSetupOptions, { DEFAULT_WEDDING_SETUP, type WeddingSetupState } from "@/components/wedding/wedding-setup-options"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Field, FormError, Input, Textarea } from "@/components/ui/field"
 
-type FormState = {
+type FormState = WeddingSetupState & {
   name: string
   coupleName1: string
   coupleName2: string
@@ -17,6 +18,7 @@ type FormState = {
 }
 
 const emptyForm: FormState = {
+  ...DEFAULT_WEDDING_SETUP,
   name: "",
   coupleName1: "",
   coupleName2: "",
@@ -160,6 +162,8 @@ export default function NewWeddingForm() {
             placeholder="A short welcome message for your guests"
           />
         </Field>
+
+        <WeddingSetupOptions value={form} onChange={updates => setForm(current => ({ ...current, ...updates }))} />
 
         {error && (
           <FormError>

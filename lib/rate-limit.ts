@@ -1,3 +1,4 @@
+import { ApiError } from "@/lib/errors"
 import { prisma } from "@/lib/prisma"
 
 export type RateLimitResult = {
@@ -9,6 +10,7 @@ export type RateLimitResult = {
 export type RateLimitOptions = {
   limit: number
   windowMs: number
+  failClosed?: boolean
 }
 
 /**
@@ -62,46 +64,32 @@ export class MemoryRateLimitStore implements RateLimitStore {
 /** PostgreSQL-backed fixed-window store shared across instances. */
 export class DatabaseRateLimitStore implements RateLimitStore {
   async check(key: string, options: RateLimitOptions, now: Date): Promise<RateLimitResult> {
-    const resetAt = new Date(now.getTime() + options.windowMs)
+    // Prisma DateTime columns are PostgreSQL timestamp without time zone.
+    const currentUtc = now.toISOString()
+    const resetUtc = new Date(now.getTime() + options.windowMs).toISOString()
 
     try {
-      return await prisma.$transaction(async (tx) => {
-        const existing = await tx.rateLimit.findUnique({ where: { key } })
-
-        if (!existing || existing.resetAt.getTime() <= now.getTime()) {
-          await tx.rateLimit.upsert({
-            where: { key },
-            update: { count: 1, resetAt },
-            create: { key, count: 1, resetAt },
-          })
-          return { allowed: true, remaining: options.limit - 1, retryAfterSeconds: 0 }
-        }
-
-        const nextCount = existing.count + 1
-        await tx.rateLimit.update({
-          where: { key },
-          data: { count: nextCount },
-        })
-
-        if (nextCount > options.limit) {
-          return {
-            allowed: false,
-            remaining: 0,
-            retryAfterSeconds: Math.max(
-              1,
-              Math.ceil((existing.resetAt.getTime() - now.getTime()) / 1000),
-            ),
-          }
-        }
-
-        return {
-          allowed: true,
-          remaining: options.limit - nextCount,
-          retryAfterSeconds: 0,
-        }
-      })
+      // A single upsert increments atomically, including when concurrent
+      // requests arrive at the start of a window on different instances.
+      const [bucket] = await prisma.$queryRaw<Array<{ count: number; resetAt: Date }>>`
+        INSERT INTO "RateLimit" ("key", "count", "resetAt", "updatedAt")
+        VALUES (${key}, 1, ${resetUtc}::timestamp, ${currentUtc}::timestamp)
+        ON CONFLICT ("key") DO UPDATE SET
+          "count" = CASE WHEN "RateLimit"."resetAt" <= ${currentUtc}::timestamp THEN 1
+                         ELSE LEAST("RateLimit"."count" + 1, ${options.limit + 1}) END,
+          "resetAt" = CASE WHEN "RateLimit"."resetAt" <= ${currentUtc}::timestamp
+                           THEN ${resetUtc}::timestamp ELSE "RateLimit"."resetAt" END,
+          "updatedAt" = ${currentUtc}::timestamp
+        RETURNING "count", "resetAt"
+      `
+      const allowed = bucket.count <= options.limit
+      return {
+        allowed,
+        remaining: Math.max(0, options.limit - bucket.count),
+        retryAfterSeconds: allowed ? 0 : Math.max(1, Math.ceil((bucket.resetAt.getTime() - now.getTime()) / 1000)),
+      }
     } catch (error) {
-      // Fail open: a rate-limiter outage must not take the whole app down.
+      if (options.failClosed) throw new ApiError("Verification is temporarily unavailable", 503)
       console.error("rate limit store failed", error)
       return { allowed: true, remaining: options.limit, retryAfterSeconds: 0 }
     }
@@ -118,7 +106,9 @@ export async function checkRateLimit(
   store?: RateLimitStore,
 ): Promise<RateLimitResult> {
   const resolved =
-    store ?? (process.env.RATE_LIMIT_STORE === "memory" ? memoryStore : new DatabaseRateLimitStore())
+    store ?? (process.env.RATE_LIMIT_STORE === "memory" && !options.failClosed
+      ? memoryStore
+      : new DatabaseRateLimitStore())
   return resolved.check(key, options, new Date())
 }
 

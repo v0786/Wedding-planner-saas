@@ -6,10 +6,10 @@ import {
   readJson,
 } from "@/lib/api"
 import { requireUserId } from "@/lib/server-auth"
-import { requireWeddingAccess } from "@/lib/wedding-access"
+import { requireOpenWeddingAccess, requireWeddingAccess } from "@/lib/wedding-access"
 import { customQuestionSchema } from "@/lib/validation"
 import { logAudit } from "@/lib/audit"
-import { assertFeature, assertWeddingLimit, withWorkspaceLimitLock } from "@/lib/subscriptions/service"
+import { assertWeddingFeature, assertWeddingLimit, withWorkspaceLimitLock } from "@/lib/subscriptions/service"
 
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -32,7 +32,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     assertSameOrigin(req)
     const userId = await requireUserId()
     const { id } = await params
-    const wedding = await requireWeddingAccess(id, userId)
+    const wedding = await requireOpenWeddingAccess(id, userId)
 
     const body = await readJson(req)
     const data = customQuestionSchema.parse(body)
@@ -41,7 +41,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       wedding.workspaceId,
       "customQuestions",
       async (tx) => {
-        await assertFeature(wedding.workspaceId, "customQuestions")
+        await assertWeddingFeature(wedding.workspaceId, id, "customQuestions")
         await assertWeddingLimit(wedding.workspaceId, id, "customQuestions")
         return tx.customQuestion.create({
           data: { ...data, weddingId: id },

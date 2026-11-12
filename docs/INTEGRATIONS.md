@@ -37,14 +37,22 @@ Variables: `CASHFREE_APP_ID`, `CASHFREE_SECRET_KEY`,
 `CASHFREE_WEBHOOK_SECRET`, `CASHFREE_ENVIRONMENT`. Verify signature and
 amount/currency; duplicate callbacks cannot activate twice. Use sandbox.
 
-## 5. OTP provider (not selected)
+## 5. Guest RSVP phone verification
 
-Variables: `OTP_PROVIDER`, `OTP_API_KEY`, `OTP_API_SECRET`,
-`OTP_SENDER_ID` if required. Must support short-lived OTP, bounded
-attempts/resends, one-time verification, generic anti-enumeration
-responses, no plaintext OTP storage/logging, and target-region coverage.
-On outage, never create false verified state. Select after comparing
-coverage, sender rules, cost, rate limits, and data handling.
+The web app uses Twilio Verify SMS. Configure server-side
+`TWILIO_VERIFY_SERVICE_SID`, `TWILIO_API_KEY`, `TWILIO_API_SECRET`, and
+`AUTH_SECRET`. Check delivery with consented test numbers in the intended
+countries before launch. The request and verify endpoints rate-limit by IP,
+phone, and wedding. After a code is approved, the app issues a 15-minute proof
+bound to the invitation, canonical phone number, and browser. The app stores
+no SMS codes. The code challenge expires after 10 minutes.
+
+For local automated tests, start `node scripts/mock-rsvp-otp.mjs` and set
+`RSVP_OTP_TEST_ORIGIN=http://127.0.0.1:3097` with test-only Twilio-shaped
+credentials. The application only allows this override with loopback app and
+database URLs outside Vercel. The stub does not send SMS.
+
+- [Twilio Verify API](https://www.twilio.com/docs/verify/api)
 
 ## 6. CAPTCHA provider (not selected)
 

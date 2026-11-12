@@ -1,6 +1,7 @@
 import type { PrismaClient } from "@prisma/client"
 import { prisma } from "@/lib/prisma"
 import { ApiError } from "@/lib/errors"
+import { assertWeddingOpen } from "@/lib/wedding-lifecycle"
 
 /**
  * Tenant boundary: a wedding is only visible to members of its workspace.
@@ -25,6 +26,12 @@ export async function getWeddingAccess(weddingId: string, userId: string, db: Db
 export async function requireWeddingAccess(weddingId: string, userId: string, db: Db = prisma) {
   const wedding = await getWeddingAccess(weddingId, userId, db)
   if (!wedding) throw new ApiError("Wedding not found", 404)
+  return wedding
+}
+
+export async function requireOpenWeddingAccess(weddingId: string, userId: string) {
+  const wedding = await requireWeddingAccess(weddingId, userId)
+  assertWeddingOpen(wedding)
   return wedding
 }
 

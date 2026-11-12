@@ -1,6 +1,7 @@
 import { parse } from "csv-parse/sync"
 import { stringify } from "csv-stringify/sync"
 import { guestSchema } from "@/lib/validation"
+import { guestPhoneVariants } from "@/lib/guest-phone"
 
 export const GUEST_CSV_HEADERS = [
   "firstName",
@@ -10,6 +11,10 @@ export const GUEST_CSV_HEADERS = [
   "group",
   "notes",
   "dietaryPrefs",
+  "side",
+  "category",
+  "accommodationNeeds",
+  "transportNeeds",
 ] as const
 
 export type GuestCsvRow = {
@@ -20,6 +25,10 @@ export type GuestCsvRow = {
   group: string | null
   notes: string | null
   dietaryPrefs: string | null
+  side: string | null
+  category: string | null
+  accommodationNeeds: string | null
+  transportNeeds: string | null
 }
 
 export type CsvParseResult =
@@ -28,6 +37,16 @@ export type CsvParseResult =
 
 const MAX_ROWS = 2000
 const MAX_BYTES = 2 * 1024 * 1024
+
+export const spreadsheetCsvOptions = {
+  escape_formulas: true,
+  cast: {
+    string(value: string) {
+      // Some spreadsheet applications skip leading whitespace before formulas.
+      return value.startsWith("\n") || /^\s+[=+\-@＝＋－＠]/u.test(value) ? `'${value}` : value
+    },
+  },
+}
 
 /**
  * Parses and fully validates a guest CSV. Any malformed row rejects the whole
@@ -74,11 +93,16 @@ export function parseGuestCsv(input: string | Buffer): CsvParseResult {
     const parsed = guestSchema.safeParse({
       firstName: record.firstName,
       lastName: record.lastName,
-      mobile: record.mobile,
+      // Accept the spreadsheet text prefix produced when exporting an international number.
+      mobile: /^'\+\d+$/.test(record.mobile ?? "") ? record.mobile.slice(1) : record.mobile,
       email: record.email,
       group: record.group,
       notes: record.notes,
       dietaryPrefs: record.dietaryPrefs,
+      side: record.side,
+      category: record.category,
+      accommodationNeeds: record.accommodationNeeds,
+      transportNeeds: record.transportNeeds,
     })
 
     if (!parsed.success) {
@@ -88,11 +112,12 @@ export function parseGuestCsv(input: string | Buffer): CsvParseResult {
     }
 
     if (parsed.data.mobile) {
-      if (seenMobiles.has(parsed.data.mobile)) {
+      const mobileKey = guestPhoneVariants(parsed.data.mobile)[0]
+      if (seenMobiles.has(mobileKey)) {
         errors.push(`Line ${line}: duplicate mobile number in file`)
         return
       }
-      seenMobiles.add(parsed.data.mobile)
+      seenMobiles.add(mobileKey)
     }
 
     rows.push(parsed.data)
@@ -111,10 +136,19 @@ export function guestsToCsv(
     group: string | null
     notes: string | null
     dietaryPrefs: string | null
+    side?: string | null
+    category?: string | null
+    accommodationNeeds?: string | null
+    transportNeeds?: string | null
   }>,
+  options: { includeContacts?: boolean } = {},
 ): string {
+  const columns = options.includeContacts === false
+    ? GUEST_CSV_HEADERS.filter((column) => column !== "mobile" && column !== "email")
+    : GUEST_CSV_HEADERS
   return stringify(guests, {
+    ...spreadsheetCsvOptions,
     header: true,
-    columns: GUEST_CSV_HEADERS,
+    columns,
   })
 }

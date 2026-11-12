@@ -1,337 +1,87 @@
-# System Architecture --- Wedding Guest Manager
+# System Architecture — Wedding Guest Manager
 
-**Version:** 2.0 \| **Status:** Production-ready (temporary stack)  
-**Style:** Modular monolith with managed services and provider adapters.
+Updated 11 November 2026. This document describes the current web implementation and separates the remaining product targets. Verification status is maintained in [the implementation tracker](implementation-tracker.md).
 
-## 1. Goals
+## Current implementation
 
-Support web, Android, and iOS with shared business rules; Supabase
-PostgreSQL as production database; strict tenant isolation; independent
-wedding subscriptions; replaceable providers; reliable expiry/deletion;
-no AI or microservices dependency.
+| Layer | Implementation | Evidence |
+|---|---|---|
+| Web | Next.js 15 App Router, React 19, TypeScript, Tailwind | `package.json`, `app/`, `components/` |
+| Host authentication | Auth.js v5 credentials provider, bcrypt hashes, JWT sessions | `auth.ts`, `app/api/register/route.ts`, `lib/auth-login.ts` |
+| Database | PostgreSQL through Prisma 6 | `prisma/schema.prisma`, `prisma/migrations/`, `lib/prisma.ts` |
+| Production database target | Supabase PostgreSQL | `docs/Rules.md`, `docs/SUPABASE_MIGRATION_PLAN.md` |
+| Payments | Razorpay REST orders, captured-payment verification, signed webhook | `lib/subscriptions/`, `app/api/webhooks/razorpay/route.ts` |
+| Guest verification | Twilio Verify SMS and Cloudflare Turnstile | `lib/rsvp-otp.ts`, `lib/captcha.ts`, `app/api/rsvp/phone/` |
+| Tests | Jest, database integration tests, HTTP smoke, Playwright | `__tests__/`, `scripts/smoke-e2e.mjs`, `tests/e2e/` |
+| Hosting configuration | Vercel build and retention cron | `vercel.json`, `vercel-build.sh` |
 
-## 2. Stack (Current — Temporary)
+Supabase Auth migration remains a separate planned change. The current authentication implementation is retained under `docs/Rules.md` and the migration plan. Production database access and Supabase Data API exposure require a deployment review because the tracked schema does not establish tenant RLS policies.
 
-  -----------------------------------------------------------------------
-  Layer                   Technology              Reason
-  ----------------------- ----------------------- -----------------------
-  Web                     Next.js 15 + TypeScript Mature server-rendered
-                                                  React web platform (App Router)
+## Repository layout
 
-  Mobile                  React Native + Expo +   Shared Android/iOS app
-                          TypeScript              
+| Directory | Responsibility |
+|---|---|
+| `app/` | Host pages, public invitation/RSVP pages, admin pages, API handlers |
+| `components/` | Forms, managers, dashboard, check-in, policy and billing UI |
+| `lib/` | Validation, authorization, domain rules, providers and reports |
+| `prisma/` | Actual data model, migrations and synthetic development seed |
+| `__tests__/` | Unit and PostgreSQL integration checks |
+| `tests/e2e/` | Browser journeys |
+| `scripts/` | HTTP smoke and local verification provider |
+| `docs/` | Canonical requirements, decisions and verification record |
+| `inbox/` | Supplied reference document copies |
 
-  Database                Supabase PostgreSQL     Production database via
-                                                  Prisma ORM (temporary)
+The proposed Expo and shared-package layout in the original documents is a future target. The current repository has no native app implementation.
 
-  Auth                    NextAuth v5 (Auth.js)   Email/password credentials
-                          (prisma adapter)        provider; JWT sessions;
-                                                  temporary until Supabase
-                                                  Auth migration
+## Runtime flow
 
-  ORM                     Prisma Client v6        Type-safe database access;
-                                                  migrations via prisma migrate
-
-  Storage                 Supabase Storage        Invitation assets and
-                                                  private exports
-
-  Server logic            Next.js server          Privileged logic stays
-                          routes/actions +        server-side
-                          Supabase Edge Functions 
-                          where suitable          
-
-  Hosting                 Vercel                  Low operations burden;
-                                                  managed web hosting
-
-  Payments                Razorpay + Cashfree     Provider portability
-                          adapters                
-
-  Tests                   Vitest, React Native    Unit/component/E2E
-                          Testing Library,        
-                          Playwright              
-  -----------------------------------------------------------------------
-
-## 2b. Target Stack (Future — Requires Separate Migration Plan)
-
-  -----------------------------------------------------------------------
-  Layer                   Technology              Reason
-  ----------------------- ----------------------- -----------------------
-  Auth                    Supabase Auth           Email/password + Google
-                                                  OAuth; replaces NextAuth v5
-                                                  (migration requires owner
-                                                  approval)
-
-  ORM                     Prisma Client v6        Retained; connects to
-                                                  Supabase PostgreSQL
-  -----------------------------------------------------------------------
-
-Hybrid means managed web hosting (Vercel) + managed Supabase PostgreSQL
-+ secure worker/functions, not a self-hosted production database. Exact
-vendors and worker runtime require approval before launch.
-
-## 3. Migration Path (Planned)
-
-The current stack uses **Prisma ORM + NextAuth v5** connected to
-**Supabase PostgreSQL** via `DATABASE_URL`. A future migration will
-replace NextAuth v5 with **Supabase Auth** while retaining Prisma ORM.
-This migration requires a separate plan and owner approval.
-
-See `docs/SUPABASE_MIGRATION_PLAN.md` for the detailed migration plan.
-
-## 4. Modules
-
-Identity/accounts; weddings/events; plans/subscriptions/payments;
-guests/groups/import; invitations/tokens; OTP/abuse protection;
-RSVP/deadlines; reports/exports; QR check-in; notifications;
-lifecycle/deletion; super-admin/audit.
-
-## 5. Data flow
-
-``` mermaid
+```mermaid
 flowchart TD
- WEB[Next.js Web] --> API[Server Application Layer]
- MOB[Expo Mobile] --> API
- PUB[Public Invitation / RSVP] --> API
- ADM[Super Admin] --> API
- API --> AUTH[NextAuth v5 (JWT sessions)]
- API --> DB[(Supabase PostgreSQL via Prisma)]
- API --> STORE[Supabase Storage]
- API --> PAY[Payment Adapter]
- PAY --> R[Razorpay]
- PAY --> C[Cashfree]
- API --> OTP[OTP / CAPTCHA]
- API --> MSG[Email / WhatsApp]
- JOB[Scheduled Worker] --> DB
- JOB --> MSG
+  Web["Host and guest web UI"] --> API["Next.js handlers and server pages"]
+  API --> Auth["Auth.js host session"]
+  API --> Domain["Ownership and domain services"]
+  Domain --> DB["PostgreSQL through Prisma"]
+  Domain --> Verify["Turnstile and Twilio Verify"]
+  Domain --> Payment["Razorpay verification"]
 ```
 
-## 6. Tenant model
+All private operations resolve the authenticated user and wedding ownership server-side. Public handlers use invitation credentials and explicit public field projections. Browser controls supplement server authorization.
 
-One authenticated owner maps to one customer account. An account owns
-multiple weddings. Every wedding owns events, guest groups, guests,
-invitation links, RSVPs, reports, and exactly one current subscription
-entitlement plus history. Every server operation resolves ownership from
-auth identity and database relationships. Tenant isolation is enforced
-server-side on every API route. Public token endpoints return
-allowlisted fields only.
+## Account and wedding boundaries
 
-## 7. Authentication and trust (Temporary — NextAuth v5)
+An account is represented by a `Workspace`, connected to users through `WorkspaceMember`. A wedding belongs to one workspace and owns its events, guests, RSVP responses, questions, group invitations and wedding audit entries.
 
-NextAuth v5 manages host sessions with email/password credentials and
-JWT sessions. Guest phone OTP is a separate short-lived challenge; no
-full guest account is required. Optional Google guest sign-in may be
-enabled but must still validate the invitation token. CAPTCHA/rate
-limiting protect public endpoints. Super-admin uses a separate guard
-and strong auth. Payment success is verified server-side.
+New paid access is derived from verified payment records tied to a specific wedding. The historical `Subscription` model remains for earlier workspace purchases. Legacy records must retain their existing history while new checkout uses wedding identity, plan price and tax snapshots. Plan entitlement services remain the common authorization surface.
 
-## 8. Entitlement service
+## Invitation and RSVP trust
 
-Plan entitlements live in versioned plan configuration. Central service
-answers active/read-only/expired state, feature access, and configured
-limits. Guest count is unlimited for every plan. Never scatter
-Basic/Pro/Prime conditionals through UI components.
+The wedding-wide shared invitation is available to multiple guests. Private group invitations require an explicit first-open claim and an HttpOnly browser cookie. RSVP edit access requires its edit credential and the browser that owns it. A one-time transfer confirmation moves access to another browser and revokes the old credential.
 
-## 9. Lifecycle
+Phone verification proofs are scoped to the invitation, phone and browser. RSVP persistence runs in a transaction. Wedding and event deadlines use server time. Normal edits preserve the edit link, while ownership transfer rotates access. The current security review and regression coverage must confirm each boundary before release.
 
-``` mermaid
-stateDiagram-v2
- [*] --> AwaitingPayment
- AwaitingPayment --> Active: Verified payment
- Active --> Active: Upgrade difference paid
- Active --> ReadOnly: 00:00 day after wedding
- ReadOnly --> DeletionScheduled: retention window
- DeletionScheduled --> Deleted: scheduled timestamp
-```
+Public display settings are projected by `lib/public-wedding.ts`. Guest contacts and private notes are excluded from public invitation data. Host report contact columns follow the wedding's contact visibility preference.
 
-Example wedding 10 Dec Asia/Kolkata: expires 11 Dec 00:00; deletion 18
-Dec 00:00. At expiry host can view/export, cannot edit; public
-invitation/RSVP disabled.
+## Lifecycle
 
-## 10. RSVP and attendance
+`lib/wedding-lifecycle.ts` derives expiry from the stored wedding calendar date and IANA timezone. A wedding on 10 December in Asia/Kolkata expires on 11 December at 00:00. Editing and public RSVPs then close, while authorized historical viewing and available exports continue.
 
-Shared and unique invitation tokens are separate records. Store token
-hashes where practical. Unique links bind to an invitation group. Phone
-OTP is verified before phone-based RSVP. RSVP captures name, email,
-party size, diet, overall status, event selections, and configured
-answers. Updates are transactional and idempotent. Deadline checks use
-server time. QR is one per group and marks group arrival, not individual
-family-member arrival.
+`lib/wedding-retention.ts` calculates deletion eligibility for 18 December at 00:00 in that example. The cron handler requires `CRON_SECRET` and defaults to a dry run. Deletion requires the explicit retention-enable setting. Nullable payment wedding references preserve payment history after wedding removal.
 
-## 11. Payments and notifications
+Deletion reminder delivery, durable deletion results, asset cleanup and backup purge remain separate requirements in the tracker. Their presence in the product specification does not establish an implemented worker or verified operational policy.
 
-Payment interface: create order, verify payment, handle webhook, get
-status. Use idempotency and validate amount/currency/wedding. Failed
-upgrade preserves current plan. Email and official WhatsApp are
-adapters; queue/retry delivery after data commit. Messaging must not
-block RSVP.
+## Configuration and audit
 
-## 12. Deletion
+Plan definitions are centralized in `lib/subscriptions/config.ts`; persisted plan configuration is administered server-side. Platform settings include business details, GST calculation settings and controlled ad placements. GST and advertisements start disabled. Payment order snapshots preserve the amounts presented at purchase.
 
-Persist wedding date, timezone, subscription expiry, and scheduled
-deletion. A trusted worker sends 7-day/3-day reminders and processes due
-jobs idempotently. Remove dependent DB records and assets; separately
-enforce backup expiry. Keep minimal non-personal deletion audit result.
+Policy acceptance is versioned and recorded for the authenticated user. Admin access requires trusted provisioning or a verified account on the configured allowlist. Ordinary registration cannot establish admin status merely by choosing an allowlisted email address.
 
-## 13. Proposed repository tree
+## Remaining architectural targets
 
-``` text
-wedding-guest-manager/
-├── apps/web/{app,components,features}
-├── apps/mobile/{app,components,features,services}
-├── packages/{domain,validation,api-client,design-tokens,config}
-├── supabase/{migrations,functions,seed.sql}
-├── services/{worker,notification-adapters}
-├── tests/
-├── docs/
-├── .env.example
-├── AGENTS.md
-└── README.md
-```
+- Supabase Auth migration and production RLS/access review.
+- Managed private asset storage and complete asset lifecycle.
+- Cashfree adapter if included in the approved payment rollout.
+- Email and official WhatsApp delivery with retries and consent controls.
+- Native Expo workflows and expanded locale/currency coverage.
+- Broad platform administration, strong admin authentication, monitoring and restore acceptance.
 
-This is a target, not proof of existing files. Inspect any existing
-repository before changing its structure.
-
-## 14. State, errors, performance
-
-Use typed server/API boundaries; keep transient UI state local. Validate
-all external input. Use stable error codes, correlation IDs, safe logs,
-and retries only for idempotent operations. Index wedding-scoped
-queries; paginate guests; queue large exports and notifications; cache
-only public-safe invitation content and invalidate on
-edit/unpublish/expiry. Start modular; split services only when measured
-load requires it.
-
-## 15. Environment categories
-
-Supabase URL/public key, server-only service role, payment credentials,
-OTP, CAPTCHA, email, WhatsApp, monitoring, and worker auth. Exact names
-are in `INTEGRATIONS.md`. No secrets in client bundles.
-
-
-## 3. Modules
-
-Identity/accounts; weddings/events; plans/subscriptions/payments;
-guests/groups/import; invitations/tokens; OTP/abuse protection;
-RSVP/deadlines; reports/exports; QR check-in; notifications;
-lifecycle/deletion; super-admin/audit.
-
-## 4. Data flow
-
-``` mermaid
-flowchart TD
- WEB[Next.js Web] --> API[Server Application Layer]
- MOB[Expo Mobile] --> API
- PUB[Public Invitation / RSVP] --> API
- ADM[Super Admin] --> API
- API --> AUTH[Supabase Auth]
- API --> DB[(Supabase PostgreSQL)]
- API --> STORE[Supabase Storage]
- API --> PAY[Payment Adapter]
- PAY --> R[Razorpay]
- PAY --> C[Cashfree]
- API --> OTP[OTP / CAPTCHA]
- API --> MSG[Email / WhatsApp]
- JOB[Scheduled Worker] --> DB
- JOB --> MSG
-```
-
-## 5. Tenant model
-
-One authenticated owner maps to one customer account. An account owns
-multiple weddings. Every wedding owns events, guest groups, guests,
-invitation links, RSVPs, reports, and exactly one current subscription
-entitlement plus history. Every server operation resolves ownership from
-auth identity and database relationships. RLS protects all tenant
-tables. Public token endpoints return allowlisted fields only.
-
-## 6. Authentication and trust
-
-Supabase Auth manages host sessions. Guest phone OTP is a separate
-short-lived challenge; no full guest account is required. Optional
-Google guest sign-in may be enabled but must still validate the
-invitation token. CAPTCHA/rate limiting protect public endpoints.
-Super-admin uses a separate guard and strong auth. Payment success is
-verified server-side.
-
-## 7. Entitlement service
-
-Plan entitlements live in versioned plan configuration. Central service
-answers active/read-only/expired state, feature access, and configured
-limits. Guest count is unlimited for every plan. Never scatter
-Basic/Pro/Prime conditionals through UI components.
-
-## 8. Lifecycle
-
-``` mermaid
-stateDiagram-v2
- [*] --> AwaitingPayment
- AwaitingPayment --> Active: Verified payment
- Active --> Active: Upgrade difference paid
- Active --> ReadOnly: 00:00 day after wedding
- ReadOnly --> DeletionScheduled: retention window
- DeletionScheduled --> Deleted: scheduled timestamp
-```
-
-Example wedding 10 Dec Asia/Kolkata: expires 11 Dec 00:00; deletion 18
-Dec 00:00. At expiry host can view/export, cannot edit; public
-invitation/RSVP disabled.
-
-## 9. RSVP and attendance
-
-Shared and unique invitation tokens are separate records. Store token
-hashes where practical. Unique links bind to an invitation group. Phone
-OTP is verified before phone-based RSVP. RSVP captures name, email,
-party size, diet, overall status, event selections, and configured
-answers. Updates are transactional and idempotent. Deadline checks use
-server time. QR is one per group and marks group arrival, not individual
-family-member arrival.
-
-## 10. Payments and notifications
-
-Payment interface: create order, verify payment, handle webhook, get
-status. Use idempotency and validate amount/currency/wedding. Failed
-upgrade preserves current plan. Email and official WhatsApp are
-adapters; queue/retry delivery after data commit. Messaging must not
-block RSVP.
-
-## 11. Deletion
-
-Persist wedding date, timezone, subscription expiry, and scheduled
-deletion. A trusted worker sends 7-day/3-day reminders and processes due
-jobs idempotently. Remove dependent DB records and assets; separately
-enforce backup expiry. Keep minimal non-personal deletion audit result.
-
-## 12. Proposed repository tree
-
-``` text
-wedding-guest-manager/
-├── apps/web/{app,components,features}
-├── apps/mobile/{app,components,features,services}
-├── packages/{domain,validation,api-client,design-tokens,config}
-├── supabase/{migrations,functions,seed.sql}
-├── services/{worker,notification-adapters}
-├── tests/
-├── docs/
-├── .env.example
-├── AGENTS.md
-└── README.md
-```
-
-This is a target, not proof of existing files. Inspect any existing
-repository before changing its structure.
-
-## 13. State, errors, performance
-
-Use typed server/API boundaries; keep transient UI state local. Validate
-all external input. Use stable error codes, correlation IDs, safe logs,
-and retries only for idempotent operations. Index wedding-scoped
-queries; paginate guests; queue large exports and notifications; cache
-only public-safe invitation content and invalidate on
-edit/unpublish/expiry. Start modular; split services only when measured
-load requires it.
-
-## 14. Environment categories
-
-Supabase URL/public key, server-only service role, payment credentials,
-OTP, CAPTCHA, email, WhatsApp, monitoring, and worker auth. Exact names
-are in `INTEGRATIONS.md`. No secrets in client bundles.
+Keep these targets in the requirement map until code and executed acceptance evidence establish completion. Avoid replacing the working modular web application solely to match the proposed folder diagram.

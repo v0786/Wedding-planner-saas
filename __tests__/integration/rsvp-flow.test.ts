@@ -1,8 +1,16 @@
 import { describe, it, expect, beforeAll, afterAll } from "@jest/globals"
 import { prisma } from "@/lib/prisma"
-import { submitRsvp, getEditableRsvp } from "@/lib/rsvp-service"
-import { hashEditToken } from "@/lib/tokens"
+import { submitRsvp as submit, getEditableRsvp, createRsvpTransfer, consumeRsvpTransfer } from "@/lib/rsvp-service"
+import { generateEditToken, hashEditToken } from "@/lib/tokens"
 import { getWeddingAccess } from "@/lib/wedding-access"
+import { createGroupInvitationToken, groupInvitationCookieName } from "@/lib/group-invitations"
+import { issueRsvpPhoneProof } from "@/lib/rsvp-otp"
+import { RSVP_BROWSER_COOKIE } from "@/lib/rsvp-browser"
+
+const browserToken = generateEditToken()
+const otherBrowserToken = generateEditToken()
+const browser = { get: (name: string) => name === RSVP_BROWSER_COOKIE ? { value: browserToken } : undefined }
+const submitRsvp = (payload: unknown) => submit(payload, prisma, undefined, browser)
 
 const suffix = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
 const ownerEmail = `owner-${suffix}@example.com`
@@ -120,21 +128,18 @@ describe("RSVP integration", () => {
     expect(submission?.editTokenHash).toBe(hashEditToken(response.editToken))
   })
 
-  it("updates instead of duplicating on a repeat submission with the same mobile", async () => {
+  it("protects an existing RSVP against a repeat submission without its edit link", async () => {
+    await submitRsvp({ ...payload, mobile: "9876500005", answers: requiredAnswer })
     const before = await prisma.guest.count({ where: { weddingId } })
-    const response = await submitRsvp({
+    await expect(submitRsvp({
       ...payload,
-      fullName: "Aarav S. Sharma",
-      eventResponses: {},
+      mobile: "+91 9876500005",
+      fullName: "Unwanted Replacement",
       answers: requiredAnswer,
-    })
-    const after = await prisma.guest.count({ where: { weddingId } })
-    const submissions = await prisma.rsvpSubmission.count({ where: { weddingId } })
+    })).rejects.toMatchObject({ status: 409 })
 
-    expect(after).toBe(before)
-    expect(response.submissionId).toBeTruthy()
-    expect(submissions).toBeGreaterThanOrEqual(1)
-    const guest = await prisma.guest.findFirst({ where: { weddingId, mobile: "9876500001" } })
+    expect(await prisma.guest.count({ where: { weddingId } })).toBe(before)
+    const guest = await prisma.guest.findFirst({ where: { weddingId, mobile: "9876500005" } })
     expect(guest?.firstName).toBe("Aarav")
   })
 
@@ -146,11 +151,32 @@ describe("RSVP integration", () => {
       answers: requiredAnswer,
     })
 
-    const loaded = await getEditableRsvp(inviteToken, response.editToken)
+    const loaded = await getEditableRsvp(inviteToken, response.editToken, browserToken)
     expect(loaded?.id).toBe(response.submissionId)
 
-    const invalid = await getEditableRsvp(inviteToken, "not-a-valid-edit-token")
+    const invalid = await getEditableRsvp(inviteToken, "not-a-valid-edit-token", browserToken)
     expect(invalid).toBeNull()
+    expect(await getEditableRsvp(inviteToken, response.editToken, otherBrowserToken)).toBeNull()
+  })
+
+  it("transfers editing exactly once and revokes the previous browser", async () => {
+    const response = await submitRsvp({ ...payload, mobile: "9876500006", answers: requiredAnswer })
+    await expect(createRsvpTransfer(inviteToken, response.editToken, otherBrowserToken))
+      .rejects.toMatchObject({ status: 404 })
+    const expired = await createRsvpTransfer(inviteToken, response.editToken, browserToken, new Date("2020-01-01"))
+    expect(await consumeRsvpTransfer(expired.transferToken, otherBrowserToken)).toBeNull()
+
+    const transfer = await createRsvpTransfer(inviteToken, response.editToken, browserToken)
+    await expect(consumeRsvpTransfer(transfer.transferToken, browserToken)).rejects.toMatchObject({ status: 409 })
+    const [first, second] = await Promise.all([
+      consumeRsvpTransfer(transfer.transferToken, otherBrowserToken),
+      consumeRsvpTransfer(transfer.transferToken, otherBrowserToken),
+    ])
+    const claimed = first ?? second
+    expect(Number(Boolean(first)) + Number(Boolean(second))).toBe(1)
+    expect(await getEditableRsvp(inviteToken, response.editToken, browserToken)).toBeNull()
+    expect(await getEditableRsvp(inviteToken, claimed!.editToken, otherBrowserToken))
+      .toMatchObject({ id: response.submissionId, fullName: payload.fullName })
   })
 
   it("edits an RSVP with the edit token and keeps the token valid", async () => {
@@ -173,7 +199,7 @@ describe("RSVP integration", () => {
     expect(edited.submissionId).toBe(response.submissionId)
     expect(edited.editToken).toBe(response.editToken)
 
-    const stillLoadable = await getEditableRsvp(inviteToken, response.editToken)
+    const stillLoadable = await getEditableRsvp(inviteToken, response.editToken, browserToken)
     expect(stillLoadable?.fullName).toBe("Edited Guest")
   })
 
@@ -181,6 +207,56 @@ describe("RSVP integration", () => {
     await expect(
       submitRsvp({ ...payload, token: pastInviteToken, mobile: "9876500003" }),
     ).rejects.toMatchObject({ status: 400 })
+  })
+
+  it("never revives the original group edit link when access returns to a previous browser", async () => {
+    const groupToken = createGroupInvitationToken()
+    const groupBrowserToken = generateEditToken()
+    const group = await prisma.groupInvitation.create({
+      data: { weddingId, label: "Transfer cycle", tokenHash: groupToken.tokenHash, browserHash: hashEditToken(groupBrowserToken) },
+    })
+    const cookieStore = {
+      get(name: string) {
+        if (name === RSVP_BROWSER_COOKIE) return { value: browserToken }
+        if (name === groupInvitationCookieName(group.id)) return { value: groupBrowserToken }
+        return undefined
+      },
+    }
+    const response = await submit({ ...payload, token: groupToken.token, mobile: "9876500010", answers: requiredAnswer }, prisma, undefined, cookieStore)
+    const forward = await createRsvpTransfer(response.editInvitationToken, response.editToken, browserToken)
+    const moved = await consumeRsvpTransfer(forward.transferToken, otherBrowserToken)
+    expect(moved).toBeTruthy()
+    const backward = await createRsvpTransfer(moved!.locator, moved!.editToken, otherBrowserToken)
+    const returned = await consumeRsvpTransfer(backward.transferToken, browserToken)
+    expect(returned).toBeTruthy()
+    expect(returned!.editToken).not.toBe(response.editToken)
+    expect(await getEditableRsvp(response.editInvitationToken, response.editToken, browserToken)).toBeNull()
+    expect(await getEditableRsvp(returned!.locator, returned!.editToken, browserToken)).toMatchObject({ id: response.submissionId })
+  })
+
+  it("preserves an omitted response after its event closes and rejects changes to that event", async () => {
+    const closed = await prisma.event.create({ data: { weddingId, name: "Closing event" } })
+    const open = await prisma.event.create({ data: { weddingId, name: "Open event" } })
+    const response = await submitRsvp({ ...payload, mobile: "9876500011", eventResponses: { [closed.id]: "yes" }, answers: requiredAnswer })
+    await prisma.event.update({ where: { id: closed.id }, data: { rsvpDeadline: new Date("2020-01-01") } })
+    await submitRsvp({ ...payload, mobile: "9876500011", editToken: response.editToken, eventResponses: { [open.id]: "yes" }, answers: requiredAnswer })
+    const responses = await prisma.rsvpEventResponse.findMany({ where: { rsvpSubmissionId: response.submissionId } })
+    expect(responses).toEqual(expect.arrayContaining([
+      expect.objectContaining({ eventId: closed.id, status: "yes" }),
+      expect.objectContaining({ eventId: open.id, status: "yes" }),
+    ]))
+    await expect(submitRsvp({ ...payload, mobile: "9876500011", editToken: response.editToken, eventResponses: { [closed.id]: "no" }, answers: requiredAnswer }))
+      .rejects.toMatchObject({ status: 400 })
+  })
+
+  it("consumes a phone proof only with a committed RSVP and refuses reuse", async () => {
+    const mobile = "9876500012"
+    const phoneProof = issueRsvpPhoneProof({ invitationToken: inviteToken, mobile, browserToken })
+    const response = await submitRsvp({ ...payload, mobile, phoneProof, answers: requiredAnswer })
+    expect(response.submissionId).toBeTruthy()
+    await expect(submitRsvp({ ...payload, mobile, phoneProof, answers: requiredAnswer })).rejects.toMatchObject({ status: 403 })
+    expect(await prisma.rateLimit.count({ where: { key: `rsvp-proof-use:${hashEditToken(phoneProof)}` } })).toBe(1)
+    await prisma.rateLimit.deleteMany({ where: { key: `rsvp-proof-use:${hashEditToken(phoneProof)}` } })
   })
 
   it("enforces workspace tenant isolation", async () => {

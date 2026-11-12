@@ -175,6 +175,8 @@ export default async function Home() {
             <Link href="/pricing" className="text-ink-600 transition-colors hover:text-gold-700">
               Pricing
             </Link>
+            <Link href="/terms" className="text-ink-600 transition-colors hover:text-gold-700">Terms</Link>
+            <Link href="/privacy" className="text-ink-600 transition-colors hover:text-gold-700">Privacy</Link>
             <Link href="/auth/login" className="text-ink-600 transition-colors hover:text-gold-700">
               Sign in
             </Link>

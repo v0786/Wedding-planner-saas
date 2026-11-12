@@ -42,6 +42,19 @@ describe("parseGuestCsv", () => {
     if (!result.ok) expect(result.errors.join(" ")).toMatch(/duplicate mobile/i)
   })
 
+  it("recognizes local and international variants as duplicate guests", () => {
+    const result = parseGuestCsv("firstName,mobile\nAarav,9876543210\nMeera,+919876543210\n")
+    expect(result.ok).toBe(false)
+    if (!result.ok) expect(result.errors.join(" ")).toMatch(/duplicate mobile/i)
+  })
+
+  it("preserves optional guest logistics while older files remain supported", () => {
+    const result = parseGuestCsv("firstName,side,category,accommodationNeeds,transportNeeds\nAarav,Bride,VIP,Two nights,Airport pickup\n")
+    expect(result.ok && result.rows[0]).toMatchObject({ side: "Bride", category: "VIP", accommodationNeeds: "Two nights", transportNeeds: "Airport pickup" })
+    const legacy = parseGuestCsv("firstName\nMeera\n")
+    expect(legacy.ok && legacy.rows[0]).toMatchObject({ side: null, accommodationNeeds: null, transportNeeds: null })
+  })
+
   it("reports an empty file", () => {
     const result = parseGuestCsv("")
     expect(result.ok).toBe(false)
@@ -69,5 +82,30 @@ describe("guestsToCsv", () => {
     ])
     expect(csv.split("\n")[0]).toContain("firstName,lastName,mobile")
     expect(csv).toContain('"Family, close"')
+  })
+
+  it("omits both contact headers and contact values when privacy hides contacts", () => {
+    const csv = guestsToCsv([{ firstName: "Guest", lastName: null, mobile: "9876543210", email: "private@example.com", group: null, notes: null, dietaryPrefs: null }], { includeContacts: false })
+    expect(csv.split("\n")[0]).not.toMatch(/mobile|email/)
+    expect(csv).not.toMatch(/9876543210|private@example.com/)
+  })
+
+  it("escapes spreadsheet formulas and allows exported international numbers to be reimported", () => {
+    const csv = guestsToCsv([
+      {
+        firstName: "=1+1",
+        lastName: null,
+        mobile: "+919876543210",
+        email: null,
+        group: "＠SUM(A1)",
+        notes: "  =1+1",
+        dietaryPrefs: null,
+      },
+    ])
+
+    expect(csv).toContain("'=1+1,,'+919876543210")
+    expect(csv).toContain("'＠SUM(A1),'  =1+1")
+    const imported = parseGuestCsv(csv)
+    expect(imported.ok && imported.rows[0].mobile).toBe("+919876543210")
   })
 })

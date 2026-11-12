@@ -26,7 +26,7 @@ export async function POST(req: Request) {
     }
 
     const body = await readJson(req)
-    const { name, email, password } = registerSchema.parse(body)
+    const { name, email, password, termsVersion, privacyVersion } = registerSchema.parse(body)
 
     const existingUser = await prisma.user.findUnique({ where: { email } })
     if (existingUser) {
@@ -45,6 +45,9 @@ export async function POST(req: Request) {
       })
       await tx.workspaceMember.create({
         data: { workspaceId: workspace.id, userId: created.id, role: "owner" },
+      })
+      await tx.policyAcceptance.create({
+        data: { userId: created.id, termsVersion, privacyVersion, source: "registration" },
       })
       return created
     })

@@ -1,85 +1,72 @@
 import Link from "next/link"
 import Script from "next/script"
 import { auth } from "@/auth"
-import { redirect } from "next/navigation"
+import { notFound, redirect } from "next/navigation"
 import CheckoutClient from "@/components/subscriptions/checkout-client"
-import { getEntitlementsForUser, getPlanConfig } from "@/lib/subscriptions/service"
-import { billingLabel, isPlanConfigured, priceLabel } from "@/lib/subscriptions/config"
+import { getPlanConfig } from "@/lib/subscriptions/service"
+import { formatInr, isPlanCode } from "@/lib/subscriptions/config"
 import { getRazorpayConfig } from "@/lib/subscriptions/razorpay"
+import { getWeddingCheckoutBreakdown } from "@/lib/subscriptions/payments"
+import { getWeddingAccess } from "@/lib/wedding-access"
+import { isWeddingExpired, weddingExpiry } from "@/lib/wedding-lifecycle"
+import type { TaxQuote } from "@/lib/settings"
+import { ApiError } from "@/lib/errors"
 
 export const dynamic = "force-dynamic"
 
 export default async function CheckoutPage({
   searchParams,
 }: {
-  searchParams: Promise<{ plan?: string }>
+  searchParams: Promise<{ weddingId?: string; plan?: string }>
 }) {
   const session = await auth()
-  if (!session?.user?.id) redirect("/auth/login?next=/pricing")
+  if (!session?.user?.id) redirect("/auth/login?next=/dashboard/billing")
 
-  const { plan: rawPlan } = await searchParams
-  const code = (rawPlan || "").toUpperCase()
-  const plan = await getPlanConfig(code === "PRO" || code === "PRIME" ? code : "PRO")
-  const current = await getEntitlementsForUser(session.user.id)
-  const isRenewal = current.planCode === plan.code
-  const isDowngrade = !isRenewal && plan.rank < current.plan.rank
-  const paymentsReady = getRazorpayConfig() !== null
-  const purchasable = plan.isActive && isPlanConfigured(plan) && (plan.priceInPaise ?? 0) > 0
+  const { weddingId, plan: code } = await searchParams
+  if (!weddingId) redirect("/dashboard/billing")
+  if (!isPlanCode(code) || code === "FREE") notFound()
+  const [plan, wedding] = await Promise.all([getPlanConfig(code), getWeddingAccess(weddingId, session.user.id)])
+  if (!wedding) notFound()
 
+  let quote: TaxQuote | null = null
+  let error = ""
+  if (isWeddingExpired(wedding)) error = "This wedding has expired and is read-only."
+  else if (!weddingExpiry(wedding)) error = "Set the wedding date before choosing a plan."
+  else {
+    try {
+      quote = await getWeddingCheckoutBreakdown(wedding.id, plan)
+      if (!getRazorpayConfig()) error = "Online payment is currently unavailable."
+    } catch (failure) {
+      if (!(failure instanceof ApiError)) throw failure
+      error = failure.message
+    }
+  }
+
+  const back = `/dashboard/billing?weddingId=${encodeURIComponent(wedding.id)}`
   return (
     <main className="mx-auto max-w-lg px-4 py-10 sm:px-6">
-      <Link href="/pricing" className="text-sm font-medium text-indigo-600 hover:text-indigo-700">← Compare plans</Link>
-      <div className="mt-6 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-        <h1 className="text-2xl font-bold text-gray-900">
-          {isDowngrade ? "Plan change" : isRenewal ? `Renew ${plan.name}` : `Upgrade to ${plan.name}`}
-        </h1>
-        <p className="mt-1 text-sm text-gray-600">{plan.description}</p>
-
-        <dl className="mt-6 space-y-3 text-sm">
-          <div className="flex items-center justify-between">
-            <dt className="text-gray-600">Price</dt>
-            <dd className="font-semibold text-gray-900">{priceLabel(plan)}</dd>
-          </div>
-          <div className="flex items-center justify-between">
-            <dt className="text-gray-600">Billing period</dt>
-            <dd className="font-medium text-gray-900">{billingLabel(plan.billingPeriodDays)}</dd>
-          </div>
-          <div className="flex items-center justify-between">
-            <dt className="text-gray-600">Payment provider</dt>
-            <dd className="font-medium text-gray-900">Razorpay</dd>
-          </div>
-        </dl>
-
+      <Link href={back} className="text-sm font-medium text-indigo-600 hover:text-indigo-700">← Wedding billing</Link>
+      <section className="mt-6 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+        <h1 className="text-2xl font-bold text-gray-900">{plan.name} for {wedding.name}</h1>
+        <p className="mt-2 text-sm text-gray-600">One-time payment. Access runs through the wedding date.</p>
+        {quote && (
+          <dl className="mt-5 space-y-2 text-sm">
+            <div className="flex justify-between"><dt>Plan price</dt><dd>{formatInr(quote.baseAmountInPaise)}</dd></div>
+            {quote.taxRateBasisPoints > 0 && (
+              <div className="flex justify-between"><dt>GST ({quote.taxRateBasisPoints / 100}%{quote.taxInclusive ? ", included" : ""})</dt><dd>{formatInr(quote.taxAmountInPaise)}</dd></div>
+            )}
+            <div className="flex justify-between font-semibold"><dt>Total payable</dt><dd>{formatInr(quote.amountInPaise)}</dd></div>
+          </dl>
+        )}
         <div className="mt-6">
-          {isDowngrade ? (
-            <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-              You are on {current.plan.name}. Paid plans are prepaid, so a cheaper plan can be bought
-              after the current period ends. Cancel from Billing to move to Free at period end.
-            </p>
-          ) : !paymentsReady ? (
-            <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-              Payments are not configured yet. Add the Razorpay keys to enable checkout.
-            </p>
-          ) : !purchasable ? (
-            <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-              {plan.name} is not available for purchase yet. Its price has not been published.
-            </p>
-          ) : (
+          {error ? <p role="alert" className="rounded-xl bg-amber-50 p-4 text-sm text-amber-800">{error}</p> : quote !== null && (
             <>
               <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="afterInteractive" />
-              <CheckoutClient
-                planCode={plan.code}
-                planName={plan.name}
-                priceLabel={priceLabel(plan)}
-                signedIn
-              />
+              <CheckoutClient weddingId={wedding.id} planCode={plan.code} planName={plan.name} priceLabel={formatInr(quote.amountInPaise)} expectedAmountInPaise={quote.amountInPaise} />
             </>
           )}
         </div>
-      </div>
-      <p className="mt-4 text-center text-xs text-gray-500">
-        Upgrades and renewals apply after a verified payment. No refunds; cancellations apply at period end.
-      </p>
+      </section>
     </main>
   )
 }

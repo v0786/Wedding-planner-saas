@@ -15,7 +15,7 @@ export default async function AdminPlansPage() {
 
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { email: true, isAdmin: true },
+    select: { email: true, isAdmin: true, emailVerified: true },
   })
   const isAdmin = Boolean(user && isAdminAllowed(user))
 
@@ -25,7 +25,7 @@ export default async function AdminPlansPage() {
         <h1 className="text-2xl font-bold text-gray-900">Administrator access required</h1>
         <p className="mt-2 text-sm text-gray-600">
           Your account is not allowed to edit plan pricing. Ask an operator to grant the admin flag or add your
-          email to <code className="rounded bg-gray-100 px-1 py-0.5">ADMIN_EMAILS</code>.
+          verified email to <code className="rounded bg-gray-100 px-1 py-0.5">ADMIN_EMAILS</code>.
         </p>
         <Link href="/dashboard" className="mt-6 inline-block text-sm font-medium text-indigo-600">← Back to dashboard</Link>
       </main>
@@ -50,6 +50,7 @@ export default async function AdminPlansPage() {
         </p>
       </div>
 
+      <Link href="/dashboard/admin/settings" className="btn btn-secondary">Business, tax and advertisements</Link>
       <AdminPlanEditor plans={plans} paymentsConfigured={paymentsConfigured} />
     </main>
   )

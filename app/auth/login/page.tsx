@@ -54,7 +54,7 @@ async function LoginPageContent({
         )}
 
         <div className="mt-8">
-          <LoginForm />
+          <LoginForm googleEnabled={Boolean(process.env.AUTH_GOOGLE_ID && process.env.AUTH_GOOGLE_SECRET)} />
         </div>
 
         <div className="mt-8 text-center">

@@ -3,6 +3,8 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
+import { invitationTheme, invitationThemeStyle } from "@/lib/invitation-theme"
+import { PhoneVerification } from "@/components/rsvp/phone-verification"
 
 export type PublicEvent = {
   id: string
@@ -39,6 +41,10 @@ export type PublicWedding = {
   events: PublicEvent[]
   customQuestions: PublicQuestion[]
   whatsappMessage?: string | null
+  mapUrl?: string | null
+  invitationTheme?: string
+  locale?: string
+  timezone?: string
 }
 
 type FamilyMemberInput = {
@@ -53,6 +59,8 @@ export type RsvpInitial = {
   fullName: string
   mobile: string
   email?: string
+  status?: "confirmed" | "declined" | "maybe" | "pending"
+  partySize?: number | null
   dietaryPrefs: string
   familyMembers: FamilyMemberInput[]
   eventResponses: Record<string, string>
@@ -107,16 +115,25 @@ export default function RsvpForm({
   initial,
   editToken,
   rsvpUrl,
+  privateInvitation = false,
+  whatsappSharing = false,
 }: {
   wedding: PublicWedding
   token: string
   initial?: RsvpInitial
   editToken?: string
   rsvpUrl: string
+  privateInvitation?: boolean
+  whatsappSharing?: boolean
 }) {
   const starting = initial ?? emptyInitial
   const [fullName, setFullName] = useState(starting.fullName)
   const [mobile, setMobile] = useState(starting.mobile)
+  const [phoneProof, setPhoneProof] = useState("")
+  const shareable = !privateInvitation && !editToken
+  const [status, setStatus] = useState<"confirmed" | "declined" | "maybe">(starting.status === "declined" || starting.status === "maybe" ? starting.status : "confirmed")
+  const [partySize, setPartySize] = useState(String(starting.partySize ?? 1 + starting.familyMembers.length))
+  const [reviewing, setReviewing] = useState(false)
   const [email, setEmail] = useState(starting.email || "")
   const [dietaryPrefs, setDietaryPrefs] = useState(starting.dietaryPrefs)
   const [familyMembers, setFamilyMembers] = useState<FamilyMemberInput[]>(starting.familyMembers)
@@ -133,6 +150,7 @@ export default function RsvpForm({
 
 
   function addFamilyMember() {
+    setPartySize((current) => String(Math.max(Number(current) || 1, familyMembers.length + 2)))
     setFamilyMembers((current) => [
       ...current,
       { id: crypto.randomUUID(), fullName: "", relation: "", age: "", dietaryPrefs: "" },
@@ -177,7 +195,6 @@ export default function RsvpForm({
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    setLoading(true)
     setError("")
 
     // Validation
@@ -202,6 +219,20 @@ export default function RsvpForm({
       return
     }
 
+    const size = Number(partySize)
+    const namedFamily = familyMembers.filter((member) => member.fullName.trim())
+    if (!Number.isInteger(size) || size < 1 || size > 1000 || (status !== "declined" && size < 1 + namedFamily.length)) {
+      setError("Enter a party size that includes you and all named family members")
+      setActiveSection(0)
+      setReviewing(false)
+      return
+    }
+    if (!reviewing) {
+      setReviewing(true)
+      return
+    }
+
+    setLoading(true)
     try {
       const res = await fetch("/api/rsvp", {
         method: "POST",
@@ -211,6 +242,8 @@ export default function RsvpForm({
           fullName: fullName.trim(),
           mobile: mobile.trim(),
           email: email.trim() || undefined,
+          status,
+          partySize: size,
           dietaryPrefs: dietaryPrefs.trim() || undefined,
           familyMembers: familyMembers.filter((m) => m.fullName.trim()).map(m => ({
             fullName: m.fullName,
@@ -223,6 +256,7 @@ export default function RsvpForm({
             .filter(([, value]) => value.trim().length > 0)
             .map(([questionId, value]) => ({ questionId, value })),
           editToken,
+          phoneProof: phoneProof || undefined,
         }),
       })
 
@@ -230,12 +264,18 @@ export default function RsvpForm({
       if (res.ok) {
         toast.success(editToken ? "RSVP updated successfully!" : "RSVP submitted successfully!")
         router.push(
-          `/rsvp/thank-you?invite=${encodeURIComponent(token)}&edit=${encodeURIComponent(data.editToken)}`,
+          `/rsvp/thank-you?invite=${encodeURIComponent(data.editInvitationToken)}&edit=${encodeURIComponent(data.editToken)}`,
         )
       } else {
+        setReviewing(false)
+        if (!editToken && res.status === 403) {
+          setPhoneProof("")
+          setActiveSection(0)
+        }
         setError(data.error || "Something went wrong")
       }
     } catch (err) {
+      setReviewing(false)
       console.error(err)
       setError("Something went wrong. Please try again.")
     } finally {
@@ -251,9 +291,16 @@ export default function RsvpForm({
   ]
 
   const progress = ((activeSection + 1) / sections.length) * 100
+  const palette = invitationTheme(wedding)
 
   return (
-    <div className="min-h-screen bg-ivory-50">
+    <div className="min-h-screen" data-invitation-theme={palette.name} style={invitationThemeStyle(wedding)}>
+      {(wedding.coverImageUrl || wedding.couplePhotoUrl) && (
+        <div className="relative mx-auto max-w-2xl overflow-hidden rounded-b-3xl border-b-4" style={{ borderColor: palette.accent }}>
+          {wedding.coverImageUrl && <div role="img" aria-label="Wedding cover" className="h-32 bg-cover bg-center sm:h-44" style={{ backgroundImage: `url(${JSON.stringify(wedding.coverImageUrl)})` }} />}
+          {wedding.couplePhotoUrl && <div role="img" aria-label="Couple portrait" className="relative mx-auto my-4 h-20 w-20 rounded-full border-4 border-white bg-cover bg-center shadow-sm" style={{ backgroundImage: `url(${JSON.stringify(wedding.couplePhotoUrl)})` }} />}
+        </div>
+      )}
       {/* Progress Bar */}
       <div className="fixed top-0 left-0 right-0 h-1 bg-ivory-200/60 z-50">
         <div 
@@ -283,7 +330,7 @@ export default function RsvpForm({
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <button
+              {shareable && <button
                 onClick={shareViaNative}
                 className="btn btn-ghost btn-sm"
                 aria-label="Share"
@@ -291,8 +338,8 @@ export default function RsvpForm({
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6.614l6.632-3.316m0 0a3 3 0 115.367-2.684 3 3 0 01-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z" />
                 </svg>
-              </button>
-              <button
+              </button>}
+              {shareable && whatsappSharing && <button
                 onClick={shareOnWhatsApp}
                 className="btn btn-primary btn-sm"
                 aria-label="Share on WhatsApp"
@@ -300,7 +347,7 @@ export default function RsvpForm({
                 <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.348-.52.348-.173 0-.347-.049-.52-.148-.172-.099-.378-.249-.55-.497-.173-.249-.399-.55-.575-.848-.38-.633-.84-1.234-1.047-1.52-.198-.286-.38-.548-.41-.67-.03-.114-.075-.228-.12-.342-.112-.27-.24-.594-.384-.97-.312-.82-.5-1.705-.677-2.44-.187-.775-.303-1.54-.303-1.99 0-.35.03-.7.11-1.04.066-.27.187-.548.28-.807.112-.312.148-.633.075-.95-.066-.286-.273-.602-.303-.795-.03-.187-.044-.334-.075-.47-.03-.114-.149-.42-.149-.95 0-.286-.075-.474-.148-.9-.06-.24-.107-.48-.16-1.2.15-.68.14-.97.06-1.1-.12-.17-.29-.6-.29-1.24 0-.7.22-1.65.68-2.12.37-.37.8-1.03 1.2-1.6.4-.56.78-1.08 1.12-1.5.33-.44.6-1.1.72-1.46.11-.36.14-.72.09-1.08-.04-.35-.14-.85-.3-1.35-.15-.4-.3-.95-.46-1.55-.16-.58-.23-1.18-.32-1.8-.08-.6-.11-1.23-.11-1.87 0-.76.11-1.52.33-2.26.22-.73.52-1.5.8-2.1.15-.3.26-.6.37-.85.1-.24.2-.47.29-.68.1-.22.14-.44.2-.6.07-.16.1-.32.1-.49 0-.16-.04-.33-.1-.5-.05-.17-.1-.33-.16-.48-.06-.15-.11-.28-.19-.38-.08-.1-.2-.25-.3-.42-.1-.17-.2-.34-.3-.5-.1-.16-.2-.32-.3-.47-.1-.15-.2-.3-.3-.44-.09-.14-.18-.27-.28-.38-.1-.11-.2-.22-.3-.32-.1-.1-.2-.19-.3-.28-.1-.1-.18-.18-.28-.27-.1-.09-.18-.17-.27-.25-.09-.08-.17-.16-.26-.24-.09-.08-.17-.15-.25-.23-.08-.08-.15-.14-.23-.22-.08-.07-.15-.14-.22-.21-.08-.07-.14-.13-.21-.19-.07-.06-.13-.12-.2-.18-.07-.06-.12-.11-.18-.17-.06-.05-.11-.1-.16-.15-.06-.05-.1-.09-.15-.14-.05-.04-.09-.08-.13-.12-.05-.04-.08-.07-.11-.11-.04-.04-.07-.06-.1-.1-.04-.03-.07-.05-.09-.08-.03-.03-.05-.04-.07-.06-.02-.02-.04-.03-.05-.04-.02-.02-.03-.02-.04-.03-.01-.01-.02-.01-.02-.02 0 0-.01 0-.01 0 0 0 0 0 0 0 0 0 0 0 0 0" />
                 </svg>
-              </button>
+              </button>}
             </div>
           </div>
           </div>
@@ -349,7 +396,7 @@ export default function RsvpForm({
 
         {/* Form Content */}
         <main className="px-4 md:px-8 pb-20">
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} onChange={() => setReviewing(false)} className="space-y-6">
             {error && (
               <div
                 role="alert"
@@ -391,10 +438,25 @@ export default function RsvpForm({
                       maxLength={20}
                       autoComplete="tel"
                       value={mobile}
-                      onChange={(e) => setMobile(e.target.value)}
+                      readOnly={Boolean(editToken)}
+                      onChange={(e) => {
+                        setMobile(e.target.value)
+                        setPhoneProof("")
+                      }}
                       className={inputClass}
                       placeholder="+91 98765 43210"
                     />
+                  </Field>
+                  <Field label="Will you attend?" required>
+                    <select aria-label="Will you attend?" value={status} onChange={(event) => setStatus(event.target.value as typeof status)} className={inputClass}>
+                      <option value="confirmed">Accept</option>
+                      <option value="declined">Decline</option>
+                      <option value="maybe">Maybe</option>
+                    </select>
+                  </Field>
+                  <Field label="Party size, including you" required>
+                    <input aria-label="Party size, including you" type="number" min={1} max={1000} required value={partySize} onChange={(event) => setPartySize(event.target.value)} className={inputClass} />
+                    <p className="mt-1 text-sm text-brand-text-muted">Include everyone in your group. Naming accompanying family members later is optional.</p>
                   </Field>
                   <Field label="Email (optional)">
                     <input
@@ -416,12 +478,22 @@ export default function RsvpForm({
                       className={inputClass}
                       placeholder="e.g., Vegetarian, Jain, No nuts, Gluten-free"
                     />
+                    <p className="mt-1 text-sm text-brand-text-muted">This preference also applies to companions you do not name separately.</p>
                   </Field>
                 </div>
 
+                {!editToken && (
+                  <PhoneVerification
+                    key={mobile}
+                    invitationToken={token}
+                    mobile={mobile}
+                    onVerified={setPhoneProof}
+                  />
+                )}
                 <div className="flex gap-3 pt-4">
                   <button
                     type="button"
+                    disabled={!editToken && !phoneProof}
                     onClick={() => setActiveSection(1)}
                     className="btn btn-primary flex-1 text-lg"
                   >
@@ -724,7 +796,7 @@ export default function RsvpForm({
                         </>
                       ) : (
                         <>
-                          {editToken ? "Save my RSVP" : "Submit RSVP"}
+                          Review RSVP
                           <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                           </svg>
@@ -770,6 +842,7 @@ export default function RsvpForm({
                             />
                           ) : question.type === "select" ? (
                             <select
+                              aria-label={question.question}
                               required={question.required}
                               value={answers[question.id] ?? ""}
                               onChange={(e) => setAnswers((prev) => ({ ...prev, [question.id]: e.target.value }))}
@@ -845,11 +918,9 @@ export default function RsvpForm({
                           </svg>
                           Submitting...
                         </>
-                      ) : editToken ? (
-                        "Save my RSVP"
                       ) : (
                         <>
-                          Submit RSVP
+                          Review RSVP
                           <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                           </svg>
@@ -860,11 +931,46 @@ export default function RsvpForm({
                 </section>
               )}
 
+              {reviewing && (
+                <section role="dialog" aria-modal="true" aria-labelledby="rsvp-review-heading" className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-ink-900/50 p-4">
+                  <div className="max-h-[90vh] w-full max-w-lg space-y-4 overflow-y-auto rounded-2xl bg-brand-surface p-6 shadow-lift">
+                    <h2 id="rsvp-review-heading" className="font-display text-2xl text-ink-900">Review your RSVP</h2>
+                    <dl className="space-y-2 text-sm">
+                      <div><dt className="font-semibold">Name</dt><dd>{fullName}</dd></div>
+                      <div><dt className="font-semibold">Response</dt><dd>{status === "confirmed" ? "Accept" : status === "declined" ? "Decline" : "Maybe"}</dd></div>
+                      <div><dt className="font-semibold">Party size</dt><dd>{partySize}, including you</dd></div>
+                      <div><dt className="font-semibold">Expected attendance</dt><dd>{status === "confirmed" ? partySize : "0 confirmed"}</dd></div>
+                      <div><dt className="font-semibold">Mobile</dt><dd>{mobile}</dd></div>
+                      <div><dt className="font-semibold">Email</dt><dd>{email || "Not provided"}</dd></div>
+                      <div><dt className="font-semibold">Dietary preferences</dt><dd>{dietaryPrefs || "Not provided"}</dd></div>
+                    </dl>
+                    {wedding.events.length > 0 && (
+                      <div className="space-y-1 text-sm">
+                        <h3 className="font-semibold">Events</h3>
+                        {wedding.events.map((event) => <p key={event.id}>{event.name} — {eventResponses[event.id] === "yes" ? "Yes" : eventResponses[event.id] === "no" ? "No" : "Not sure"}</p>)}
+                      </div>
+                    )}
+                    {familyMembers.some((member) => member.fullName.trim()) && (
+                      <div className="text-sm"><h3 className="font-semibold">Named companions</h3><p>{familyMembers.filter((member) => member.fullName.trim()).map((member) => member.fullName).join(", ")}</p></div>
+                    )}
+                    {wedding.customQuestions.length > 0 && (
+                      <dl className="space-y-2 text-sm">
+                        {wedding.customQuestions.map((question) => <div key={question.id}><dt className="font-semibold">{question.question}</dt><dd>{answers[question.id] || "Not provided"}</dd></div>)}
+                      </dl>
+                    )}
+                    <p className="text-sm text-brand-text-muted">You can update this response in this browser before the hosts close guest editing.</p>
+                    <div className="flex flex-wrap gap-3">
+                      <button type="button" onClick={() => setReviewing(false)} className="btn btn-secondary" disabled={loading}>Back to editing</button>
+                      <button type="submit" className="btn btn-primary" disabled={loading}>{loading ? "Saving…" : editToken ? "Save my RSVP" : "Submit RSVP"}</button>
+                    </div>
+                  </div>
+                </section>
+              )}
             </form>
           </main>
 
           {/* Floating WhatsApp Share Button */}
-          <button
+          {shareable && whatsappSharing && <button
             onClick={shareOnWhatsApp}
             className="fixed bottom-6 right-4 md:bottom-8 md:right-8 z-40 p-4 bg-brand-primary text-white rounded-2xl shadow-lift hover:bg-brand-primary-hover hover:scale-105 transition-all active:scale-[0.98]"
             aria-label="Share on WhatsApp"
@@ -872,7 +978,7 @@ export default function RsvpForm({
             <svg className="w-7 h-7" fill="currentColor" viewBox="0 0 24 24">
               <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.348-.52.348-.173 0-.347-.049-.52-.148-.172-.099-.378-.249-.55-.497-.173-.249-.399-.55-.575-.848-.38-.633-.84-1.234-1.047-1.52-.198-.286-.38-.548-.41-.67-.03-.114-.075-.228-.12-.342-.112-.27-.24-.594-.384-.97-.312-.82-.5-1.705-.677-2.44-.187-.775-.303-1.54-.303-1.99 0-.35.03-.7.11-1.04.066-.27.187-.548.28-.807.112-.312.148-.633.075-.95-.066-.286-.273-.602-.303-.795-.03-.187-.044-.334-.075-.47-.03-.114-.149-.42-.149-.95 0-.286-.075-.474-.148-.9-.06-.24-.107-.48-.16-1.2.15-.68.14-.97.06-1.1-.12-.17-.29-.6-.29-1.24 0-.7.22-1.65.68-2.12.37-.37.8-1.03 1.2-1.6.4-.56.78-1.08 1.12-1.5.33-.44.6-1.1.72-1.46.11-.36.14-.72.09-1.08-.04-.35-.14-.85-.3-1.35-.15-.4-.3-.95-.46-1.55-.16-.58-.23-1.18-.32-1.8-.08-.6-.11-1.23-.11-1.87 0-.76.11-1.52.33-2.26.22-.73.52-1.5.8-2.1.15-.3.26-.6.37-.85.1-.24.2-.47.29-.68.1-.22.14-.44.2-.6.07-.16.1-.32.1-.49 0-.16-.04-.33-.1-.5-.05-.17-.1-.33-.16-.48-.06-.15-.11-.28-.19-.38-.08-.1-.2-.25-.3-.42-.1-.17-.2-.34-.3-.5-.1-.17-.2-.34-.3-.5-.1-.16-.2-.32-.3-.47-.1-.15-.2-.3-.3-.44-.09-.14-.18-.27-.28-.38-.1-.11-.2-.22-.3-.32-.1-.1-.2-.19-.3-.28-.1-.1-.18-.18-.28-.27-.1-.09-.18-.17-.27-.25-.09-.08-.17-.16-.26-.24-.09-.08-.17-.15-.25-.23-.08-.08-.15-.14-.23-.22-.08-.07-.15-.14-.22-.21-.08-.07-.15-.13-.21-.19-.08-.07-.15-.13-.21-.19-.07-.06-.13-.12-.2-.18-.07-.06-.12-.11-.18-.17-.06-.05-.11-.1-.16-.15-.06-.05-.1-.09-.15-.14-.05-.04-.09-.08-.13-.12-.05-.04-.08-.07-.11-.11-.04-.04-.07-.06-.1-.1-.04-.03-.07-.05-.09-.08-.03-.03-.05-.04-.07-.06-.02-.02-.04-.03-.05-.04-.02-.02-.03-.02-.04-.03-.01-.01-.02-.01-.02-.02 0 0-.01 0-.01 0 0 0 0 0 0 0 0 0 0 0 0 0" />
             </svg>
-          </button>
+          </button>}
         </div>
   )
 }

@@ -4,7 +4,7 @@ import bcrypt from "bcryptjs"
 const prisma = new PrismaClient()
 
 async function main() {
-  // Default plan rows. Prices stay null/Coming Soon until an admin sets them.
+  // Launch plan prices can be adjusted by an administrator.
   // Keep these defaults in sync with lib/subscriptions/config.ts; the app also
   // fills any missing row at runtime.
   const freeFeatures = {
@@ -37,26 +37,37 @@ async function main() {
       sortOrder: 0,
     },
     {
+      code: "BASIC",
+      name: "Basic",
+      description: "Manage guests, events and responses for one wedding.",
+      priceInPaise: 49900,
+      billingPeriodDays: 0,
+      features: { ...proFeatures, whatsappSharing: false, customBranding: false },
+      limits: { weddings: null, guestsPerWedding: null, eventsPerWedding: null, customQuestionsPerWedding: 2 },
+      isActive: true,
+      sortOrder: 1,
+    },
+    {
       code: "PRO",
       name: "Pro",
-      description: "More weddings, a bigger guest list and rich RSVP collection.",
-      priceInPaise: null,
-      billingPeriodDays: 30,
+      description: "Custom RSVP questions, advanced reporting and sharing for your wedding.",
+      priceInPaise: 99900,
+      billingPeriodDays: 0,
       features: proFeatures,
-      limits: { weddings: 3, guestsPerWedding: 500, eventsPerWedding: 5, customQuestionsPerWedding: 10 },
-      isActive: false,
-      sortOrder: 1,
+      limits: { weddings: null, guestsPerWedding: null, eventsPerWedding: 5, customQuestionsPerWedding: 10 },
+      isActive: true,
+      sortOrder: 2,
     },
     {
       code: "PRIME",
       name: "Prime",
-      description: "Unlimited weddings and guests, every feature, priority support.",
-      priceInPaise: null,
-      billingPeriodDays: 30,
+      description: "Premium customization and priority support for your wedding.",
+      priceInPaise: 199900,
+      billingPeriodDays: 0,
       features: { ...proFeatures, prioritySupport: true },
       limits: { weddings: null, guestsPerWedding: null, eventsPerWedding: null, customQuestionsPerWedding: null },
-      isActive: false,
-      sortOrder: 2,
+      isActive: true,
+      sortOrder: 3,
     },
   ]
   for (const plan of planRows) {

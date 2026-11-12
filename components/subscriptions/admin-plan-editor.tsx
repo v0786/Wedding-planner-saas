@@ -10,6 +10,8 @@ import {
   type PlanConfig,
 } from "@/lib/subscriptions/config"
 
+const weddingLimits = LIMIT_KEYS.filter((key) => key !== "weddings" && key !== "guestsPerWedding")
+
 function PlanForm({
   plan,
   paymentsConfigured,
@@ -24,13 +26,12 @@ function PlanForm({
   const [priceRupees, setPriceRupees] = useState(
     plan.priceInPaise === null ? "" : String(plan.priceInPaise / 100),
   )
-  const [billingPeriodDays, setBillingPeriodDays] = useState(String(plan.billingPeriodDays))
   const [isActive, setIsActive] = useState(plan.isActive)
   const [sortOrder, setSortOrder] = useState(String(plan.sortOrder))
   const [features, setFeatures] = useState({ ...plan.features })
   const [limits, setLimits] = useState<Record<string, string>>(
     Object.fromEntries(
-      LIMIT_KEYS.map((key) => [key, plan.limits[key] === null ? "" : String(plan.limits[key])]),
+      weddingLimits.map((key) => [key, plan.limits[key] === null ? "" : String(plan.limits[key])]),
     ),
   )
   const [saving, setSaving] = useState(false)
@@ -54,12 +55,11 @@ function PlanForm({
       name,
       description,
       priceInPaise: parsedPrice === null ? null : Math.round(parsedPrice * 100),
-      billingPeriodDays: Number(billingPeriodDays),
       isActive,
       sortOrder: Number(sortOrder),
       features,
       limits: Object.fromEntries(
-        LIMIT_KEYS.map((key) => {
+        weddingLimits.map((key) => {
           const raw = limits[key]?.trim() ?? ""
           return [key, raw === "" ? null : Math.max(0, Math.floor(Number(raw)))]
         }),
@@ -149,24 +149,13 @@ function PlanForm({
             Empty = “Coming Soon”. {isFree ? "Free is always free." : "Stored in paise server-side."}
           </span>
         </label>
-        <label className="block text-sm">
-          <span className="font-medium text-gray-700">Billing period (days)</span>
-          <input
-            type="number"
-            min={1}
-            value={billingPeriodDays}
-            disabled={isFree}
-            onChange={(event) => setBillingPeriodDays(event.target.value)}
-            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 disabled:bg-gray-50"
-          />
-        </label>
       </div>
 
       <div className="mt-6">
         <h3 className="text-sm font-semibold text-gray-900">Limits</h3>
-        <p className="text-xs text-gray-500">Leave a limit empty for unlimited. 0 means the item is not included.</p>
+        <p className="text-xs text-gray-500">All wedding plans include unlimited guests. Leave a limit empty for unlimited.</p>
         <div className="mt-2 grid gap-3 sm:grid-cols-2">
-          {LIMIT_KEYS.map((key) => (
+          {weddingLimits.map((key) => (
             <label key={key} className="block text-sm">
               <span className="text-gray-700">{LIMIT_LABELS[key].label}</span>
               <input

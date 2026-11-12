@@ -12,9 +12,11 @@ import Sidebar from "./sidebar";
  */
 export default function AppShell({
   email,
+  isAdmin = false,
   children,
 }: {
   email?: string | null;
+  isAdmin?: boolean;
   children: React.ReactNode;
 }) {
   const [open, setOpen] = useState(false);
@@ -40,12 +42,12 @@ export default function AppShell({
   return (
     <div className="min-h-screen bg-ivory-50">
       {/* Desktop sidebar */}
-      <aside className="fixed inset-y-0 left-0 z-40 hidden w-72 border-r border-ivory-300/70 lg:block">
-        <Sidebar />
+      <aside className="fixed inset-y-0 left-0 z-40 hidden w-72 border-r border-ivory-300/70 lg:block print:!hidden">
+        <Sidebar isAdmin={isAdmin} />
       </aside>
 
       {/* Mobile top bar */}
-      <header className="sticky top-0 z-40 border-b border-ivory-300/70 bg-ivory-50/90 backdrop-blur-lg lg:hidden">
+      <header className="sticky top-0 z-40 border-b border-ivory-300/70 bg-ivory-50/90 backdrop-blur-lg lg:hidden print:hidden">
         <div className="flex h-16 items-center justify-between px-4 sm:px-6">
           <button
             type="button"
@@ -72,7 +74,7 @@ export default function AppShell({
 
       {/* Mobile drawer */}
       <div
-        className={`fixed inset-0 z-50 lg:hidden ${open ? "" : "pointer-events-none"}`}
+        className={`fixed inset-0 z-50 lg:hidden print:hidden ${open ? "" : "pointer-events-none"}`}
         aria-hidden={!open}
       >
         <button
@@ -102,20 +104,20 @@ export default function AppShell({
             </button>
           </div>
           <div className="h-[calc(100%-3.25rem)]">
-            <Sidebar onNavigate={() => setOpen(false)} variant="drawer" />
+            <Sidebar isAdmin={isAdmin} onNavigate={() => setOpen(false)} variant="drawer" />
           </div>
         </div>
       </div>
 
-      <div className="lg:pl-72">
+      <div className="lg:pl-72 print:!pl-0">
         {email ? (
-          <div className="hidden border-b border-ivory-200/70 bg-white/50 lg:block">
+          <div className="hidden border-b border-ivory-200/70 bg-white/50 lg:block print:!hidden">
             <div className="mx-auto flex max-w-6xl items-center justify-end px-6 py-2 text-xs text-ink-400 lg:px-10">
               Signed in as <span className="ml-1 font-medium text-ink-600">{email}</span>
             </div>
           </div>
         ) : null}
-        <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-10 lg:py-12">{children}</main>
+        <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-10 lg:py-12 print:!max-w-none print:!p-0">{children}</main>
       </div>
     </div>
   );

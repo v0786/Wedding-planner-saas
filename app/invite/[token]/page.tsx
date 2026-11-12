@@ -1,13 +1,25 @@
+import { invitationTheme, invitationThemeStyle } from "@/lib/invitation-theme"
+import { publicWeddingContent, publicEventContent } from "@/lib/public-wedding"
+import Advertisement from "@/components/ui/advertisement"
 import { prisma } from "@/lib/prisma"
 import Link from "next/link"
-import { headers } from "next/headers"
+import { notFound } from "next/navigation"
+import { publicInvitationWhere } from "@/lib/public-invitation"
+import { isWeddingExpired } from "@/lib/wedding-lifecycle"
+import { getWeddingEntitlements } from "@/lib/subscriptions/service"
+import { groupCheckInCode } from "@/lib/group-invitations"
+import CheckInQr from "@/components/wedding/check-in-qr"
+import GroupInvitationTransfer from "@/components/wedding/group-invitation-transfer"
+import { cookies, headers } from "next/headers"
 import { ButtonAnchor, ButtonLink, Eyebrow } from "@/components/ui/button"
 
 export default async function InvitePage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params
+  const invitation = await publicInvitationWhere(token, await cookies())
+  if (!invitation) notFound()
 
-  const wedding = await prisma.wedding.findUnique({
-    where: { invitationToken: token },
+  const sourceWedding = await prisma.wedding.findUnique({
+    where: invitation.where,
     include: {
       events: {
         orderBy: { order: 'asc' },
@@ -18,7 +30,7 @@ export default async function InvitePage({ params }: { params: Promise<{ token: 
     },
   })
 
-  if (!wedding || !wedding.published) {
+  if (!sourceWedding || !sourceWedding.published || isWeddingExpired(sourceWedding)) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-ivory-50 paper-texture px-4 py-12">
         <div className="panel w-full max-w-md px-6 py-10 text-center">
@@ -45,6 +57,14 @@ export default async function InvitePage({ params }: { params: Promise<{ token: 
     )
   }
 
+  const wedding = {
+    ...publicWeddingContent(sourceWedding),
+    rsvpDeadline: sourceWedding.rsvpDeadline,
+    events: sourceWedding.events.map(publicEventContent),
+  }
+  const entitlements = await getWeddingEntitlements(sourceWedding.workspaceId, sourceWedding.id)
+
+  const palette = invitationTheme(wedding)
   const coupleNames = wedding.coupleName2
     ? `${wedding.coupleName1} & ${wedding.coupleName2}`
     : wedding.coupleName1
@@ -92,10 +112,11 @@ export default async function InvitePage({ params }: { params: Promise<{ token: 
     "",
     "We can't wait to celebrate with you! ❤️",
   ].join("\n")
+  const whatsappSharing = !invitation.group && entitlements.features.whatsappSharing
   const whatsappHref = `https://wa.me/?text=${encodeURIComponent(shareMessage)}`
 
   return (
-    <div className="relative min-h-screen overflow-x-hidden bg-ivory-50 paper-texture">
+    <div className="relative isolate min-h-screen overflow-x-hidden paper-texture" data-invitation-theme={palette.name} style={invitationThemeStyle(wedding)}>
       {/* The cover image sits behind a warm ivory veil so the type always reads. */}
       {wedding.coverImageUrl && (
         <div className="pointer-events-none absolute inset-0 -z-10" aria-hidden="true">
@@ -120,11 +141,14 @@ export default async function InvitePage({ params }: { params: Promise<{ token: 
           <p className="eyebrow">Wedding invitation</p>
         </header>
 
-        <article className="panel mt-6 flex-1 px-5 py-9 sm:px-10 sm:py-12">
+        <article className="panel mt-6 flex-1 border-t-4 px-5 py-9 sm:px-10 sm:py-12" style={{ borderTopColor: palette.accent }}>
           {/* Couple names */}
           <div className="text-center">
+            {wedding.couplePhotoUrl && (
+              <div role="img" aria-label={`Portrait of ${coupleNames}`} className="mx-auto mb-6 h-28 w-28 rounded-full border-4 bg-cover bg-center shadow-sm" style={{ borderColor: palette.accent, backgroundImage: `url(${JSON.stringify(wedding.couplePhotoUrl)})` }} />
+            )}
             <Eyebrow>You&apos;re invited</Eyebrow>
-            <h1 className="mt-4 font-display text-[2.6rem] leading-[1.06] text-ink-900 sm:text-6xl">
+            <h1 className="mt-4 font-display text-[2.6rem] leading-[1.06] sm:text-6xl" style={{ color: palette.primary }}>
               {coupleNames}
             </h1>
             <p className="mt-3 font-display text-lg italic text-ink-500 sm:text-xl">{wedding.name}</p>
@@ -263,15 +287,14 @@ export default async function InvitePage({ params }: { params: Promise<{ token: 
               <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              RSVP now
+              {invitation.group?.rsvpSubmission ? "View or edit RSVP" : "RSVP now"}
             </ButtonLink>
             <p className="text-xs text-ink-400">
               Please respond for yourself and anyone joining you.
             </p>
           </div>
 
-          {/* WhatsApp share — a plain anchor, no client-side handler. */}
-          <div className="mt-7 flex justify-center">
+          {whatsappSharing && <div className="mt-7 flex justify-center">
             <ButtonAnchor
               href={whatsappHref}
               target="_blank"
@@ -284,7 +307,14 @@ export default async function InvitePage({ params }: { params: Promise<{ token: 
               </svg>
               Share on WhatsApp
             </ButtonAnchor>
-          </div>
+          </div>}
+          {invitation.group && (
+            <div className="mt-7 space-y-5">
+              <CheckInQr code={groupCheckInCode(invitation.group.id)} />
+              {!invitation.group.rsvpSubmission && <GroupInvitationTransfer token={token} />}
+            </div>
+          )}
+          <Advertisement planCode={entitlements.planCode} placement="invitation" />
         </article>
 
         <footer className="mt-8 text-center text-xs text-ink-400">

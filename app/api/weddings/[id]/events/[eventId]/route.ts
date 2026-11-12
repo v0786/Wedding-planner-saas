@@ -1,3 +1,4 @@
+import { assertEventDesignChanges } from "@/lib/invitation-design"
 import { requireUserId } from "@/lib/server-auth"
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
@@ -8,7 +9,7 @@ import {
   ApiError,
 } from "@/lib/api"
 import { eventSchema } from "@/lib/validation"
-import { getEventAccess, requireWeddingAccess } from "@/lib/wedding-access"
+import { getEventAccess, requireOpenWeddingAccess } from "@/lib/wedding-access"
 import { logAudit } from "@/lib/audit"
 
 type Params = { params: Promise<{ id: string; eventId: string }> }
@@ -18,13 +19,14 @@ export async function PATCH(req: Request, { params }: Params) {
     assertSameOrigin(req)
     const userId = await requireUserId()
     const { id, eventId } = await params
-    await requireWeddingAccess(id, userId)
+    const wedding = await requireOpenWeddingAccess(id, userId)
 
     const event = await getEventAccess(id, eventId, userId)
     if (!event) throw new ApiError("Event not found", 404)
 
     const body = await readJson(req)
     const data = eventSchema.partial().parse(body)
+    await assertEventDesignChanges(wedding.workspaceId, id, event, data)
     const updated = await prisma.event.update({ where: { id: eventId }, data })
     await logAudit(id, userId, "event.updated", { eventId })
     return NextResponse.json({ event: updated })
@@ -38,7 +40,7 @@ export async function DELETE(req: Request, { params }: Params) {
     assertSameOrigin(req)
     const userId = await requireUserId()
     const { id, eventId } = await params
-    await requireWeddingAccess(id, userId)
+    await requireOpenWeddingAccess(id, userId)
 
     const event = await getEventAccess(id, eventId, userId)
     if (!event) throw new ApiError("Event not found", 404)

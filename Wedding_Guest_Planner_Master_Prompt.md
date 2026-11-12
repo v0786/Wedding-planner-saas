@@ -145,7 +145,7 @@ This is a **ONE-TIME PURCHASE PER WEDDING** model.
 
 There are three plans.
 
-### BASIC — ₹299 PER WEDDING
+### BASIC — ₹499 PER WEDDING
 Includes:
 - Wedding workspace.
 - Guest management.
@@ -158,7 +158,7 @@ Includes:
 - Advertisements displayed.
 - No WhatsApp integration.
 
-### PRO — ₹399 PER WEDDING
+### PRO — ₹999 PER WEDDING
 Includes:
 - All Basic features.
 - Advanced reports.
@@ -168,7 +168,7 @@ Includes:
 - All available application services.
 - Advertisements displayed.
 
-### PRIME — ₹499 PER WEDDING
+### PRIME — ₹1,999 PER WEDDING
 Includes:
 - All Pro features.
 - Premium customization.
@@ -214,9 +214,9 @@ Since the business is initially operating as an individual without GST registrat
 When GST is disabled, display only the base price.
 
 When legally enabled, display:
-- Basic: ₹299 + applicable GST.
-- Pro: ₹399 + applicable GST.
-- Prime: ₹499 + applicable GST.
+- Basic: ₹499 + applicable GST.
+- Pro: ₹999 + applicable GST.
+- Prime: ₹1,999 + applicable GST.
 
 The checkout must clearly show base price, applicable tax, and final payable amount.
 
@@ -309,9 +309,9 @@ Collect:
 ### STEP 4 — CHOOSE YOUR PLAN
 
 Display three elegant pricing cards:
-- Basic — ₹299.
-- Pro — ₹399.
-- Prime — ₹499.
+- Basic — ₹499.
+- Pro — ₹999.
+- Prime — ₹1,999.
 
 Clearly show features, limitations, WhatsApp availability, and advertisement status.
 

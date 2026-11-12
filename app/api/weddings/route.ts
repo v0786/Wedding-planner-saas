@@ -1,3 +1,4 @@
+import { requireCurrentPolicyAcceptance } from "@/lib/policy-service"
 import { requireUserId } from "@/lib/server-auth"
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
@@ -9,7 +10,7 @@ import {
 } from "@/lib/api"
 import { weddingCreateSchema } from "@/lib/validation"
 import { logAudit } from "@/lib/audit"
-import { assertWorkspaceLimit, withWorkspaceLimitLock } from "@/lib/subscriptions/service"
+import { scheduleWeddingDeletion } from "@/lib/wedding-retention"
 
 export async function GET() {
   try {
@@ -29,6 +30,7 @@ export async function POST(req: Request) {
   try {
     assertSameOrigin(req)
     const userId = await requireUserId()
+    await requireCurrentPolicyAcceptance(userId)
     const body = await readJson(req)
     const data = weddingCreateSchema.parse(body)
 
@@ -38,25 +40,27 @@ export async function POST(req: Request) {
     })
     if (!membership) throw new ApiError("No workspace found for this account", 400)
 
-    // Server-side entitlement check: the UI cannot bypass this. The lock makes
-    // the count-then-create pair safe under concurrent requests.
-    const wedding = await withWorkspaceLimitLock(membership.workspaceId, "weddings", async (tx) => {
-      await assertWorkspaceLimit(membership.workspaceId, "weddings")
-      return tx.wedding.create({
-        data: {
-          workspaceId: membership.workspaceId,
-          name: data.name,
-          coupleName1: data.coupleName1,
-          coupleName2: data.coupleName2,
-          date: data.date,
-          venue: data.venue,
-          address: data.address,
-          description: data.description,
-          timezone: data.timezone,
-          rsvpDeadline: data.rsvpDeadline,
-          invitationToken: crypto.randomUUID(),
-        },
+    const wedding = await prisma.$transaction(async (tx) => {
+      const created = await tx.wedding.create({
+      data: {
+        workspaceId: membership.workspaceId,
+        name: data.name,
+        coupleName1: data.coupleName1,
+        coupleName2: data.coupleName2,
+        date: data.date,
+        venue: data.venue,
+        address: data.address,
+        description: data.description,
+        timezone: data.timezone,
+        locale: data.locale,
+        contactVisibility: data.contactVisibility,
+        publicFields: data.publicFields,
+        rsvpDeadline: data.rsvpDeadline,
+        invitationToken: crypto.randomUUID(),
+      },
       })
+      await scheduleWeddingDeletion(created.id, tx)
+      return created
     })
 
     await logAudit(wedding.id, userId, "wedding.created", { name: wedding.name })

@@ -1,132 +1,101 @@
 # Implementation Tracker — Wedding Guest Manager
 
-**Last updated:** 2026-10-31
+Updated 12 November 2026. This tracker follows the full supplied product scope. Source files show implementation presence, while executed checks establish only the behavior exercised at that checkpoint. The latest local combined verification passed. Production/provider acceptance and the remaining product phases are listed below.
 
-## Overall Status
-Implementation complete for the scoped SaaS. Core flows verified against a real
-PostgreSQL database with unit, integration, and HTTP end-to-end smoke tests.
-Subscription/payment flows were audited on 2026-10-31; live Razorpay payments are
-still unverified because no credentials or published prices exist in this
-environment. Browser-based Playwright E2E is not runnable in this container (see
-limitations).
+## Inspection and decisions
 
-## Completed
-- [x] Authentication & workspaces (NextAuth v5, bcrypt, transactional registration)
-- [x] Wedding & event management (CRUD, publish/unpublish, ordering)
-- [x] Guest management (CRUD, search/filter/pagination, CSV import/export)
-- [x] One shared invitation link per wedding
-- [x] Public RSVP with family members and per-event responses
-- [x] Custom questions rendered and saved
-- [x] RSVP edit tokens (hash-only storage, stable on edit)
-- [x] RSVP deadlines (wedding- and event-level, enforced server-side)
-- [x] Dashboard with reports summary
-- [x] Reports (counts, headcount, dietary, groups, event attendance, CSV export)
-- [x] Audit logging
-- [x] Rate limiting (PostgreSQL-backed `RateLimit` table, shared across instances; in-memory store for tests)
-- [x] Tenant/workspace isolation on every private route
-- [x] CSRF origin defence in depth
-- [x] UX: not-found, error, loading/empty states; hydration-safe invite manager
-- [x] TypeScript compiles (PASS with `NODE_OPTIONS=--max-old-space-size=4096`)
-- [x] Prisma schema valid
-- [x] ESLint configured and passing (one pre-existing `<img>` warning; no errors)
-- [x] Unit tests (10 suites, 65 tests) passing
-- [x] Integration tests (2 suites, 26 tests) passing against `wedding_guest_manager_test`
-- [x] HTTP smoke test (79 checks) passing against a running production build
-- [x] Production build (PASS, including trace collection after excluding sharp/detect-libc)
-- [x] `.env.example` aligned with Auth.js v5 (`AUTH_SECRET`, `AUTH_URL`, `AUTH_TRUST_HOST`)
-- [x] Docs updated (README, tracker, agent-tooling)
-- [x] Subscription plans FREE / PRO / PRIME with one central config (`lib/subscriptions/config.ts`)
-- [x] Plan pricing, billing duration, availability, features and limits stored in the `Plan` table and editable by an admin at `/dashboard/admin/plans`
-- [x] No invented prices: every default price is `null`, rendered as “Coming Soon”; checkout is refused until an admin sets a price
-- [x] Server-side entitlement enforcement on weddings, guests (single + CSV import), events, custom questions, reports and CSV export (`402 LIMIT_REACHED`, `403 FEATURE_NOT_AVAILABLE` with current/max/upgradeUrl)
-- [x] Razorpay orders over REST + HMAC verification (no new npm dependency), signed webhook `/api/webhooks/razorpay`, activation only after verified payment, idempotent retries
-- [x] Subscription lifecycle: immediate upgrades, same-plan renewals, cancellation and the move to Free at period end via `cancelAtPeriodEnd` + `pendingPlanCode`, resume, expiry settlement, payment history
-- [x] Usage meters on the dashboard and billing page; client managers surface the upgrade link from API errors
-- [x] Subscription migrations applied: `20261030120000_public_wedding_content`, `20261030130000_subscriptions`, `20261030140000_payment_billing_snapshot`
-- [x] Subscription tests: 3 unit suites (19 tests) + 1 integration suite (20 tests)
+The fresh inspection covered the root application, `app/`, `components/`, `lib/`, Prisma schema and migrations, tests, CI, configuration, screenshots and product document folders. The product-document inventory contains 53 Markdown files with 27 distinct bodies. Every numbered `inbox/*-1.md` duplicates its unnumbered counterpart. Reference copies remain available in `inbox/`.
 
-## QA Results
-- TypeScript: PASS
-- Prisma Validation: PASS
-- Lint: PASS (only the pre-existing `<img>` warning in `app/invite/[token]/page.tsx`; no errors)
-- Unit Tests: 10 suites / 65 tests PASS (includes subscription config, Razorpay signatures/amount checks and admin policy)
-- Integration Tests: 2 suites / 26 tests PASS (includes 20 subscription tests)
-- HTTP Smoke Test: 79 checks PASS
-- Production Build: PASS (static + dynamic routes generated, including `/pricing`, `/dashboard/billing`, `/dashboard/admin/plans`)
-- Playwright E2E: NOT RUN locally (Chromium/Firefox cannot launch under gVisor in this container). CI workflow added at `.github/workflows/ci.yml` in commit `a4c78c7`; push verified blocked (2026-10-29): gh token scopes are `admin:public_key, gist, read:org, repo` — `workflow` scope missing, and the token is the credential for the HTTPS remote; SSH fallback unavailable (`Permission denied (publickey)`). GitHub refuses pushes that add `.github/workflows/*` without the `workflow` scope. CI has therefore not been triggered. Remedy: run `gh auth refresh -s workflow` (interactive device code), then push `a4c78c7` and run `gh workflow run ci.yml`.
+- The user's approved prices are Basic ₹499, Pro ₹999 and Prime ₹1,999, one time per wedding. Guest counts remain unlimited.
+- The current Prisma and Auth.js stack is retained under `docs/Rules.md` and `docs/SUPABASE_MIGRATION_PLAN.md`. Supabase Auth remains a separately planned migration.
+- The source of truth is the latest user instruction, then the canonical requirements in `docs/`. The API document describes a proposed contract. Existing working routes should retain compatibility while their actual behavior is documented.
+- The latest private-link requirement binds a private invitation or RSVP to a browser, supports reopening saved changes, rejects another browser and provides an explicit transfer flow. Shared wedding invitations continue to serve multiple guests.
+- Earlier statements that the repository had no scaffold, that all documented scope was complete, or that browsers could never run locally were stale. README and architecture now describe the actual web application.
 
-## Subscription system (2026-10-30)
-- Central source of truth: `lib/subscriptions/config.ts` (plan codes, features, limits, labels, price formatting, upgrade/downgrade rank rules).
-- Database: `Plan`, `Subscription`, `Payment`, `UsageRecord`; `User.isAdmin`. Migrations `20261030130000_subscriptions`, `20261030140000_payment_billing_snapshot`.
-- Prices are `null` by default → “Coming Soon”. An admin sets price/billing days/limits/features/availability at `/dashboard/admin/plans`; nothing requires a deploy.
-- Enforcement: `lib/subscriptions/service.ts` (`getEntitlements`, `assertFeature`, `assertWorkspaceLimit`, `assertWeddingLimit`, `settleSubscription`). All checks run server-side in API routes; UI gates are informational only.
-- Payments: `lib/subscriptions/razorpay.ts` + `lib/subscriptions/payments.ts`. Order created server-side, checkout signature verified with HMAC-SHA256, then the payment is fetched from Razorpay and checked against the stored amount/currency before activation. Webhook `/api/webhooks/razorpay` verifies `x-razorpay-signature` against the raw body and is idempotent.
-- Lifecycle: upgrades and same-plan renewals apply immediately after verification (renewals extend from the paid-through date); cancellation and the move to Free are scheduled at period end; expiry settles lazily on the next request; no refunds. Paid-to-paid downgrades are refused because they would otherwise grant a plan without payment.
-- UI: `/pricing`, dashboard plan/usage card, `/dashboard/billing`, `/dashboard/billing/checkout`, `/dashboard/admin/plans`, `UpgradeRequired`, sidebar `Billing`/`Pricing`.
-- Tests: `__tests__/unit/subscription-config.test.ts` (8), `__tests__/unit/razorpay.test.ts` (7), `__tests__/unit/subscription-admin.test.ts` (4), `__tests__/integration/subscription.test.ts` (20).
-- Required env: `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, `RAZORPAY_WEBHOOK_SECRET`, optional `RAZORPAY_CURRENCY`, `ADMIN_EMAILS` (see `.env.example`). Missing keys disable checkout instead of failing.
+## Requirement map
 
-## Production-readiness audit (2026-10-31)
-Scope: every subscription/payment API, Razorpay integration, webhook, entitlement check, admin authorization, pricing surface and lifecycle path.
+“Present” means source exists. The local verification below covers exercised paths, while row-specific acceptance remains explicit. “Partial” identifies a documented gap. “External acceptance” requires configured services or target-environment evidence.
 
-Fixed:
-1. **Free paid downgrade** — settlement no longer activates a `pendingPlanCode` paid plan without payment; paid-to-paid downgrades are refused, and only a scheduled move to FREE is honored.
-2. **Payment amount integrity** — checkout activation now fetches the Razorpay payment and rejects amount/currency/order mismatches; webhooks validate the amount/currency in the signed payload against the stored order before activation.
-3. **Webhook-only deployments** — `RAZORPAY_WEBHOOK_SECRET` verification no longer depends on the REST API key pair.
-4. **Concurrent activation** — payments are claimed atomically and the workspace row is locked, so verify/webhook/retry races cannot extend a period twice or lose a renewal.
-5. **Renewals** — an active same-plan purchase is now a renewal that extends from the paid-through date instead of being rejected.
-6. **Billing snapshot** — `Payment.billingPeriodDays` freezes the purchased duration; later admin duration/price changes cannot alter an existing payment.
-7. **Settlement race** — expiry uses a conditional update, so a renewal landing at the same moment is not overwritten.
-8. **Failed-payment race** — failure notifications cannot overwrite an already-paid row.
-9. **Quota races** — wedding/guest/import/event/question creation run the count-then-create pair under a PostgreSQL advisory transaction lock.
-10. **Plan seeding cost** — plan rows are seeded once per process instead of three upserts on every entitlement lookup.
-11. **Admin policy** — the allowlist rule is a pure, unit-tested helper used by both the page and the API.
-12. **Pricing UI** — lower-ranked paid plans no longer offer a checkout that the server refuses.
+| Requirement and source | Current source evidence | State and acceptance still needed |
+|---|---|---|
+| Credentials signup, login, workspace provisioning — PRD 6/14 | `auth.ts`, `app/api/register/route.ts`, `lib/auth-login.ts`, registration/auth unit tests | Present. Recheck policy acceptance, transactions, login limits and session flow in the combined gate. |
+| Google login and password recovery — FEATURES 1 | `auth.ts`, `lib/password-reset.ts`, `lib/email.ts`, forgot/reset routes and account recovery integration tests | Present optional verified Google sign-in and expiring single-use password reset. Reset invalidates earlier sessions. Google/Resend configuration and staging delivery remain external acceptance. |
+| Admin trust boundary — AUTH_SECURITY 9 | `lib/subscriptions/admin-access.ts`, `lib/subscriptions/admin.ts`, admin policy tests | Explicit `isAdmin` or verified allowlisted account. Strong admin authentication/MFA and sensitive-operation review remain incomplete. |
+| Multi-wedding setup — PRD 9 | `app/dashboard/weddings/`, new/edit forms, `lib/validation.ts` | Present basic setup and saved records. Full guided save/resume onboarding still needs acceptance. |
+| Timezone, locale, privacy and public field choices — PRD 9/13 | `lib/wedding-settings.ts`, `lib/public-wedding.ts`, setup fields and migration `20261111130000_wedding_setup` | Partial. Verify every public projection, form and export respects the saved choices. Expanded translations/currencies are later scope. |
+| Event CRUD, order and advanced details — PRD 9 | Wedding events API, `components/wedding/event-manager.tsx`, Event schema | Present core CRUD/order. Advanced map/address/dress-code/public field controls and their public rendering need the combined check. |
+| Guests, side/category, dietary/accommodation/transport — PRD 10 | Guest schema, `lib/validation.ts`, `components/wedding/guest-manager.tsx`, guest API, migration `20261111010000_guest_details` | Present source additions. Verify filtering, edits, legacy records, privacy and imported values together. |
+| CSV preview, validation, duplicates and commit — FEATURES 5 | `lib/csv.ts`, guests import route, preview/confirm UI, `guest-management.test.ts` | Present CSV path with revalidation. Durable `GuestImport` records make same-key retries idempotent, including blank phone rows. Native XLSX remains incomplete. |
+| Shared and unique invitations — PRD 11 | Public invitation pages, `lib/group-invitations.ts`, claim/transfer/reissue/revoke handlers | Present. Earlier five-browser checkpoint covered first-open binding, forwarding denial, network change, saved response and transfer. The latest six browser journeys revalidated the combined flow. |
+| One wedding-wide invitation design and downloads — PRD 9/11 | `lib/invitation-design.ts`, design/setup components, host invitation print page and PNG button | Present plan-aware themes, accents, cover/couple image URLs, safe public projection, browser PDF and PNG. Uploaded storage remains unimplemented. PNG images require HTTPS and CORS permission from their host. |
+| OTP and CAPTCHA — PRD 11; AUTH_SECURITY 2 | `lib/rsvp-otp.ts`, `lib/rsvp-phone.ts`, `lib/captcha.ts`, phone request/verify routes, verification UI | Present adapters. Configure Twilio Verify and Turnstile, then verify provider delivery/challenge acceptance on staging. Local mocks cannot establish provider delivery. |
+| Scoped, one-use phone proof — AUTH_SECURITY 2/3 | RSVP proof validation and transactional proof-use record in `lib/rsvp-service.ts`; OTP/unit/integration tests | Present. Recheck replay, transaction rollback and normal retry paths in the combined gate. |
+| Party size, Accept/Decline/Maybe, email, questions and review — PRD 11 | `lib/validation.ts`, RSVP form, `lib/rsvp-attendance.ts`, migration `20261111230000_rsvp_party_size` | Present additions. Verify persistence and initial/edit form wiring, legacy fallback, review and downstream counts. |
+| RSVP idempotency and deadlines — TESTING 3/6 | `lib/rsvp-service.ts`, phone identity lock, compound guest keys, RSVP integration tests | Present. New regressions cover closed-event preservation, proof reuse and transfer A→B→A credential revival. Local integration and browser gates passed. |
+| Wedding-specific purchase, upgrade and verified activation — PRD 7 | `lib/subscriptions/payments.ts`, service, checkout/verify/webhook routes, `wedding-payments.test.ts` | Present source. Existing covered weddings retain explicit migrated grants with their original expiry. Newly created weddings never inherit workspace paid access. A real Razorpay sandbox checkout/webhook and final target verification remain required. |
+| GST config and immutable tax amounts — master prompt 5 | `lib/settings.ts`, Payment snapshot fields, admin settings, `platform-settings.test.ts` | Present with GST disabled by default. Verify checkout totals and snapshots after admin changes. Business/legal configuration and production activation remain operator decisions. |
+| Plan-aware advertisements — master prompt 9 | `lib/settings.ts`, `components/ui/advertisement.tsx`, admin settings | Eligibility/settings architecture present, ads disabled by default. Confirm placement integration, Prime exclusion and public RSVP exclusion in the combined gate. |
+| Real dashboard and report totals — PRD 13 | `lib/dashboard-metrics.ts`, dashboard charts, `lib/wedding-report.ts`, attendance/report tests | Present. Verify accepted party-weighted counts, Maybe/Pending separation and zero declined expected attendance across dashboard, report and export. |
+| Reports, privacy, PDF and spreadsheet export — PRD 13 | Report pages, report CSV, guest/RSVP CSV, print controls and formula escaping | Present selectable CSV columns and status/group/diet/event filters with server-enforced contact privacy. CSV and browser PDF are available. Native XLSX remains unimplemented. |
+| Authorized group QR check-in — PRD 12 | `lib/check-in-qr.ts`, group manager/scanner, check-in API, group integration and browser tests | Present. Earlier browser checkpoint covered manual code and duplicate check-in. Physical camera/device testing remains external acceptance. |
+| Expiry/read-only and public disable — PRD 8 | `lib/wedding-lifecycle.ts`, `requireOpenWeddingAccess`, public/host routes and lifecycle tests | Present. Recheck every mutation, exact local midnight and historical export access in the combined gate. |
+| Seven complete local days of retention — PRD 8 | `lib/wedding-retention.ts`, cron route, `vercel.json`, retention unit tests | Present durable deletion jobs and safe completion results, explicit-confirmation early deletion, transactional rescheduling and leased 7/3-day email reminders. Scheduled deletion and reminder sends default off. Provider delivery, asset cleanup and backup purge require operational acceptance. |
+| Broad platform administration and audit — PRD 14 | Protected admin overview/resource pages, `lib/admin-overview.ts`, `PlatformAdminAudit`, plans/settings APIs and wedding audit log | Present paginated read-only customer/wedding/payment/retention/audit lists with explicit access purposes and durable audit. MFA, destructive admin overrides and independent security acceptance remain incomplete. |
+| Terms, privacy and consent audit — master prompt 12–14 | `/terms`, `/privacy`, `lib/policies.ts`, `lib/policy-service.ts`, policy acceptance API/model and tests | Present draft policy content and versioned user acceptance. Verify unchecked registration consent and legacy-user acceptance before creation/checkout. Complete business details and legal review remain required. |
+| Tenant and storage isolation — AUTH_SECURITY 5 | Server membership guards and cross-workspace tests; Prisma migrations | Server guards present. Production Supabase Data API/RLS review and private storage isolation remain incomplete. No production database acceptance is claimed. |
+| Notifications and support — PRD 13/16 | Manual WhatsApp link sharing and FAQ | Resend adapter supports account recovery and opt-in lifecycle reminders with stable delivery keys and retry leases. Real email acceptance remains external. Official WhatsApp automation and general campaign notifications remain V2. |
+| Native apps and expanded localization — PRD 15; PLAN 8 | Web locale/timezone settings only; no Expo app directory | Deferred product phase. Native implementation, Android/iOS release, language content and additional payment currencies remain unimplemented. |
+| Release assurance — PLAN 9; TESTING 12 | Unit/integration/smoke/Playwright suites and CI workflow | Latest local combined gate passed. Staging provider checks, device/accessibility testing, monitoring, dependency review, restore drill and consented pilot remain required. |
 
-Verification: TypeScript PASS; unit tests 10 suites / 65 tests PASS; integration tests 2 suites / 26 tests PASS (PostgreSQL `wedding_guest_manager_test`); HTTP smoke test 79 checks PASS against the production build; lint PASS except the pre-existing `<img>` warning; production build PASS. Migration `20261030140000_payment_billing_snapshot` was applied to both databases with `psql` because Prisma's migration engine crashes natively in this container.
+## Executed verification
 
-Not production-ready yet (external blockers, no code claim):
-- No Razorpay credentials or published prices exist in this environment, so no live/sandbox payment has been completed. Checkout correctly returns “not configured” until the operator sets real keys and prices.
-- Browser Playwright E2E still cannot run in this container; CI remains blocked by the GitHub billing lock.
-- WhatsApp/branding features are advertised in plan config but have no dedicated enforcement surface yet because the corresponding edit endpoints do not exist. This does not grant paid privileges; it only means those feature flags are currently unused.
+Verified on 12 November 2026 against isolated PostgreSQL data and loopback provider fixtures.
 
-## Security fixes (initial findings)
+| Check | Observed result |
+|---|---|
+| ESLint | Passed, with the image optimization warning recorded in the log |
+| TypeScript | Passed |
+| Unit tests | 107 tests passed across 22 suites |
+| PostgreSQL integration | 50 tests passed across 13 suites, including latest reminder scheduling/eligibility source |
+| Production build | Passed on the latest source |
+| HTTP smoke | 96 checks passed |
+| Playwright | All 6 browser journeys passed |
+| Diff whitespace | Passed |
 
-1. Undefined `status` reference in `components/rsvp/rsvp-form.tsx` — fixed (removed unused state).
-2. Missing `app/auth/register/page.tsx` — implemented.
-3. Broken links and missing `/onboarding`, events, guests, reports routes — implemented.
-4. Unsafe RSVP API when `mobile`/`fullName` absent — Zod validation + mobile required.
-5. Missing wedding/publish validation — Zod schemas + `publishSchema`.
-6. Non-transactional registration — `prisma.$transaction` wraps user/workspace/membership.
-7. Tracker claims corrected (this document).
-8. In-place mutation in family-member state — immutable `map` update.
-9. Custom questions fetched but not rendered/saved — rendered in form; answers saved.
-10. Invitation URLs from `window.location.origin` during SSR — computed after mount.
-11. Edit token not surfaced safely — thank-you page shows private edit link with warning.
-12. Route protection/authorization consistency — `requireUserId` + `requireWeddingAccess` on every private route.
-13. Rate limiting/abuse controls — 5 req/15 min register, 10 req/10 min RSVP, process-local (documented).
-14. Dependencies — verified; no unused direct imports remain in app code.
-15. `.env.example` Auth.js mismatch — fixed.
-16. Placeholder tests — replaced with behaviour-driven tests.
+The current browser run covers host login/list/report access and PNG download, public RSVP submit/review/edit, private-link denial in another browser, a network-IP change in the authorized browser, one-time transfer/replay, group first-open/replacement/check-in, reopening a saved group RSVP after transfer, and fresh registration with unchecked explicit policy choices followed by a private draft wedding.
 
-## Remaining Blockers
-- Playwright browser automation does not run in this container (Chromium/Firefox fail to start under gVisor; both error at process launch). The core journey is instead verified by the HTTP smoke test (`npm run test:smoke`), which exercises the real API and page renders.
-- Rate limiter is now PostgreSQL-backed and shared across instances (fixed-window, table `RateLimit`). In-memory store remains available for tests.
-- Custom questions now have full host management (API + UI) and are covered by the smoke test.
-- Commit `a4c78c7` pushed 2026-10-29 after `workflow` scope granted. GitHub Actions CI triggered (run 40975568009) but **job not started** due to GitHub account billing lock; `gh` token scopes are `admin:public_key, gist, read:org, repo` — `workflow` scope missing, and the token is the credential for the HTTPS remote; SSH fallback unavailable (`Permission denied (publickey)`). GitHub refuses pushes that add `.github/workflows/*` without the `workflow` scope. CI has therefore not been triggered. Remedy: run `gh auth refresh -s workflow` (interactive device code), then push and run `gh workflow run ci.yml`. All audit work is now committed (`68a91a9`, `0175f21`) and pushed to `main`.
+The integration gate covers token/proof replay, transfer A→B→A without reviving an old edit link, closed-event response preservation, same-workspace wedding-payment isolation, migrated legacy grants, import retry idempotency, hidden-contact preservation, tax snapshots, account reset/session invalidation, policy audit, deletion confirmation/retry and reminder scheduling/dry-run/concurrent delivery.
 
-## Test Commands
-- `npm test` — 10 suites / 65 tests PASS
-- `npm run test:integration` — 2 suites / 26 tests PASS (uses `TEST_DATABASE_URL` or `wedding_guest_manager_test`)
-- `npm run test:smoke` — 79 checks PASS (requires running server + seeded DB)
-- `npm run lint` — PASS (one pre-existing `<img>` warning)
-- `npx tsc --noEmit` (with `NODE_OPTIONS=--max-old-space-size=4096`) — PASS
-- `npm run build` (with increased heap) — PASS
-- `npm run test:e2e` — NOT RUN locally (browser unavailable in this container); CI workflow added at `.github/workflows/ci.yml`; CI execution blocked by GitHub account billing lock.
+An HTML form failure was fixed with strict-origin referrer policy while Origin validation continues to reject null and foreign origins. The local headless browser uses multiple processes so closing one browser context does not terminate another. A new report filter created a test locator ambiguity, which was corrected by targeting the metric paragraph.
 
-## Environment note (Prisma)
-`prisma migrate dev|deploy` crashes in this container with a native engine error
-(`Could not parse schema engine response … free(): invalid pointer`). The
-migrations in `prisma/migrations/` were applied with `psql -f` instead and
-`prisma generate` works. Use `npx prisma migrate deploy` normally outside this
-container.
+Provider mocks validate application contracts without establishing live Twilio, Turnstile, Resend, Google or Razorpay acceptance. The normal Prisma migration-engine command remains unverified in staging because this container uses direct application of tracked SQL migrations to disposable test databases. No deployment, real message delivery, payment or production deletion was performed.
+
+## Verification commands
+
+Commands are taken from the actual package manifest.
+
+```bash
+npm run db:generate
+npm run db:deploy
+npm run lint
+npx tsc --noEmit
+npm test -- --runInBand
+npm run test:integration
+npm run build
+npm run test:smoke
+npm run test:e2e
+```
+
+Use isolated development/test data. The HTTP and browser commands require a seeded test database and running production build, plus the local verification provider when exercising SMS/CAPTCHA fixtures. The tests must complete real assertions rather than skipping failed journeys.
+
+In this container the Prisma schema-engine migration command has failed. The executed local checks applied each tracked SQL migration to a disposable PostgreSQL database and generated the Prisma client. This establishes SQL application in that database; the normal migration command still needs verification in staging.
+
+## Completion gates
+
+1. Configure staging providers and complete real OAuth, SMS/CAPTCHA, email and captured-payment/webhook checks.
+2. Verify the ordinary Prisma migration command, Supabase Data API/RLS and storage permissions with the production access model.
+3. Complete business/legal details, strong admin authentication/MFA, monitoring, asset/backup cleanup and a restore drill.
+4. Finish native XLSX and the deferred native-app/localization phases according to the product release sequence. General WhatsApp/email campaigns remain V2.
+5. Run physical mobile/camera, accessibility and consented pilot acceptance before production release.
+
+Historical GitHub billing, token-scope, database and deployment statements from the 2026-10-31 tracker were not reverified in this inspection. They are not current completion evidence. No live SMS, real payment, production data operation or deployment is established by this tracker.

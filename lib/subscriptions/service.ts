@@ -1,6 +1,7 @@
 import type { Prisma } from "@prisma/client"
 import { prisma } from "@/lib/prisma"
 import { ApiError } from "@/lib/errors"
+import { weddingExpiry } from "@/lib/wedding-lifecycle"
 import {
   FEATURE_KEYS,
   LIMIT_KEYS,
@@ -9,6 +10,8 @@ import {
   defaultPlanConfig,
   isPlanCode,
   planConfigFromRow,
+  normalizeFeatures,
+  normalizeLimits,
   type FeatureKey,
   type LimitKey,
   type PlanCode,
@@ -239,6 +242,60 @@ export async function getEntitlementsForUser(userId: string) {
   return getEntitlements(await getUserWorkspaceId(userId))
 }
 
+export async function getWeddingEntitlements(
+  workspaceId: string,
+  weddingId: string,
+): Promise<EffectiveEntitlements> {
+  const wedding = await prisma.wedding.findFirst({
+    where: { id: weddingId, workspaceId },
+    select: {
+      date: true,
+      legacyPlanCode: true,
+      legacyPaidThrough: true,
+      legacyPlanFeatures: true,
+      legacyPlanLimits: true,
+      timezone: true,
+      payments: {
+        where: { status: "PAID", weddingPlanPriceInPaise: { not: null } },
+        orderBy: { paidAt: "desc" },
+        take: 1,
+        include: { plan: true },
+      },
+    },
+  })
+  if (!wedding) throw new ApiError("Wedding not found", 404)
+
+  const expiresAt = weddingExpiry(wedding)
+  const expired = expiresAt !== null && expiresAt <= new Date()
+  const purchase = wedding.payments[0]
+  const hasLegacyGrant = !purchase && wedding.legacyPaidThrough !== null &&
+    wedding.legacyPaidThrough > new Date() && isPlanCode(wedding.legacyPlanCode) && wedding.legacyPlanCode !== "FREE"
+  let plan = purchase ? planConfigFromRow(purchase.plan) : await freePlan()
+  if (hasLegacyGrant) {
+    const grantedPlan = await getPlanConfig(wedding.legacyPlanCode!)
+    plan = {
+      ...grantedPlan,
+      features: normalizeFeatures(wedding.legacyPlanFeatures, grantedPlan.features),
+      limits: normalizeLimits(wedding.legacyPlanLimits, grantedPlan.limits),
+    }
+  }
+  const grantEnd = hasLegacyGrant ? wedding.legacyPaidThrough : null
+  const currentPeriodEnd = grantEnd && (!expiresAt || grantEnd < expiresAt) ? grantEnd : expiresAt
+  return {
+    workspaceId,
+    plan,
+    planCode: plan.code,
+    status: expired ? "EXPIRED" : plan.code === "FREE" ? "FREE" : "ACTIVE",
+    subscriptionId: null,
+    currentPeriodStart: purchase?.paidAt ?? null,
+    currentPeriodEnd,
+    cancelAtPeriodEnd: false,
+    pendingPlanCode: null,
+    features: { ...plan.features, whatsappSharing: !expired && plan.features.whatsappSharing },
+    limits: { ...plan.limits, weddings: null, guestsPerWedding: null },
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Usage
 // ---------------------------------------------------------------------------
@@ -333,6 +390,12 @@ export async function assertFeature(workspaceId: string, feature: FeatureKey) {
   return entitlements
 }
 
+export async function assertWeddingFeature(workspaceId: string, weddingId: string, feature: FeatureKey) {
+  const entitlements = await getWeddingEntitlements(workspaceId, weddingId)
+  if (!entitlements.features[feature]) throw featureError(feature, entitlements)
+  return entitlements
+}
+
 /** Throws 402 when adding one more of `limitKey` would exceed the plan. */
 export async function assertWorkspaceLimit(workspaceId: string, limitKey: "weddings") {
   const entitlements = await getEntitlements(workspaceId)
@@ -365,7 +428,7 @@ export async function assertWeddingLimit(
   resource: "guests" | "events" | "customQuestions",
   additional = 1,
 ) {
-  const entitlements = await getEntitlements(workspaceId)
+  const entitlements = await getWeddingEntitlements(workspaceId, weddingId)
   const mapping = WEDDING_LIMIT_MAP[resource]
   const max = entitlements.limits[mapping.key]
   if (max === null) return entitlements

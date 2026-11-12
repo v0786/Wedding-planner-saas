@@ -7,13 +7,13 @@ export { isAdminAllowed, parseAdminEmails, type AdminCandidate } from "@/lib/sub
 
 /**
  * Admin access is granted either by the `User.isAdmin` flag or by listing the
- * account in the `ADMIN_EMAILS` environment variable (comma separated).
+ * a verified account in the `ADMIN_EMAILS` environment variable (comma separated).
  */
 export async function requireAdmin() {
   const userId = await requireUserId()
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { id: true, email: true, isAdmin: true },
+    select: { id: true, email: true, isAdmin: true, emailVerified: true },
   })
   if (!user) throw new ApiError("Unauthorized", 401)
 

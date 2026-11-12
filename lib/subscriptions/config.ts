@@ -6,11 +6,10 @@
  * limits/features are stored in the `Plan` table so an administrator can
  * change them without touching source code.
  *
- * IMPORTANT: no price is hard-coded here. A plan with `priceInPaise: null`
- * has not been configured yet and the UI must display "Coming Soon".
+ * Launch prices are seeded below. Administrators can edit the persisted values.
  */
 
-export const PLAN_CODES = ["FREE", "PRO", "PRIME"] as const
+export const PLAN_CODES = ["FREE", "BASIC", "PRO", "PRIME"] as const
 export type PlanCode = (typeof PLAN_CODES)[number]
 
 export const FEATURE_KEYS = [
@@ -48,7 +47,7 @@ export interface PlanDefinition {
    */
   priceInPaise: number | null
   currency: string
-  /** Billing period in days. 0 means the plan never expires (FREE). */
+  /** Legacy workspace subscription duration. Wedding purchases use the wedding date. */
   billingPeriodDays: number
   features: FeatureMap
   limits: LimitMap
@@ -125,8 +124,7 @@ const PRIME_FEATURES: FeatureMap = {
 }
 
 /**
- * Default definitions. Prices are intentionally `null` until the operator
- * supplies them through the admin console.
+ * Initial plan definitions. Persisted values can be managed by an administrator.
  */
 export const PLAN_DEFINITIONS: Record<PlanCode, PlanDefinition> = {
   FREE: {
@@ -148,34 +146,60 @@ export const PLAN_DEFINITIONS: Record<PlanCode, PlanDefinition> = {
     isActive: true,
     sortOrder: 0,
   },
+  BASIC: {
+    code: "BASIC",
+    name: "Basic",
+    tagline: "The wedding essentials",
+    description: "Manage guests, events and responses for one wedding.",
+    rank: 1,
+    priceInPaise: 49900,
+    currency: "INR",
+    billingPeriodDays: 0,
+    features: {
+      ...FREE_FEATURES,
+      whatsappSharing: false,
+      customQuestions: true,
+      csvImport: true,
+      csvExport: true,
+      reports: true,
+    },
+    limits: {
+      weddings: null,
+      guestsPerWedding: null,
+      eventsPerWedding: null,
+      customQuestionsPerWedding: 2,
+    },
+    isActive: true,
+    sortOrder: 1,
+  },
   PRO: {
     code: "PRO",
     name: "Pro",
     tagline: "For the full celebration",
-    description: "More weddings, a bigger guest list and rich RSVP collection.",
-    rank: 1,
-    priceInPaise: null,
+    description: "Custom RSVP questions, advanced reporting and sharing for your wedding.",
+    rank: 2,
+    priceInPaise: 99900,
     currency: "INR",
-    billingPeriodDays: 30,
+    billingPeriodDays: 0,
     features: PRO_FEATURES,
     limits: {
-      weddings: 3,
-      guestsPerWedding: 500,
+      weddings: null,
+      guestsPerWedding: null,
       eventsPerWedding: 5,
       customQuestionsPerWedding: 10,
     },
-    isActive: false,
-    sortOrder: 1,
+    isActive: true,
+    sortOrder: 2,
   },
   PRIME: {
     code: "PRIME",
     name: "Prime",
     tagline: "Unlimited, without compromise",
-    description: "Unlimited weddings and guests, every feature, priority support.",
-    rank: 2,
-    priceInPaise: null,
+    description: "Premium customization and priority support for your wedding.",
+    rank: 3,
+    priceInPaise: 199900,
     currency: "INR",
-    billingPeriodDays: 30,
+    billingPeriodDays: 0,
     features: PRIME_FEATURES,
     limits: {
       weddings: null,
@@ -183,8 +207,8 @@ export const PLAN_DEFINITIONS: Record<PlanCode, PlanDefinition> = {
       eventsPerWedding: null,
       customQuestionsPerWedding: null,
     },
-    isActive: false,
-    sortOrder: 2,
+    isActive: true,
+    sortOrder: 3,
   },
 }
 
@@ -223,6 +247,10 @@ export function priceLabel(plan: Pick<PlanDefinition, "priceInPaise" | "billingP
       ? ` / ${plan.billingPeriodDays} days`
       : ""
   return `${formatInr(plan.priceInPaise)}${suffix}`
+}
+
+export function weddingPriceLabel(plan: Pick<PlanDefinition, "priceInPaise">): string {
+  return plan.priceInPaise === null ? "Coming Soon" : formatInr(plan.priceInPaise)
 }
 
 export function billingLabel(days: number): string {

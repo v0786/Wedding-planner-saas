@@ -118,3 +118,16 @@ Expo Android/iOS host workflows, QR scanner, locale/currency/timezone
 support. **Accept:** core approved flows work on both platforms; camera
 fallback; INR/Asia-Kolkata defaults; additional locales/currencies
 supported by architecture.
+
+## Private invitation and RSVP links
+
+- The host can publish a shared invitation for all guests, or create a private link for a guest or group. A guest explicitly opens a private invitation to bind it to the current browser. Opening a bound private link in another browser gives a 404. The host can issue a fresh link when needed.
+- A guest verifies the mobile number before submitting an RSVP. The private edit link works in the browser that saved the response. Another submission with the same phone number cannot overwrite a bound response. Existing RSVPs from before device binding can be claimed once after verifying the associated phone.
+- To switch browsers, select **Create device transfer link**, open it on the new browser within 15 minutes, and confirm. This keeps the saved RSVP and invalidates the old edit link. The transfer cannot be reused.
+- Browser data is the access credential. Switching networks does not affect access. A different browser app, private browsing session, or cleared site data is treated as a different browser.
+
+In **Group Invitations & Check-in**, hosts can create, reissue, or revoke
+private guest or group links. The QR on an opened invitation encodes an
+opaque group code. Authorized wedding staff can scan it with a compatible
+browser, enter the code, or find the group by name. Repeated check-ins keep
+the first arrival time.

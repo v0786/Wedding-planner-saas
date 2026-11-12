@@ -7,6 +7,7 @@ import { describe, it, expect, beforeEach } from "@jest/globals"
 import { prisma } from "@/lib/prisma"
 import { POST } from "@/app/api/register/route"
 import { resetRateLimits, memoryStore } from "@/lib/rate-limit"
+import { PRIVACY_VERSION, TERMS_VERSION } from "@/lib/policies"
 
 function request(body: unknown, ip = "10.0.0.1") {
   return new Request("http://localhost:3000/api/register", {
@@ -16,7 +17,11 @@ function request(body: unknown, ip = "10.0.0.1") {
   })
 }
 
-const valid = { name: "Demo Host", email: `host-${Date.now()}@example.com`, password: "longenough" }
+const valid = {
+  name: "Demo Host", email: `host-${Date.now()}@example.com`, password: "longenough",
+  termsAccepted: true, privacyAcknowledged: true,
+  termsVersion: TERMS_VERSION, privacyVersion: PRIVACY_VERSION,
+}
 
 describe("POST /api/register", () => {
   beforeEach(async () => {
@@ -27,6 +32,18 @@ describe("POST /api/register", () => {
   it("rejects invalid input", async () => {
     const response = await POST(request({ ...valid, password: "short" }))
     expect(response.status).toBe(400)
+  })
+
+  it("requires explicit agreement to the current policies", async () => {
+    for (const change of [
+      { termsAccepted: false },
+      { privacyAcknowledged: false },
+      { termsVersion: "superseded-terms" },
+      { privacyVersion: "superseded-privacy" },
+    ]) {
+      expect((await POST(request({ ...valid, ...change }))).status).toBe(400)
+    }
+    expect(await prisma.user.findUnique({ where: { email: valid.email } })).toBeNull()
   })
 
   it("rejects a duplicate email with 409", async () => {
@@ -50,6 +67,9 @@ describe("POST /api/register", () => {
     expect(membership?.role).toBe("owner")
     const workspace = await prisma.workspace.findUnique({ where: { id: membership!.workspaceId } })
     expect(workspace).not.toBeNull()
+    const acceptance = await prisma.policyAcceptance.findFirst({ where: { userId: user!.id } })
+    expect(acceptance).toMatchObject({ termsVersion: TERMS_VERSION, privacyVersion: PRIVACY_VERSION, source: "registration" })
+    expect(acceptance?.acceptedAt).toBeInstanceOf(Date)
 
     await prisma.workspace.deleteMany({ where: { id: membership!.workspaceId } })
     await prisma.user.deleteMany({ where: { id: user!.id } })

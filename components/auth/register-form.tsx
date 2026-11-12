@@ -4,12 +4,16 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Field, FormError, Input } from "@/components/ui/field"
+import { PolicyAcknowledgement } from "@/components/policies/policy-acknowledgement"
+import { PRIVACY_VERSION, TERMS_VERSION } from "@/lib/policies"
 
 export default function RegisterForm() {
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
+  const [termsAccepted, setTermsAccepted] = useState(false)
+  const [privacyAcknowledged, setPrivacyAcknowledged] = useState(false)
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
   const router = useRouter()
@@ -28,7 +32,10 @@ export default function RegisterForm() {
       const res = await fetch("/api/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password }),
+        body: JSON.stringify({
+          name, email, password, termsAccepted, privacyAcknowledged,
+          termsVersion: TERMS_VERSION, privacyVersion: PRIVACY_VERSION,
+        }),
       })
 
       if (res.ok) {
@@ -104,6 +111,12 @@ export default function RegisterForm() {
         />
       </Field>
 
+      <PolicyAcknowledgement
+        termsAccepted={termsAccepted}
+        privacyAcknowledged={privacyAcknowledged}
+        onTermsChange={setTermsAccepted}
+        onPrivacyChange={setPrivacyAcknowledged}
+      />
       {error && <FormError>{error}</FormError>}
 
       <Button type="submit" disabled={loading} size="lg" className="w-full">

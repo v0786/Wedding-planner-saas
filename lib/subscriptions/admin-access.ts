@@ -6,6 +6,7 @@
 export interface AdminCandidate {
   email: string
   isAdmin: boolean
+  emailVerified?: Date | null
 }
 
 /** Normalises the comma-separated `ADMIN_EMAILS` allowlist. */
@@ -17,13 +18,13 @@ export function parseAdminEmails(value: string | undefined = process.env.ADMIN_E
 }
 
 /**
- * The `isAdmin` flag wins; otherwise the account email must be on the
- * allowlist. Matching is case-insensitive and ignores surrounding whitespace.
+ * Explicitly provisioned administrators are trusted. The email allowlist also
+ * requires verified ownership so open registration cannot claim admin access.
  */
 export function isAdminAllowed(
   user: AdminCandidate,
   emails: string | undefined = process.env.ADMIN_EMAILS,
 ): boolean {
   if (user.isAdmin) return true
-  return parseAdminEmails(emails).includes(user.email.trim().toLowerCase())
+  return Boolean(user.emailVerified) && parseAdminEmails(emails).includes(user.email.trim().toLowerCase())
 }

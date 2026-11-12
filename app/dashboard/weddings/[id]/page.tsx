@@ -1,3 +1,5 @@
+import Advertisement from "@/components/ui/advertisement"
+import { getWeddingEntitlements } from "@/lib/subscriptions/service"
 import { auth } from "@/auth"
 import { redirect, notFound } from "next/navigation"
 import { prisma } from "@/lib/prisma"
@@ -6,6 +8,9 @@ import PageHeader from "@/components/ui/page-header"
 import { Card, CardBody, CardHeader } from "@/components/ui/card"
 import { ButtonLink } from "@/components/ui/button"
 import Badge from "@/components/ui/badge"
+import DeleteWedding from "@/components/wedding/delete-wedding"
+import { expectedRsvpAttendance } from "@/lib/rsvp-attendance"
+import { isWeddingExpired, weddingExpiry, weddingTimeZone } from "@/lib/wedding-lifecycle"
 
 export const dynamic = "force-dynamic"
 
@@ -28,12 +33,17 @@ export default async function WeddingDetailPage({ params }: { params: Promise<{ 
   })
 
   if (!wedding) notFound()
+  const entitlements = await getWeddingEntitlements(wedding.workspaceId, wedding.id)
+  const expired = isWeddingExpired(wedding)
+  const expiry = weddingExpiry(wedding)
 
   const confirmed = wedding.rsvpSubmissions.filter((rsvp) => rsvp.status === "confirmed").length
-  const pending = wedding.rsvpSubmissions.filter((rsvp) => rsvp.status === "pending").length
+  const pending = wedding.rsvpSubmissions.filter((rsvp) => rsvp.status === "pending").length +
+    Math.max(0, wedding.guests.length - wedding.rsvpSubmissions.length)
+  const maybe = wedding.rsvpSubmissions.filter((rsvp) => rsvp.status === "maybe").length
   const declined = wedding.rsvpSubmissions.filter((rsvp) => rsvp.status === "declined").length
   const headcount = wedding.rsvpSubmissions.reduce(
-    (total, rsvp) => total + 1 + rsvp.familyMembers.length,
+    (total, rsvp) => total + expectedRsvpAttendance(rsvp),
     0,
   )
 
@@ -48,8 +58,13 @@ export default async function WeddingDetailPage({ params }: { params: Promise<{ 
         description={couple}
         actions={
           <div className="flex flex-wrap items-center gap-2">
-            <ButtonLink href={`/dashboard/weddings/${wedding.id}/edit`} variant="secondary" size="sm">
-              Edit details
+            {!expired && (
+              <ButtonLink href={`/dashboard/weddings/${wedding.id}/edit`} variant="secondary" size="sm">
+                Edit details
+              </ButtonLink>
+            )}
+            <ButtonLink href={`/dashboard/billing?weddingId=${encodeURIComponent(wedding.id)}`} variant="secondary" size="sm">
+              Plan and payments
             </ButtonLink>
             <ButtonLink href={`/dashboard/weddings/${wedding.id}/invite`} variant="primary" size="sm">
               Invitation
@@ -64,8 +79,8 @@ export default async function WeddingDetailPage({ params }: { params: Promise<{ 
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-3">
               <h2 className="font-display text-display-xs text-ink-800">{couple}</h2>
-              <Badge tone={wedding.published ? "success" : "neutral"}>
-                {wedding.published ? "Published" : "Draft"}
+              <Badge tone={!expired && wedding.published ? "success" : "neutral"}>
+                {expired ? "Read-only" : wedding.published ? "Published" : "Draft"}
               </Badge>
             </div>
             <div className="mt-3 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-ink-500">
@@ -108,6 +123,13 @@ export default async function WeddingDetailPage({ params }: { params: Promise<{ 
           </div>
         </div>
 
+        {expired && expiry && (
+          <p className="border-b border-champagne-200 bg-champagne-100/60 px-6 py-4 text-sm text-ink-600 sm:px-8">
+            Editing and public RSVPs closed on {expiry.toLocaleDateString("en-IN", { dateStyle: "long", timeZone: weddingTimeZone(wedding) })}.
+            You can still view this wedding and its reports.
+          </p>
+        )}
+
         {wedding.rsvpDeadline && (
           <div className="flex items-start gap-3 border-b border-champagne-200 bg-champagne-100/60 px-6 py-4 text-sm text-gold-700 sm:px-8">
             <svg
@@ -131,14 +153,17 @@ export default async function WeddingDetailPage({ params }: { params: Promise<{ 
           </div>
         )}
 
-        <div className="grid grid-cols-2 gap-px bg-ivory-200/70 sm:grid-cols-3 lg:grid-cols-5">
+        <div className="grid grid-cols-2 gap-px bg-ivory-200/70 sm:grid-cols-3 lg:grid-cols-6">
           <Stat label="Total Guests" value={wedding.guests.length} />
-          <Stat label="Headcount" value={headcount} hint="Including family members" />
+          <Stat label="Headcount" value={headcount} hint="Confirmed attendees, including companions" />
           <Stat label="Confirmed" value={confirmed} tone="text-sage-600" />
+          <Stat label="Maybe" value={maybe} tone="text-gold-600" />
           <Stat label="Pending" value={pending} tone="text-gold-600" />
           <Stat label="Declined" value={declined} tone="text-rose-600" />
         </div>
       </section>
+
+      <Advertisement planCode={entitlements.planCode} placement="dashboard" />
 
       {/* Section navigation */}
       <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -189,6 +214,13 @@ export default async function WeddingDetailPage({ params }: { params: Promise<{ 
             d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75"
           />
         </NavCard>
+        <NavCard
+          href={`/dashboard/weddings/${wedding.id}/group-invitations`}
+          title="Group Invitations & Check-in"
+          description="Share private links and mark groups as arrived"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="M3 9V3h6m6 0h6v6m0 6v6h-6m-6 0H3v-6m6-3 2 2 4-4" />
+        </NavCard>
       </div>
 
       {wedding.events.length > 0 && (
@@ -236,6 +268,7 @@ export default async function WeddingDetailPage({ params }: { params: Promise<{ 
           </Card>
         </section>
       )}
+      <DeleteWedding id={wedding.id} name={wedding.name} />
     </main>
   )
 }

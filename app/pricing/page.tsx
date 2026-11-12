@@ -1,43 +1,26 @@
 import Link from "next/link"
 import { auth } from "@/auth"
-import { prisma } from "@/lib/prisma"
 import {
   FEATURE_KEYS,
   FEATURE_LABELS,
   LIMIT_KEYS,
   LIMIT_LABELS,
-  billingLabel,
   limitLabel,
-  priceLabel,
+  weddingPriceLabel,
 } from "@/lib/subscriptions/config"
-import { getEntitlements } from "@/lib/subscriptions/service"
 import { getPublicPlans } from "@/lib/subscriptions/payments"
 
 export const dynamic = "force-dynamic"
 
 export const metadata = {
   title: "Pricing · Wedding Guest Manager",
-  description: "Compare the Free, Pro and Prime plans for your wedding invitations and RSVPs.",
+  description: "Compare the Basic, Pro and Prime plans for your wedding invitations and RSVPs.",
 }
 
 export default async function PricingPage() {
   const catalog = await getPublicPlans()
 
-  const session = await auth()
-  let currentPlanCode: string | null = null
-  let signedIn = false
-  if (session?.user?.id) {
-    signedIn = true
-    const membership = await prisma.workspaceMember.findFirst({
-      where: { userId: session.user.id },
-      orderBy: { createdAt: "asc" },
-      select: { workspaceId: true },
-    })
-    if (membership) {
-      const entitlements = await getEntitlements(membership.workspaceId)
-      currentPlanCode = entitlements.planCode
-    }
-  }
+  const signedIn = Boolean((await auth())?.user?.id)
 
   return (
     <main className="min-h-screen bg-ivory-50">
@@ -74,8 +57,7 @@ export default async function PricingPage() {
             Choose the plan that fits your celebration
           </h1>
           <p className="lede mx-auto mt-4 max-w-2xl">
-            Start free, then unlock more weddings, bigger guest lists and rich RSVP tools. Plans are prepaid and
-            billed in Indian Rupees.
+            Make a one-time purchase for each wedding. All plans include unlimited guests.
           </p>
           <div className="mx-auto mt-9 max-w-xs">
             <div className="gold-hairline" />
@@ -91,10 +73,6 @@ export default async function PricingPage() {
 
         <div className="mt-14 grid gap-6 lg:grid-cols-3 lg:items-start">
           {catalog.plans.map((plan) => {
-            const isCurrent = plan.code === currentPlanCode
-            const currentRank =
-              catalog.plans.find((candidate) => candidate.code === currentPlanCode)?.rank ?? -1
-            const isDowngrade = !isCurrent && currentRank >= 0 && plan.rank < currentRank
             const highlight = plan.code === "PRO"
             return (
               <section
@@ -116,23 +94,20 @@ export default async function PricingPage() {
                     <h2 className="font-display text-2xl text-ink-800">{plan.name}</h2>
                     <p className="mt-1 text-sm text-ink-500">{plan.tagline}</p>
                   </div>
-                  {isCurrent && (
-                    <span className="pill shrink-0 bg-champagne-200 text-gold-700">Current</span>
-                  )}
                 </div>
 
                 <div className="mt-6">
                   <p
                     className={`font-display text-[2.25rem] leading-tight tracking-[-0.01em] ${
-                      plan.priceInPaise === null && plan.code !== "FREE" ? "text-gold-700" : "text-ink-800"
+                      plan.priceInPaise === null ? "text-gold-700" : "text-ink-800"
                     }`}
                   >
-                    {priceLabel(plan)}
+                    {weddingPriceLabel(plan)}
                   </p>
                   <p className="mt-1.5 text-[0.6875rem] font-semibold uppercase tracking-[0.16em] text-ink-400">
-                    {plan.code === "FREE" ? "Forever free" : billingLabel(plan.billingPeriodDays)}
+                    One-time · per wedding
                   </p>
-                  {plan.priceInPaise === null && plan.code !== "FREE" && (
+                  {plan.priceInPaise === null && (
                     <p className="mt-3 inline-flex rounded-full bg-champagne-100 px-3 py-1 text-xs font-medium text-gold-700">
                       Pricing has not been published yet.
                     </p>
@@ -144,7 +119,7 @@ export default async function PricingPage() {
                 <div className="gold-hairline mt-6" />
 
                 <ul className="mt-6 space-y-2.5 text-sm text-ink-600">
-                  {LIMIT_KEYS.map((key) => (
+                  {LIMIT_KEYS.filter((key) => key !== "weddings").map((key) => (
                     <li key={key} className="flex items-start gap-3">
                       <span
                         className="mt-[0.45rem] h-1.5 w-1.5 shrink-0 rotate-45 bg-gold-400"
@@ -176,30 +151,12 @@ export default async function PricingPage() {
                 </div>
 
                 <div className="mt-auto pt-8">
-                  {isCurrent ? (
+                  {plan.purchasable ? (
                     <Link
-                      href="/dashboard/billing"
-                      className="btn btn-secondary w-full"
-                    >
-                      Manage plan
-                    </Link>
-                  ) : plan.code === "FREE" ? (
-                    <Link
-                      href={signedIn ? "/dashboard/billing" : "/auth/register"}
-                      className="btn btn-secondary w-full"
-                    >
-                      {signedIn ? "Included by default" : "Start free"}
-                    </Link>
-                  ) : isDowngrade ? (
-                    <Link href="/dashboard/billing" className="btn btn-secondary w-full">
-                      Available after your current plan
-                    </Link>
-                  ) : plan.purchasable ? (
-                    <Link
-                      href={signedIn ? `/dashboard/billing/checkout?plan=${plan.code}` : `/auth/login?next=/pricing`}
+                      href={signedIn ? "/dashboard/billing" : "/auth/login?next=/dashboard/billing"}
                       className="btn btn-primary w-full"
                     >
-                      Upgrade to {plan.name}
+                      Choose a wedding
                     </Link>
                   ) : (
                     <span className="inline-flex w-full cursor-not-allowed items-center justify-center gap-2 rounded-full border border-dashed border-gold-300 bg-champagne-100 px-5 py-2.5 text-sm font-semibold text-gold-700">
@@ -228,7 +185,7 @@ export default async function PricingPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-ivory-200">
-                {LIMIT_KEYS.map((key) => (
+                {LIMIT_KEYS.filter((key) => key !== "weddings").map((key) => (
                   <tr key={key}>
                     <td className="table-cell font-medium text-ink-700">{LIMIT_LABELS[key].label}</td>
                     {catalog.plans.map((plan) => (
@@ -262,8 +219,7 @@ export default async function PricingPage() {
         </section>
 
         <p className="mt-10 text-center text-xs leading-relaxed text-ink-400">
-          Upgrades apply immediately after a verified payment. Cancellations apply at the end of the current billing
-          period. Prices are set by the operator and shown in INR.
+          Upgrades apply after a verified payment. Access ends at midnight after the wedding date. Prices are shown in INR.
         </p>
       </div>
     </main>

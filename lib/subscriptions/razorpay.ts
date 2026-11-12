@@ -86,6 +86,7 @@ export async function createRazorpayOrder(input: {
       payment_capture: 1,
     }),
     cache: "no-store",
+    signal: AbortSignal.timeout(10_000),
   })
 
   const payload = (await response.json().catch(() => null)) as
@@ -131,6 +132,7 @@ export async function fetchRazorpayPayment(paymentId: string): Promise<RazorpayP
     method: "GET",
     headers: { authorization: authHeader(config) },
     cache: "no-store",
+    signal: AbortSignal.timeout(10_000),
   })
 
   const payload = (await response.json().catch(() => null)) as

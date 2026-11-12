@@ -1,9 +1,14 @@
 import { describe, it, expect, jest, beforeEach } from "@jest/globals"
 import type { PrismaClient } from "@prisma/client"
-import { submitRsvp } from "@/lib/rsvp-service"
-import { hashEditToken } from "@/lib/tokens"
+import { submitRsvp as submit } from "@/lib/rsvp-service"
+import { generateEditToken, hashEditToken } from "@/lib/tokens"
 import { ApiError } from "@/lib/errors"
 import { ZodError } from "zod"
+import { RSVP_BROWSER_COOKIE } from "@/lib/rsvp-browser"
+
+const browserToken = generateEditToken()
+const browser = { get: (name: string) => name === RSVP_BROWSER_COOKIE ? { value: browserToken } : undefined }
+const submitRsvp = (payload: unknown, db: PrismaClient, now?: Date) => submit(payload, db, now, browser)
 
 type Mock = ReturnType<typeof createDb>
 
@@ -11,6 +16,10 @@ function createDb(overrides: { wedding?: unknown; editSubmission?: unknown } = {
   const wedding = overrides.wedding ?? {
     id: "wedding-1",
     published: true,
+    allowGuestEdits: true,
+    date: null,
+    timezone: "Asia/Kolkata",
+    invitationToken: "invite-token",
     rsvpDeadline: null,
     events: [
       { id: "event-1", name: "Wedding", rsvpDeadline: null },
@@ -22,20 +31,25 @@ function createDb(overrides: { wedding?: unknown; editSubmission?: unknown } = {
   }
 
   const tx = {
+    $executeRaw: jest.fn(async () => 1),
     guest: {
+      findFirst: jest.fn(async () => null),
+      findUnique: jest.fn(async () => null),
       upsert: jest.fn(async () => ({ id: "guest-1" })),
       update: jest.fn(async () => ({ id: "guest-1" })),
-      findFirst: jest.fn(async () => null),
     },
     rsvpSubmission: {
-      upsert: jest.fn(async () => ({ id: "submission-1" })),
-      update: jest.fn(async () => ({ id: "submission-1" })),
+      findFirst: jest.fn(async () => null),
+      findUnique: jest.fn(async () => null),
+      create: jest.fn(async () => ({ id: "submission-1", groupInvitationId: null })),
+      updateMany: jest.fn(async () => ({ count: 1 })),
     },
     familyMember: {
       deleteMany: jest.fn(async () => ({ count: 0 })),
       createMany: jest.fn(async () => ({ count: 0 })),
     },
     rsvpEventResponse: {
+      findMany: jest.fn(async () => []),
       deleteMany: jest.fn(async () => ({ count: 0 })),
       createMany: jest.fn(async () => ({ count: 0 })),
     },
@@ -150,10 +164,12 @@ describe("submitRsvp", () => {
       }),
     )
 
-    const upsertArgs = (db.__tx.rsvpSubmission.upsert as jest.Mock).mock.calls[0][0] as {
-      create: { editTokenHash: string }
-    }
-    expect(upsertArgs.create.editTokenHash).toBe(hashEditToken(result.editToken))
+    expect(db.__tx.rsvpSubmission.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        editTokenHash: hashEditToken(result.editToken),
+        browserTokenHash: hashEditToken(browserToken),
+      }),
+    })
     expect(db.__tx.familyMember.createMany).toHaveBeenCalled()
     expect(db.__tx.rsvpEventResponse.createMany).toHaveBeenCalled()
     expect(db.__tx.answer.createMany).toHaveBeenCalled()
@@ -163,25 +179,28 @@ describe("submitRsvp", () => {
     db.rsvpSubmission.findFirst.mockResolvedValue(null as never)
     await expect(
       submitRsvp({ ...validPayload, editToken: "invalid-token" }, asClient(db)),
-    ).rejects.toMatchObject({ status: 403 })
+    ).rejects.toMatchObject({ status: 404 })
   })
 
   it("edits an existing RSVP without rotating the edit token", async () => {
-    db.rsvpSubmission.findFirst.mockResolvedValue({ id: "submission-1", guestId: "guest-1" } as never)
+    db.rsvpSubmission.findFirst.mockResolvedValue({ id: "submission-1", guestId: "guest-1", weddingId: "wedding-1", mobile: validPayload.mobile } as never)
 
     const result = await submitRsvp({ ...validPayload, editToken: "valid-edit-token-123" }, asClient(db))
 
     expect(result.editToken).toBe("valid-edit-token-123")
-    expect(db.__tx.rsvpSubmission.update).toHaveBeenCalled()
-    expect(db.__tx.rsvpSubmission.upsert).not.toHaveBeenCalled()
+    expect(db.__tx.rsvpSubmission.updateMany).toHaveBeenCalled()
+    expect(db.__tx.rsvpSubmission.create).not.toHaveBeenCalled()
   })
 
   it("rejects an edit that tries to take another guest's mobile number", async () => {
-    db.rsvpSubmission.findFirst.mockResolvedValue({ id: "submission-1", guestId: "guest-1" } as never)
-    db.__tx.guest.findFirst.mockResolvedValue({ id: "guest-2" } as never)
+    db.rsvpSubmission.findFirst.mockResolvedValue({
+      id: "submission-1",
+      guestId: "guest-1",
+      mobile: "9876543211",
+    } as never)
 
     await expect(
       submitRsvp({ ...validPayload, editToken: "valid-edit-token-123" }, asClient(db)),
-    ).rejects.toMatchObject({ status: 409 })
+    ).rejects.toMatchObject({ status: 400 })
   })
 })

@@ -1,7 +1,34 @@
-# Agent Tooling Setup — Wedding Guest Manager
+# Agent Tooling — Wedding Guest Manager
 
-Recorded during the autonomous build on 2026-10-29. All installs were user-level
-(global) and did not change project source code.
+Updated 12 November 2026.
+
+## Current verified ECC setup
+
+The user requested the ECC plugin and a team workflow. The official source is `https://github.com/affaan-m/ECC`. ECC version 2.2.3 is present in a separate writable local Codex configuration created during the earlier setup conversation.
+
+The current session independently verified the cached plugin with the repository's `scripts/codex/check-plugin-cache.js`. The manifest and every referenced skills, MCP configuration, hook file, icon and logo path resolved. The local configuration records `ecc@ecc` enabled. The reviewed reference checkout was at commit `d2ef2680594f9a17526a6e1a2e18b3d242c5d17b`.
+
+The default `/home/agent/.codex` directory is read-only. A marketplace-add attempt using that default failed with a read-only filesystem error. The verified writable configuration belongs to its local workspace and does not establish account-wide installation or automatic plugin activation in this chat.
+
+The current team executes reviewed ECC role instructions through the chat's native collaboration tools.
+
+| Role | ECC source | Responsibility |
+|---|---|---|
+| Planner/architect | `agents/planner.md`, `agents/architect.md` | Requirement map, architecture boundaries and honest progress record |
+| Code/security reviewer | `agents/code-reviewer.md`, `skills/security-review/SKILL.md` | Concrete failure scenarios, surrounding code and evidence-backed findings |
+| QA | `agents/e2e-runner.md`, `skills/verification-loop/SKILL.md` | Normal-entry journeys and build/type/lint/test/diff verification |
+
+Third-party examples are adapted to the repository's approved stack and actual commands. Runtime hooks and MCP services are not claimed to be active merely because their files pass the cache check. No model override is implied by the ECC agent frontmatter.
+
+## Local verification environment
+
+The current QA workflow uses disposable PostgreSQL databases and loopback-only SMS/CAPTCHA fixtures. Browser execution uses headless Chromium with multiple browser contexts. Provider mocks exercise application contracts without sending real messages or charging payments. The normal Prisma migration-engine command needs staging verification because the current container has required direct application of tracked SQL migrations.
+
+Current verification evidence belongs in [implementation-tracker.md](implementation-tracker.md). Scratch tool and installation paths can disappear between workspaces and are not portable setup instructions.
+
+## Historical setup record
+
+The following record was supplied with the repository from 29 October 2026. Its installations, paths and service state were not assumed to exist in the current runtime.
 
 ## Global skills (`vercel-labs/skills`)
 

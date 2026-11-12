@@ -29,9 +29,15 @@ jobs:
     env:
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/wedding_guest_manager_test
       AUTH_SECRET: ci-auth-secret-change-me
-      AUTH_URL: http://localhost:3000
+      AUTH_URL: http://127.0.0.1:3000
       AUTH_TRUST_HOST: "true"
       NODE_OPTIONS: --max-old-space-size=4096
+      RSVP_OTP_TEST_ORIGIN: http://127.0.0.1:3097
+      CAPTCHA_TEST_ORIGIN: http://127.0.0.1:3097
+      TURNSTILE_SITE_KEY: local-test-site-key
+      TURNSTILE_SECRET_KEY: local-test-secret
+      TWILIO_VERIFY_SERVICE_SID: VA0123456789abcdef0123456789abcdef
+      TWILIO_API_SECRET: ci-local-test-secret
 
     steps:
       - name: Checkout
@@ -42,6 +48,9 @@ jobs:
         with:
           node-version: 20
           cache: npm
+
+      - name: Generate local verification fixture key
+        run: echo "TWILIO_API_KEY=SK$(openssl rand -hex 16)" >> "$GITHUB_ENV"
 
       - name: Install dependencies
         run: npm ci
@@ -67,22 +76,26 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Run HTTP smoke test
-        run: |
-          PORT=3000 npm run start > /tmp/wedding-server.log 2>&1 &
-          SERVER_PID=$!
-          trap 'kill $SERVER_PID 2>/dev/null || true' EXIT
-          for i in $(seq 1 60); do
-            if curl -sf http://127.0.0.1:3000/auth/login >/dev/null; then break; fi
-            sleep 2
-          done
-          npm run test:smoke
-
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 
-      - name: Run Playwright browser E2E tests
-        run: npm run test:e2e
+      - name: Run HTTP and browser tests
+        run: |
+          node scripts/mock-rsvp-otp.mjs > /tmp/wedding-otp.log 2>&1 &
+          OTP_PID=$!
+          PORT=3000 npm run start > /tmp/wedding-server.log 2>&1 &
+          SERVER_PID=$!
+          trap 'kill "$SERVER_PID" "$OTP_PID" 2>/dev/null || true' EXIT
+          for i in $(seq 1 60); do
+            if curl -sf http://127.0.0.1:3000/auth/login >/dev/null && curl -sf "$RSVP_OTP_TEST_ORIGIN/health" >/dev/null; then
+              break
+            fi
+            sleep 2
+          done
+          curl -fsS http://127.0.0.1:3000/auth/login >/dev/null || { cat /tmp/wedding-server.log; exit 1; }
+          curl -fsS "$RSVP_OTP_TEST_ORIGIN/health" >/dev/null || { cat /tmp/wedding-otp.log; exit 1; }
+          npm run test:smoke
+          PLAYWRIGHT_BASE_URL="$AUTH_URL" npm run test:e2e
 
       - name: Upload Playwright artifacts
         if: always()

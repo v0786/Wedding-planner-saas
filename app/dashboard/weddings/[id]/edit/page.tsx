@@ -1,9 +1,12 @@
+import { getWeddingEntitlements } from "@/lib/subscriptions/service"
+import { INVITATION_THEMES, type WeddingPublicField } from "@/lib/wedding-settings"
 import { auth } from "@/auth"
 import { notFound, redirect } from "next/navigation"
 import { prisma } from "@/lib/prisma"
 import EditWeddingForm from "@/components/wedding/edit-wedding-form"
 import Link from "next/link"
 import PageHeader from "@/components/ui/page-header"
+import { isWeddingExpired } from "@/lib/wedding-lifecycle"
 
 export default async function EditWeddingPage({ params }: { params: Promise<{ id: string }> }) {
   const session = await auth()
@@ -14,6 +17,8 @@ export default async function EditWeddingPage({ params }: { params: Promise<{ id
     where: { id, workspace: { members: { some: { userId: session.user.id } } } },
   })
   if (!wedding) notFound()
+  if (isWeddingExpired(wedding)) redirect(`/dashboard/weddings/${id}`)
+  const entitlements = await getWeddingEntitlements(wedding.workspaceId, wedding.id)
 
   return (
     <main className="mx-auto max-w-2xl px-4 py-8 sm:px-6 lg:px-8">
@@ -42,7 +47,17 @@ export default async function EditWeddingPage({ params }: { params: Promise<{ id
       />
 
       <EditWeddingForm
+        canCustomize={entitlements.features.customBranding}
         wedding={{
+          timezone: wedding.timezone,
+          locale: wedding.locale,
+          contactVisibility: wedding.contactVisibility === "visible" ? "visible" : "hidden",
+          publicFields: wedding.publicFields as WeddingPublicField[],
+          invitationTheme: wedding.invitationTheme in INVITATION_THEMES ? wedding.invitationTheme as keyof typeof INVITATION_THEMES : "classic",
+          themeColor: wedding.themeColor ?? "",
+          coverImageUrl: wedding.coverImageUrl ?? "",
+          couplePhotoUrl: wedding.couplePhotoUrl ?? "",
+          mapUrl: wedding.mapUrl,
           id: wedding.id,
           name: wedding.name,
           coupleName1: wedding.coupleName1,

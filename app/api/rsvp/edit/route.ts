@@ -1,22 +1,26 @@
-import { NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
 import { assertSameOrigin, handleApiError, jsonError } from "@/lib/api"
 import { getEditableRsvp } from "@/lib/rsvp-service"
+import { rsvpBrowserToken } from "@/lib/rsvp-browser"
 
-/** Loads an existing RSVP for the guest edit screen. The token is the credential. */
-export async function GET(req: Request) {
+/** Loads an existing RSVP only in its authorized browser. */
+export async function GET(req: NextRequest) {
   try {
     assertSameOrigin(req)
     const url = new URL(req.url)
     const invitationToken = url.searchParams.get("invitationToken") ?? ""
     const editToken = url.searchParams.get("editToken") ?? ""
 
-    const rsvp = await getEditableRsvp(invitationToken, editToken)
+    const rsvp = await getEditableRsvp(invitationToken, editToken, rsvpBrowserToken(req.cookies))
     if (!rsvp) return jsonError("This RSVP edit link is invalid or has expired", 404)
 
     return NextResponse.json({
       rsvp: {
         fullName: rsvp.fullName,
         mobile: rsvp.mobile,
+        email: rsvp.email,
+        status: rsvp.status,
+        partySize: rsvp.partySize,
         dietaryPrefs: rsvp.dietaryPrefs,
         familyMembers: rsvp.familyMembers.map((member) => ({
           fullName: member.fullName,
@@ -32,7 +36,7 @@ export async function GET(req: Request) {
           value: answer.value,
         })),
       },
-    })
+    }, { headers: { "Cache-Control": "private, no-store", "Referrer-Policy": "no-referrer" } })
   } catch (error) {
     return handleApiError(error)
   }

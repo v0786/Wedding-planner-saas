@@ -14,10 +14,13 @@ model User {
   emailVerified DateTime?
   image         String?
   passwordHash  String?
+  sessionVersion Int @default(0)
+  passwordResetTokens PasswordResetToken[]
   isAdmin       Boolean   @default(false)
   accounts      Account[]
   sessions      Session[]
   memberships   WorkspaceMember[]
+  policyAcceptances PolicyAcceptance[]
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 }
@@ -85,6 +88,10 @@ model WorkspaceMember {
 model Wedding {
   id              String   @id @default(cuid())
   workspaceId     String
+  legacyPlanCode String?
+  legacyPaidThrough DateTime?
+  legacyPlanFeatures Json?
+  legacyPlanLimits Json?
   name            String
   coupleName1     String
   coupleName2     String?
@@ -93,6 +100,10 @@ model Wedding {
   address         String? @db.Text
   mapUrl          String?
   timezone        String   @default("Asia/Kolkata")
+  locale          String   @default("en-IN")
+  contactVisibility String @default("hidden")
+  invitationTheme String   @default("classic")
+  publicFields    String[] @default(["venue", "address", "description", "mapUrl", "coverImageUrl", "couplePhotoUrl"])
   description     String? @db.Text
   coverImageUrl   String? @db.Text
   couplePhotoUrl  String? @db.Text
@@ -105,9 +116,12 @@ model Wedding {
   workspace       Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   events          Event[]
   guests          Guest[]
+  guestImports    GuestImport[]
   rsvpSubmissions RsvpSubmission[]
   customQuestions CustomQuestion[]
   auditLogs       AuditLog[]
+  groupInvitations GroupInvitation[]
+  payments        Payment[]
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
@@ -125,6 +139,9 @@ model Event {
   address         String? @db.Text
   description     String? @db.Text
   imageUrl        String? @db.Text
+  mapUrl          String?
+  dressCode       String?
+  publicFields    String[] @default(["date", "time", "venue", "address", "description", "mapUrl", "dressCode", "imageUrl"])
   order           Int      @default(0)
   rsvpDeadline    DateTime?
   wedding         Wedding  @relation(fields: [weddingId], references: [id], onDelete: Cascade)
@@ -143,6 +160,10 @@ model Guest {
   mobile        String?
   email         String?
   group         String?
+  side          String?
+  category      String?
+  accommodationNeeds String? @db.Text
+  transportNeeds String? @db.Text
   notes         String? @db.Text
   dietaryPrefs  String? @db.Text
   wedding       Wedding  @relation(fields: [weddingId], references: [id], onDelete: Cascade)
@@ -153,22 +174,31 @@ model Guest {
   @@unique([weddingId, mobile])
   @@index([weddingId])
   @@index([weddingId, group])
+  @@index([weddingId, side, category])
 }
 
 model RsvpSubmission {
   id              String   @id @default(cuid())
   weddingId       String
   guestId         String   @unique
+  groupInvitationId String? @unique
   fullName        String
   mobile          String
   email           String?
   status          String   @default("pending")
+  partySize       Int?
   dietaryPrefs    String?  @db.Text
   editTokenHash   String?
+  editTokenNonce String?
+  browserTokenHash String?
+  transferTokenHash String? @unique
+  transferGroupBrowserHash String?
+  transferExpiresAt DateTime?
   submittedAt     DateTime @default(now())
   updatedAt       DateTime @updatedAt
   wedding         Wedding  @relation(fields: [weddingId], references: [id], onDelete: Cascade)
   guest           Guest    @relation(fields: [guestId], references: [id], onDelete: Cascade)
+  groupInvitation GroupInvitation? @relation(fields: [groupInvitationId], references: [id], onDelete: SetNull)
   familyMembers   FamilyMember[]
   eventResponses  RsvpEventResponse[]
   answers         Answer[]
@@ -303,6 +333,7 @@ model Subscription {
 model Payment {
   id                String   @id @default(cuid())
   workspaceId       String
+  weddingId         String?
   subscriptionId    String?
   planId            String
   planCode          String
@@ -310,6 +341,11 @@ model Payment {
   providerOrderId   String   @unique
   providerPaymentId String?  @unique
   amountInPaise     Int
+  baseAmountInPaise Int?
+  taxAmountInPaise Int?
+  taxRateBasisPoints Int?
+  taxInclusive Boolean?
+  weddingPlanPriceInPaise Int?
   currency          String   @default("INR")
   // Snapshot of the plan's billing period at purchase time, so later admin
   // changes cannot shorten or extend a payment that was already made.
@@ -323,10 +359,12 @@ model Payment {
   updatedAt         DateTime @updatedAt
   paidAt            DateTime?
   workspace         Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  wedding           Wedding? @relation(fields: [weddingId], references: [id], onDelete: SetNull)
   subscription      Subscription? @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
   plan              Plan      @relation(fields: [planId], references: [id])
 
   @@index([workspaceId, createdAt])
+  @@index([weddingId, status])
   @@index([status])
 }
 
@@ -339,4 +377,131 @@ model UsageRecord {
   workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
   @@index([workspaceId, metric, recordedAt])
+}
+
+model GroupInvitation {
+  id              String          @id @default(cuid())
+  weddingId       String
+  label           String
+  mobile          String?
+  tokenHash       String          @unique
+  browserHash     String?
+  revokedAt       DateTime?
+  checkedInAt     DateTime?
+  checkedInBy     String?
+  wedding         Wedding         @relation(fields: [weddingId], references: [id], onDelete: Cascade)
+  rsvpSubmission  RsvpSubmission?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@index([weddingId])
+}
+
+model PlatformSettings {
+  businessName String @default("")
+  legalAddress String @default("")
+  supportEmail String @default("")
+  grievanceContact String @default("")
+  id String @id @default("platform")
+  gstEnabled Boolean @default(false)
+  gstRateBasisPoints Int @default(1800)
+  taxInclusive Boolean @default(false)
+  advertisementsEnabled Boolean @default(false)
+  dashboardAds Boolean @default(true)
+  invitationAds Boolean @default(false)
+  publicRsvpAds Boolean @default(false)
+  adText String @default("")
+  adUrl String @default("")
+  updatedAt DateTime @updatedAt
+}
+
+model PlatformSettingsAudit {
+  id String @id @default(cuid())
+  actorUserId String
+  changes Json
+  createdAt DateTime @default(now())
+}
+
+model PolicyAcceptance {
+  id             String   @id @default(cuid())
+  userId         String
+  termsVersion   String
+  privacyVersion String
+  source         String
+  acceptedAt     DateTime @default(now())
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, termsVersion, privacyVersion])
+}
+
+model PlatformAdminAudit {
+  id          String   @id @default(cuid())
+  actorUserId String
+  resource    String
+  reason      String
+  createdAt   DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([actorUserId, createdAt])
+}
+
+model PasswordResetToken {
+  id String @id @default(cuid())
+  userId String
+  tokenHash String @unique
+  sessionVersion Int
+  expiresAt DateTime
+  usedAt DateTime?
+  createdAt DateTime @default(now())
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, expiresAt])
+}
+
+model GuestImport {
+  id String @id @default(cuid())
+  weddingId String
+  keyHash String
+  contentHash String
+  importedCount Int
+  createdAt DateTime @default(now())
+  wedding Wedding @relation(fields: [weddingId], references: [id], onDelete: Cascade)
+
+  @@unique([weddingId, keyHash])
+}
+
+model WeddingDeletionJob {
+  reminders WeddingReminder[]
+  id                  String   @id @default(cuid())
+  weddingId           String?  @unique
+  weddingIdHash       String   @unique
+  requestedByUserHash  String?
+  mode                String   @default("SCHEDULED")
+  status              String   @default("PENDING")
+  scheduledFor        DateTime
+  completedAt         DateTime?
+  safeResult          Json?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([status, scheduledFor])
+}
+
+model WeddingReminder {
+  id String @id @default(cuid())
+  jobId String
+  deletionAt DateTime
+  offsetDays Int
+  scheduledAt DateTime
+  status String @default("PENDING")
+  attempts Int @default(0)
+  leaseUntil DateTime?
+  sentAt DateTime?
+  providerId String?
+  job WeddingDeletionJob @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([jobId, deletionAt, offsetDays])
+  @@index([status, scheduledAt])
 }

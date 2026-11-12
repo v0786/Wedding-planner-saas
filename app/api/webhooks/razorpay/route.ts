@@ -37,7 +37,8 @@ export async function POST(req: Request) {
   }
 
   const event = typeof payload?.event === "string" ? payload.event : "unknown"
-  const entity = (payload?.payload?.payment?.entity ?? payload?.payload?.order?.entity ?? {}) as Record<
+  const paymentEntity = payload?.payload?.payment?.entity
+  const entity = (paymentEntity ?? payload?.payload?.order?.entity ?? {}) as Record<
     string,
     unknown
   > & { error_description?: string; error?: { description?: string } }
@@ -48,7 +49,7 @@ export async function POST(req: Request) {
         ? entity.id
         : undefined
   const paymentId: string | undefined =
-    typeof entity.id === "string" && event.startsWith("payment.") ? entity.id : undefined
+    typeof paymentEntity?.id === "string" ? paymentEntity.id : undefined
   const amountInPaise =
     typeof entity.amount === "number"
       ? entity.amount

@@ -1,21 +1,33 @@
+import Advertisement from "@/components/ui/advertisement"
+import { publicWeddingContent, publicEventContent } from "@/lib/public-wedding"
+import { cookies } from "next/headers"
 import { prisma } from "@/lib/prisma"
 import Link from "next/link"
+import { notFound, redirect } from "next/navigation"
+import { groupRsvpEditPath } from "@/lib/rsvp-service"
+import { rsvpBrowserToken } from "@/lib/rsvp-browser"
+import { publicInvitationWhere } from "@/lib/public-invitation"
+import { isWeddingExpired } from "@/lib/wedding-lifecycle"
+import { getWeddingEntitlements } from "@/lib/subscriptions/service"
 import RsvpForm, { type PublicWedding } from "@/components/rsvp/rsvp-form"
 
 export const dynamic = "force-dynamic"
 
 export default async function RsvpPage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params
+  const cookieStore = await cookies()
+  const invitation = await publicInvitationWhere(token, cookieStore)
+  if (!invitation) notFound()
 
   const wedding = await prisma.wedding.findUnique({
-    where: { invitationToken: token },
+    where: invitation.where,
     include: {
       events: { orderBy: [{ order: "asc" }, { createdAt: "asc" }] },
       customQuestions: { where: { enabled: true }, orderBy: { order: "asc" } },
     },
   })
 
-  if (!wedding || !wedding.published) {
+  if (!wedding || !wedding.published || isWeddingExpired(wedding)) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-ivory-50 paper-texture px-4 py-12">
         <div className="panel w-full max-w-md px-6 py-10 text-center">
@@ -42,29 +54,23 @@ export default async function RsvpPage({ params }: { params: Promise<{ token: st
     )
   }
 
+  if (invitation.group && wedding.allowGuestEdits && (!wedding.rsvpDeadline || new Date() <= wedding.rsvpDeadline)) {
+    const editPath = await groupRsvpEditPath(invitation.group.id, rsvpBrowserToken(cookieStore))
+    if (editPath) redirect(editPath)
+  }
+
+  const visible = publicWeddingContent(wedding)
   const publicWedding: PublicWedding = {
-    id: wedding.id,
-    name: wedding.name,
-    coupleName1: wedding.coupleName1,
-    coupleName2: wedding.coupleName2,
-    date: wedding.date?.toISOString() ?? null,
-    venue: wedding.venue,
-    address: wedding.address,
-    description: wedding.description,
-    coverImageUrl: wedding.coverImageUrl,
-    themeColor: wedding.themeColor,
-    couplePhotoUrl: wedding.couplePhotoUrl,
-    whatsappMessage: wedding.whatsappMessage,
-    events: wedding.events.map((event) => ({
-      id: event.id,
-      name: event.name,
-      date: event.date?.toISOString() ?? null,
-      time: event.time,
-      venue: event.venue,
-      description: event.description,
-      imageUrl: event.imageUrl,
-      rsvpDeadline: event.rsvpDeadline?.toISOString() ?? null,
-    })),
+    ...visible,
+    date: visible.date?.toISOString() ?? null,
+    events: wedding.events.map((event) => {
+      const visibleEvent = publicEventContent(event)
+      return {
+        ...visibleEvent,
+        date: visibleEvent.date?.toISOString() ?? null,
+        rsvpDeadline: visibleEvent.rsvpDeadline?.toISOString() ?? null,
+      }
+    }),
     customQuestions: wedding.customQuestions.map((question) => ({
       id: question.id,
       question: question.question,
@@ -75,6 +81,8 @@ export default async function RsvpPage({ params }: { params: Promise<{ token: st
     })),
   }
 
+  const entitlements = await getWeddingEntitlements(wedding.workspaceId, wedding.id)
+  const whatsappSharing = !invitation.group && entitlements.features.whatsappSharing
   const rsvpUrl = `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/rsvp/${token}`
 
   return (
@@ -83,7 +91,12 @@ export default async function RsvpPage({ params }: { params: Promise<{ token: st
         wedding={publicWedding}
         token={token}
         rsvpUrl={rsvpUrl}
+        privateInvitation={Boolean(invitation.group)}
+        whatsappSharing={whatsappSharing}
       />
+      <div className="mx-auto max-w-2xl px-4">
+        <Advertisement planCode={entitlements.planCode} placement="publicRsvp" />
+      </div>
     </main>
   )
 }

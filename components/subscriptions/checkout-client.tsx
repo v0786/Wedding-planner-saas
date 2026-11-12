@@ -4,6 +4,7 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { toast } from "sonner"
+import { formatInr } from "@/lib/subscriptions/config"
 
 type CheckoutResponse = {
   requiresPayment: boolean
@@ -11,6 +12,9 @@ type CheckoutResponse = {
   message?: string
   orderId?: string
   amountInPaise?: number
+  baseAmountInPaise?: number
+  taxAmountInPaise?: number
+  taxRateBasisPoints?: number
   currency?: string
   keyId?: string
   planCode?: string
@@ -29,29 +33,28 @@ export default function CheckoutClient({
   planCode,
   planName,
   priceLabel,
-  signedIn,
+  weddingId,
+  expectedAmountInPaise,
 }: {
   planCode: string
   planName: string
   priceLabel: string
-  signedIn: boolean
+  weddingId: string
+  expectedAmountInPaise: number
 }) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
+  const [confirmedQuote, setConfirmedQuote] = useState<CheckoutResponse | null>(null)
 
   async function startCheckout() {
-    if (!signedIn) {
-      router.push(`/auth/login?next=/dashboard/billing/checkout?plan=${planCode}`)
-      return
-    }
     setLoading(true)
     setError("")
     try {
       const res = await fetch("/api/subscription/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ planCode }),
+        body: JSON.stringify({ planCode, weddingId }),
       })
       const data = (await res.json()) as CheckoutResponse & { error?: string; code?: string }
 
@@ -61,12 +64,13 @@ export default function CheckoutClient({
         return
       }
 
-      if (data.requiresPayment === false) {
-        toast.success(data.message || "Plan change scheduled")
-        router.push("/dashboard/billing")
-        router.refresh()
+      const expected = confirmedQuote?.amountInPaise ?? expectedAmountInPaise
+      if (data.amountInPaise !== expected) {
+        setConfirmedQuote(data)
+        setError("The checkout amount changed. Review the updated order total below and select Pay to continue.")
         return
       }
+      setConfirmedQuote(data)
 
       if (!window.Razorpay) {
         setError("The payment window could not load. Check your connection and try again.")
@@ -98,7 +102,7 @@ export default function CheckoutClient({
               return
             }
             toast.success("Payment received — your plan is active")
-            router.push("/dashboard/billing")
+            router.push(`/dashboard/billing?weddingId=${encodeURIComponent(weddingId)}`)
             router.refresh()
           } catch {
             toast.error("Payment received but verification failed. Contact support.")
@@ -129,13 +133,20 @@ export default function CheckoutClient({
           {error}
         </div>
       )}
+      {confirmedQuote?.amountInPaise !== undefined && (
+        <dl className="space-y-2 text-sm">
+          <div className="flex justify-between"><dt>Plan price</dt><dd>{formatInr(confirmedQuote.baseAmountInPaise ?? confirmedQuote.amountInPaise)}</dd></div>
+          {Boolean(confirmedQuote.taxRateBasisPoints) && <div className="flex justify-between"><dt>GST ({(confirmedQuote.taxRateBasisPoints ?? 0) / 100}%)</dt><dd>{formatInr(confirmedQuote.taxAmountInPaise ?? 0)}</dd></div>}
+          <div className="flex justify-between font-semibold"><dt>Order total</dt><dd>{formatInr(confirmedQuote.amountInPaise)}</dd></div>
+        </dl>
+      )}
       <button
         type="button"
         onClick={startCheckout}
         disabled={loading}
         className="w-full rounded-xl bg-gradient-to-r from-pink-600 to-indigo-600 px-4 py-3 text-sm font-semibold text-white hover:from-pink-700 hover:to-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
       >
-        {loading ? "Starting checkout…" : signedIn ? `Pay ${priceLabel}` : "Sign in to continue"}
+        {loading ? "Starting checkout…" : `Pay ${confirmedQuote?.amountInPaise !== undefined ? formatInr(confirmedQuote.amountInPaise) : priceLabel}`}
       </button>
       <p className="text-center text-xs text-gray-500">
         Payments are processed securely by Razorpay. Your plan activates only after the payment is verified.

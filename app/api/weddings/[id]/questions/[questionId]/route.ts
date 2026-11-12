@@ -6,7 +6,7 @@ import {
   readJson,
 } from "@/lib/api"
 import { requireUserId } from "@/lib/server-auth"
-import { requireWeddingAccess } from "@/lib/wedding-access"
+import { requireOpenWeddingAccess } from "@/lib/wedding-access"
 import { customQuestionSchema } from "@/lib/validation"
 import { ApiError } from "@/lib/errors"
 import { logAudit } from "@/lib/audit"
@@ -18,7 +18,7 @@ export async function PATCH(req: Request, { params }: Params) {
     assertSameOrigin(req)
     const userId = await requireUserId()
     const { id, questionId } = await params
-    await requireWeddingAccess(id, userId)
+    await requireOpenWeddingAccess(id, userId)
 
     const existing = await prisma.customQuestion.findFirst({
       where: { id: questionId, weddingId: id },
@@ -43,7 +43,7 @@ export async function DELETE(req: Request, { params }: Params) {
     assertSameOrigin(req)
     const userId = await requireUserId()
     const { id, questionId } = await params
-    await requireWeddingAccess(id, userId)
+    await requireOpenWeddingAccess(id, userId)
 
     const existing = await prisma.customQuestion.findFirst({
       where: { id: questionId, weddingId: id },

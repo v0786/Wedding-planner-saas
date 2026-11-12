@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import { DeviceTransfer } from "@/components/rsvp/device-transfer"
 import { useSearchParams } from "next/navigation"
 import { Suspense, useEffect, useState } from "react"
 
@@ -153,16 +154,17 @@ function ThankYouContent() {
                     <div>
                       <p className="font-display text-lg text-ink-800">Need to change something later?</p>
                       <p className="mt-1 text-sm text-ink-500">
-                        Save this private link. Anyone with it can edit this RSVP.
+                        Save this private edit link and reopen it in this browser. To switch browsers, create a device transfer link.
                       </p>
                     </div>
                   </div>
-                  <Link href={editHref} className="btn btn-secondary mt-5 w-full">
+                  <Link href={editHref} prefetch={false} className="btn btn-secondary mt-5 w-full">
                     <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.7} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                     </svg>
                     Edit my RSVP
                   </Link>
+                  <DeviceTransfer invitationToken={searchParams.get("invite") ?? ""} editToken={searchParams.get("edit") ?? ""} />
                 </div>
               ) : (
                 <div className="card-inset px-5 py-5">

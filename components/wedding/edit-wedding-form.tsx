@@ -1,11 +1,14 @@
 "use client"
 
 import { useState } from "react"
+import WeddingSetupOptions, { type WeddingSetupState } from "@/components/wedding/wedding-setup-options"
+import InvitationDesignFields, { type InvitationDesignState } from "@/components/wedding/invitation-design-fields"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Field, FormError, FormSuccess, Input, Textarea } from "@/components/ui/field"
 
-type Wedding = {
+type Wedding = WeddingSetupState & InvitationDesignState & {
+  mapUrl: string | null
   id: string
   name: string
   coupleName1: string
@@ -17,7 +20,8 @@ type Wedding = {
   rsvpDeadline: string | null
 }
 
-type FormState = {
+type FormState = WeddingSetupState & InvitationDesignState & {
+  mapUrl: string
   name: string
   coupleName1: string
   coupleName2: string
@@ -34,8 +38,17 @@ function dateInput(value: string | null): string {
   return Number.isNaN(date.getTime()) ? "" : date.toISOString().slice(0, 10)
 }
 
-export default function EditWeddingForm({ wedding }: { wedding: Wedding }) {
+export default function EditWeddingForm({ wedding, canCustomize }: { wedding: Wedding; canCustomize: boolean }) {
   const [form, setForm] = useState<FormState>({
+    timezone: wedding.timezone,
+    locale: wedding.locale,
+    contactVisibility: wedding.contactVisibility,
+    publicFields: wedding.publicFields,
+    invitationTheme: wedding.invitationTheme,
+    themeColor: wedding.themeColor,
+    coverImageUrl: wedding.coverImageUrl,
+    couplePhotoUrl: wedding.couplePhotoUrl,
+    mapUrl: wedding.mapUrl ?? "",
     name: wedding.name,
     coupleName1: wedding.coupleName1,
     coupleName2: wedding.coupleName2 ?? "",
@@ -173,6 +186,15 @@ export default function EditWeddingForm({ wedding }: { wedding: Wedding }) {
             onChange={(e) => update("description", e.target.value)}
           />
         </Field>
+
+        <Field label="Wedding map URL" htmlFor="edit-map-url">
+          <Input id="edit-map-url" type="url" value={form.mapUrl} maxLength={2048}
+            onChange={event => update("mapUrl", event.target.value)} placeholder="https://…" />
+        </Field>
+        <WeddingSetupOptions value={form} onChange={updates => { setForm(current => ({ ...current, ...updates })); setSaved(false) }} />
+        <InvitationDesignFields weddingId={wedding.id} value={form} canCustomize={canCustomize}
+          onChange={updates => { setForm(current => ({ ...current, ...updates })); setSaved(false) }}
+          coupleNames={[form.coupleName1, form.coupleName2].filter(Boolean).join(" & ")} message={form.description} />
 
         {error && <FormError>{error}</FormError>}
         {saved && <FormSuccess>Wedding details saved.</FormSuccess>}

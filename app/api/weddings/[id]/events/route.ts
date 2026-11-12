@@ -1,3 +1,4 @@
+import { assertEventDesignChanges } from "@/lib/invitation-design"
 import { requireUserId } from "@/lib/server-auth"
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
@@ -7,7 +8,7 @@ import {
   readJson,
 } from "@/lib/api"
 import { eventSchema } from "@/lib/validation"
-import { requireWeddingAccess } from "@/lib/wedding-access"
+import { requireOpenWeddingAccess, requireWeddingAccess } from "@/lib/wedding-access"
 import { logAudit } from "@/lib/audit"
 import { assertWeddingLimit, withWorkspaceLimitLock } from "@/lib/subscriptions/service"
 
@@ -32,10 +33,11 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     assertSameOrigin(req)
     const userId = await requireUserId()
     const { id } = await params
-    const wedding = await requireWeddingAccess(id, userId)
+    const wedding = await requireOpenWeddingAccess(id, userId)
 
     const body = await readJson(req)
     const data = eventSchema.parse(body)
+    await assertEventDesignChanges(wedding.workspaceId, id, {}, data)
 
     const event = await withWorkspaceLimitLock(wedding.workspaceId, "events", async (tx) => {
       await assertWeddingLimit(wedding.workspaceId, id, "events")

@@ -1,15 +1,10 @@
 # Testing Strategy --- Wedding Guest Manager
 
-**Status:** Plan only; no tests have been implemented or run in this
-documentation task.
+The repository has executable Jest unit/integration suites, React Testing Library checks, HTTP smoke tests, and Playwright browser journeys. The matrix below is the full acceptance target. Actual executed results and remaining target checks are recorded in `docs/implementation-tracker.md`.
 
 ## 1. Tools
 
-Vitest for domain/unit; React Testing Library for web; React Native
-Testing Library for mobile; Playwright for web E2E; dedicated Supabase
-test project/local environment for DB/RLS integration; axe plus manual
-accessibility checks; dependency/static security scans. Pin versions
-after scaffold.
+Jest for current domain/unit and PostgreSQL integration tests, React Testing Library for UI regressions, and Playwright for web journeys. Mobile test infrastructure is pending the native-app phase. Use an isolated test database and mock provider boundaries. Production RLS/storage, accessibility, provider sandbox, and dependency acceptance are additional release checks.
 
 ## 2. Priorities
 

@@ -1,5 +1,15 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  async headers() {
+    const privateRsvpHeaders = [
+      { key: "Referrer-Policy", value: "strict-origin" },
+      { key: "Cache-Control", value: "private, no-store" },
+    ];
+    return ["/rsvp/:token/edit", "/rsvp/:token", "/invite/:token", "/group-invite/:token"].map((source) => ({
+      source,
+      headers: privateRsvpHeaders,
+    }));
+  },
   // Keep file tracing inside the project. Without this, tracing walks the
   // container's /proc tree and fails on recursive symlinks.
   outputFileTracingRoot: process.cwd(),

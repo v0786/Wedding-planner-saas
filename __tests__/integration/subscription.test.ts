@@ -1,12 +1,12 @@
 import { describe, it, expect, beforeAll, afterAll } from "@jest/globals"
 import { prisma } from "@/lib/prisma"
+import { Prisma } from "@prisma/client"
 import {
   assertFeature,
   assertWeddingLimit,
   assertWorkspaceLimit,
   ensurePlanRows,
   getEntitlements,
-  getPlanConfigs,
   withWorkspaceLimitLock,
 } from "@/lib/subscriptions/service"
 import {
@@ -25,6 +25,15 @@ let otherId: string
 let workspaceId: string
 let otherWorkspaceId: string
 let weddingId: string
+const planFixtureFields = {
+  code: true,
+  priceInPaise: true,
+  billingPeriodDays: true,
+  features: true,
+  limits: true,
+  isActive: true,
+} satisfies Prisma.PlanSelect
+let originalPlans: Prisma.PlanGetPayload<{ select: typeof planFixtureFields }>[] = []
 
 async function makePayment(workspace: string, planCode: "PRO" | "PRIME", orderId: string) {
   const plan = await prisma.plan.findUniqueOrThrow({ where: { code: planCode } })
@@ -46,6 +55,10 @@ async function makePayment(workspace: string, planCode: "PRO" | "PRIME", orderId
 
 beforeAll(async () => {
   await ensurePlanRows()
+  originalPlans = await prisma.plan.findMany({
+    where: { code: { in: ["FREE", "PRO", "PRIME"] } },
+    select: planFixtureFields,
+  })
   // Make paid plans purchasable and keep limits small so tests stay fast.
   await prisma.plan.update({
     where: { code: "PRO" },
@@ -105,16 +118,24 @@ beforeAll(async () => {
 })
 
 afterAll(async () => {
-  await prisma.workspace.deleteMany({ where: { id: { in: [workspaceId, otherWorkspaceId] } } })
-  await prisma.user.deleteMany({ where: { id: { in: [ownerId, otherId] } } })
-  // Restore the shipped defaults so other runs see "Coming Soon".
-  for (const plan of await getPlanConfigs()) {
-    await prisma.plan.update({
-      where: { code: plan.code },
-      data: { priceInPaise: null, isActive: plan.code === "FREE" },
-    })
+  try {
+    await prisma.$transaction(
+      originalPlans.map(({ code, features, limits, ...plan }) =>
+        prisma.plan.update({
+          where: { code },
+          data: {
+            ...plan,
+            features: features ?? Prisma.JsonNull,
+            limits: limits ?? Prisma.JsonNull,
+          },
+        }),
+      ),
+    )
+    await prisma.workspace.deleteMany({ where: { id: { in: [workspaceId, otherWorkspaceId].filter(Boolean) } } })
+    await prisma.user.deleteMany({ where: { id: { in: [ownerId, otherId].filter(Boolean) } } })
+  } finally {
+    await prisma.$disconnect()
   }
-  await prisma.$disconnect()
 })
 
 describe("subscriptions and entitlements", () => {
@@ -176,13 +197,19 @@ describe("subscriptions and entitlements", () => {
     expect(after.currentPeriodEnd?.toISOString()).toBe(before.currentPeriodEnd?.toISOString())
   })
 
-  it("enforces PRO guest, event and question limits", async () => {
-    // 0 guests, adding 2 is allowed; adding 3 is not.
-    await expect(assertWeddingLimit(workspaceId, weddingId, "guests", 2)).resolves.toBeTruthy()
-    await expect(assertWeddingLimit(workspaceId, weddingId, "guests", 3)).rejects.toMatchObject({
-      status: 402,
-      details: { limitKey: "guestsPerWedding", current: 0, max: 2 },
+  it("keeps guests unlimited and enforces the migrated wedding's PRO event and question limits", async () => {
+    const plan = await prisma.plan.findUniqueOrThrow({ where: { code: "PRO" } })
+    const subscription = await prisma.subscription.findUniqueOrThrow({ where: { workspaceId } })
+    await prisma.wedding.update({
+      where: { id: weddingId },
+      data: {
+        legacyPlanCode: plan.code,
+        legacyPaidThrough: subscription.currentPeriodEnd,
+        legacyPlanFeatures: plan.features ?? Prisma.JsonNull,
+        legacyPlanLimits: plan.limits ?? Prisma.JsonNull,
+      },
     })
+    await expect(assertWeddingLimit(workspaceId, weddingId, "guests", 3)).resolves.toBeTruthy()
 
     await prisma.guest.createMany({
       data: [
@@ -190,10 +217,7 @@ describe("subscriptions and entitlements", () => {
         { weddingId, firstName: "Guest", lastName: "Two", mobile: `91000${suffix.slice(-5)}` },
       ],
     })
-    await expect(assertWeddingLimit(workspaceId, weddingId, "guests")).rejects.toMatchObject({
-      status: 402,
-      details: { current: 2, max: 2 },
-    })
+    await expect(assertWeddingLimit(workspaceId, weddingId, "guests")).resolves.toBeTruthy()
 
     await prisma.event.createMany({
       data: [
@@ -431,28 +455,29 @@ describe("subscriptions and entitlements", () => {
   })
 
   it("serialises quota checks so concurrent creates cannot exceed the limit", async () => {
+    await prisma.wedding.update({ where: { id: weddingId }, data: { legacyPaidThrough: new Date("2020-01-01") } })
     await prisma.plan.update({
       where: { code: "FREE" },
       data: {
         limits: {
           weddings: 1,
-          guestsPerWedding: 3,
-          eventsPerWedding: 2,
+          guestsPerWedding: 50,
+          eventsPerWedding: 3,
           customQuestionsPerWedding: 0,
         },
       },
     })
 
     try {
-      const attempt = (mobile: string) =>
-        withWorkspaceLimitLock(workspaceId, "guests", async (tx) => {
-          await assertWeddingLimit(workspaceId, weddingId, "guests")
-          return tx.guest.create({ data: { weddingId, firstName: "Race", mobile } })
+      const attempt = (name: string) =>
+        withWorkspaceLimitLock(workspaceId, "events", async (tx) => {
+          await assertWeddingLimit(workspaceId, weddingId, "events")
+          return tx.event.create({ data: { weddingId, name } })
         })
 
       const results = await Promise.allSettled([
-        attempt(`92000${suffix.slice(-5)}`),
-        attempt(`93000${suffix.slice(-5)}`),
+        attempt("Race A"),
+        attempt("Race B"),
       ])
 
       expect(results.filter((result) => result.status === "fulfilled")).toHaveLength(1)
@@ -463,7 +488,7 @@ describe("subscriptions and entitlements", () => {
         status: 402,
         details: { code: "LIMIT_REACHED" },
       })
-      expect(await prisma.guest.count({ where: { weddingId } })).toBe(3)
+      expect(await prisma.event.count({ where: { weddingId } })).toBe(3)
     } finally {
       await prisma.plan.update({
         where: { code: "FREE" },

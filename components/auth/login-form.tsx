@@ -1,12 +1,13 @@
 "use client"
 
 import { useState } from "react"
+import Link from "next/link"
 import { signIn } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Field, FormError, Input } from "@/components/ui/field"
 
-export default function LoginForm() {
+export default function LoginForm({ googleEnabled = false }: { googleEnabled?: boolean }) {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [error, setError] = useState("")
@@ -70,11 +71,17 @@ export default function LoginForm() {
         />
       </Field>
 
+      <Link href="/auth/forgot-password" className="block text-sm font-medium text-gold-700 underline">Forgot password?</Link>
       {error && <FormError>{error}</FormError>}
 
       <Button type="submit" disabled={loading} size="lg" className="w-full">
         {loading ? "Signing in..." : "Sign in"}
       </Button>
+      {googleEnabled && (
+        <Button type="button" variant="secondary" className="w-full" onClick={() => signIn("google", { callbackUrl: "/onboarding" })}>
+          Continue with Google
+        </Button>
+      )}
     </form>
   )
 }

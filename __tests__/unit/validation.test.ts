@@ -1,4 +1,5 @@
 import { describe, it, expect } from "@jest/globals"
+import { PRIVACY_VERSION, TERMS_VERSION } from "@/lib/policies"
 import { rsvpSchema, registerSchema, guestSchema, eventSchema, optionalDate } from "@/lib/validation"
 
 describe("rsvpSchema", () => {
@@ -50,14 +51,16 @@ describe("rsvpSchema", () => {
 })
 
 describe("registerSchema", () => {
+  const policies = { termsAccepted: true, privacyAcknowledged: true, termsVersion: TERMS_VERSION, privacyVersion: PRIVACY_VERSION }
   it("requires an 8 character password", () => {
     expect(
-      registerSchema.safeParse({ name: "A", email: "a@example.com", password: "short" }).success,
+      registerSchema.safeParse({ ...policies, name: "A", email: "a@example.com", password: "short" }).success,
     ).toBe(false)
   })
 
   it("lowercases and trims the email", () => {
     const parsed = registerSchema.parse({
+      ...policies,
       name: " A ",
       email: "  HOST@Example.COM ",
       password: "longenough",

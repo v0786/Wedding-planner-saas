@@ -2,12 +2,12 @@
  * Real HTTP end-to-end smoke test.
  *
  * Runs against a production build (`npm run build && npm run start`) and a
- * seeded database. It uses the public HTTP API the same way the browser does,
- * including the Auth.js credentials flow, so it exercises middleware, route
- * handlers, Prisma, validation, CSRF origin checks and tenant isolation.
+ * seeded local test database and loopback OTP mock. It uses the public HTTP API
+ * the same way the browser does, including Auth.js and phone verification.
  *
  * Usage:
- *   npm run start            # in another terminal
+ *   node scripts/mock-rsvp-otp.mjs
+ *   npm run start            # in another terminal with RSVP_OTP_TEST_ORIGIN set
  *   npm run test:smoke
  *
  * Override the target with APP_URL.
@@ -15,8 +15,23 @@
 import { PrismaClient } from "@prisma/client";
 
 const base = (process.env.APP_URL ?? "http://127.0.0.1:3000").replace(/\/$/, "");
+const localHostnames = ["127.0.0.1", "localhost", "[::1]"];
+const app = new URL(base);
+const db = new URL(process.env.DATABASE_URL ?? "postgresql://invalid");
+const otp = new URL(process.env.RSVP_OTP_TEST_ORIGIN ?? "http://invalid");
+if (!localHostnames.includes(app.hostname) || !localHostnames.includes(db.hostname) ||
+    !localHostnames.includes(otp.hostname) || !db.pathname.endsWith("_test")) {
+  throw new Error("Run the smoke suite against a local *_test database and loopback OTP mock.");
+}
 const prisma = new PrismaClient();
 const suffix = `${Date.now()}${Math.floor(Math.random() * 1000)}`;
+
+const policyAcceptance = {
+  termsAccepted: true,
+  privacyAcknowledged: true,
+  termsVersion: "2026-11-11",
+  privacyVersion: "2026-11-11",
+};
 
 let passed = 0;
 const failures = [];
@@ -78,6 +93,7 @@ async function login(client, email, password) {
 async function main() {
   console.log(`Smoke test against ${base}`);
   const host = makeClient();
+  const guestBrowser = makeClient();
 
   const unauthorized = await host.request("/api/weddings");
   check("unauthenticated API request returns 401", unauthorized.status === 401);
@@ -87,69 +103,12 @@ async function main() {
     await login(host, "demo@example.com", "demo1234"),
   );
 
-  // The journey below exercises premium features (custom questions, CSV
-  // import/export, reports) and creates more than one wedding. The Free plan
-  // allows neither, so provision a plan entitlement fixture for the demo
-  // workspace and remove it again once the run finishes. This mirrors what a
-  // real paid account has, without requiring Razorpay credentials.
-  const proPlan = await prisma.plan.upsert({
-    where: { code: "PRO" },
-    update: {},
-    create: {
-      code: "PRO",
-      name: "Pro",
-      description: "More weddings, a bigger guest list and rich RSVP collection.",
-      priceInPaise: null,
-      currency: "INR",
-      billingPeriodDays: 30,
-      features: {
-        whatsappSharing: true,
-        customQuestions: true,
-        csvImport: true,
-        csvExport: true,
-        reports: true,
-        customBranding: true,
-        prioritySupport: false,
-      },
-      limits: {
-        weddings: 3,
-        guestsPerWedding: 500,
-        eventsPerWedding: 5,
-        customQuestionsPerWedding: 10,
-      },
-      isActive: false,
-      sortOrder: 1,
-    },
+  const acceptedPolicies = await host.request("/api/policies/accept", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(policyAcceptance),
   });
-  const demoUser = await prisma.user.findUnique({
-    where: { email: "demo@example.com" },
-    include: { memberships: { select: { workspaceId: true } } },
-  });
-  const demoWorkspaceId = demoUser?.memberships[0]?.workspaceId;
-  let entitlementFixture = null;
-  if (demoWorkspaceId) {
-    const periodEnd = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-    entitlementFixture = await prisma.subscription.upsert({
-      where: { workspaceId: demoWorkspaceId },
-      update: {
-        planId: proPlan.id,
-        status: "ACTIVE",
-        currentPeriodStart: new Date(),
-        currentPeriodEnd: periodEnd,
-        cancelAtPeriodEnd: false,
-        pendingPlanCode: null,
-      },
-      create: {
-        workspaceId: demoWorkspaceId,
-        planId: proPlan.id,
-        status: "ACTIVE",
-        currentPeriodStart: new Date(),
-        currentPeriodEnd: periodEnd,
-        cancelAtPeriodEnd: false,
-      },
-    });
-  }
-  check("plan entitlement fixture is provisioned for the demo workspace", Boolean(entitlementFixture));
+  check("legacy host explicitly accepts the current policies", acceptedPolicies.status === 200);
 
   const createResponse = await host.request("/api/weddings", {
     method: "POST",
@@ -168,6 +127,30 @@ async function main() {
   const weddingId = created.wedding?.id;
   const invitationToken = created.wedding?.invitationToken;
   if (!weddingId) throw new Error("Cannot continue without a wedding id");
+
+  // Seed a paid order only for this disposable wedding. This exercises the
+  // production entitlement lookup without contacting Razorpay.
+  const proPlan = await prisma.plan.findUniqueOrThrow({ where: { code: "PRO" } });
+  const { workspaceId } = await prisma.wedding.findUniqueOrThrow({
+    where: { id: weddingId },
+    select: { workspaceId: true },
+  });
+  const entitlementFixture = await prisma.payment.create({
+    data: {
+      workspaceId,
+      weddingId,
+      planId: proPlan.id,
+      planCode: proPlan.code,
+      provider: "test-fixture",
+      providerOrderId: `smoke_${suffix}`,
+      amountInPaise: 100,
+      weddingPlanPriceInPaise: 100,
+      billingPeriodDays: 0,
+      status: "PAID",
+      paidAt: new Date(),
+    },
+  });
+  check("plan entitlement fixture is provisioned for this wedding", Boolean(entitlementFixture.id));
 
   const eventResponse = await host.request(`/api/weddings/${weddingId}/events`, {
     method: "POST",
@@ -256,6 +239,8 @@ async function main() {
     exportResponse.status === 200 && exportCsv.includes("Csv,Guest"),
   );
 
+  check("guest CSV omits contact details when wedding privacy hides them", !exportCsv.includes(`98${suffix.slice(-8)}`));
+
   const publishResponse = await host.request(`/api/weddings/${weddingId}/publish`, {
     method: "POST",
     headers: { "content-type": "application/json" },
@@ -270,19 +255,66 @@ async function main() {
     invitationPage.status === 200 && invitationHtml.includes(`Smoke Wedding ${suffix}`),
   );
 
+  const hiddenAddress = `Private address ${suffix}`;
+  const privacyUpdate = await host.request(`/api/weddings/${weddingId}`, {
+    method: "PATCH",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ address: hiddenAddress, publicFields: ["venue"] }),
+  });
+  check("host can choose which optional invitation details are public", privacyUpdate.status === 200);
+  const privateInvitationHtml = await (await fetch(`${base}/invite/${invitationToken}`)).text();
+  const privateRsvpHtml = await (await fetch(`${base}/rsvp/${invitationToken}`)).text();
+  check("hidden wedding address is absent from invitation HTML and serialized data", !privateInvitationHtml.includes(hiddenAddress));
+  check("hidden wedding address is absent from RSVP HTML and serialized data", !privateRsvpHtml.includes(hiddenAddress));
+  await host.request(`/api/weddings/${weddingId}`, {
+    method: "PATCH",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ address: null, publicFields: ["venue", "address", "description", "mapUrl", "coverImageUrl", "couplePhotoUrl"] }),
+  });
+
   const rsvpPage = await fetch(`${base}/rsvp/${invitationToken}`);
   const rsvpHtml = await rsvpPage.text();
   check("public RSVP page renders", rsvpPage.status === 200);
   check("custom question renders on the RSVP form", rsvpHtml.includes("Smoke question"));
 
   const rsvpMobile = `96${suffix.slice(-8)}`;
-  const submitResponse = await fetch(`${base}/api/rsvp`, {
+  const otpHeaders = { "content-type": "application/json" };
+  const phoneRequest = { invitationToken, mobile: rsvpMobile };
+  const captchaOrigin = process.env.CAPTCHA_TEST_ORIGIN
+  if (!captchaOrigin) throw new Error("Configure CAPTCHA_TEST_ORIGIN for this isolated smoke test")
+  const captchaResponse = await fetch(new URL("/captcha-token", captchaOrigin), {
+    method: "POST",
+    body: new URLSearchParams({ hostname: new URL(base).hostname }),
+  })
+  const { token: captchaToken } = await captchaResponse.json()
+  const sendCode = await guestBrowser.request("/api/rsvp/phone/request", {
+    method: "POST",
+    headers: otpHeaders,
+    body: JSON.stringify({ ...phoneRequest, captchaToken }),
+  });
+  const { challenge, error: requestError } = await sendCode.json();
+  check("guest requests phone verification", sendCode.status === 200 && Boolean(challenge), requestError);
+
+  const verifyCode = await guestBrowser.request("/api/rsvp/phone/verify", {
+    method: "POST",
+    headers: otpHeaders,
+    body: JSON.stringify({
+      ...phoneRequest,
+      challenge,
+      code: process.env.RSVP_OTP_TEST_CODE ?? "123456",
+    }),
+  });
+  const { proof, error: verifyError } = await verifyCode.json();
+  check("guest verifies their mobile number", verifyCode.status === 200 && Boolean(proof), verifyError);
+
+  const submitResponse = await guestBrowser.request("/api/rsvp", {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({
       token: invitationToken,
       fullName: "Smoke RSVP",
       mobile: rsvpMobile,
+      phoneProof: proof,
       dietaryPrefs: "Vegetarian",
       familyMembers: [{ fullName: "Smoke Plus One", relation: "Spouse", age: "30" }],
       eventResponses: { [event.id]: "yes" },
@@ -295,9 +327,12 @@ async function main() {
     submitResponse.status === 201 && Boolean(submitted.editToken),
   );
 
-  const editLoad = await fetch(
-    `${base}/api/rsvp/edit?invitationToken=${encodeURIComponent(invitationToken)}&editToken=${encodeURIComponent(submitted.editToken)}`,
-  );
+  const editApiPath = `/api/rsvp/edit?invitationToken=${encodeURIComponent(invitationToken)}&editToken=${encodeURIComponent(submitted.editToken)}`;
+  const editLoad = await guestBrowser.request(editApiPath);
+  const changedNetwork = await guestBrowser.request(editApiPath, { headers: { "x-forwarded-for": "192.0.2.2" } });
+  check("the authorized browser retains RSVP access after an IP change", changedNetwork.status === 200);
+  const forwardedEdit = await fetch(`${base}${editApiPath}`);
+  check("forwarded edit API link is inaccessible without the guest browser", forwardedEdit.status === 404);
   const editData = await editLoad.json();
   check(
     "edit token loads the RSVP and its answer",
@@ -306,7 +341,7 @@ async function main() {
       editData.rsvp?.answers?.[0]?.value === "smoke answer",
   );
 
-  const editResponse = await fetch(`${base}/api/rsvp`, {
+  const editResponse = await guestBrowser.request("/api/rsvp", {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({
@@ -326,17 +361,13 @@ async function main() {
     editResponse.status === 201 && edited.editToken === submitted.editToken,
   );
 
-  const editPage = await fetch(
-    `${base}/rsvp/${invitationToken}/edit?token=${encodeURIComponent(submitted.editToken)}`,
-  );
-  check("edit page renders for a valid token", editPage.status === 200);
+  const editPath = `/rsvp/${invitationToken}/edit?token=${encodeURIComponent(submitted.editToken)}`;
+  const editPage = await guestBrowser.request(editPath);
+  check("edit page renders in the authorized browser", editPage.status === 200);
+  check("forwarded edit page returns 404", (await fetch(`${base}${editPath}`)).status === 404);
 
-  const badEditPage = await fetch(`${base}/rsvp/${invitationToken}/edit?token=invalid-token`);
-  const badEditHtml = await badEditPage.text();
-  check(
-    "edit page rejects an invalid token",
-    badEditPage.status === 200 && badEditHtml.includes("Edit link not valid"),
-  );
+  const badEditPage = await guestBrowser.request(`/rsvp/${invitationToken}/edit?token=invalid-token`);
+  check("edit page rejects an invalid token", badEditPage.status === 404);
 
   const reportsPage = await host.request(`/dashboard/weddings/${weddingId}/reports`);
   const reportsHtml = await reportsPage.text();
@@ -352,12 +383,14 @@ async function main() {
     rsvpExport.status === 200 && rsvpCsv.includes("Smoke RSVP Edited"),
   );
 
+  check("RSVP CSV omits phone contacts when wedding privacy hides them", !rsvpCsv.includes(rsvpMobile));
+
   const guestCsvReport = await host.request(`/api/weddings/${weddingId}/guests/export`);
   check("guest export remains downloadable after edits", guestCsvReport.status === 200);
 
 
   // UI navigation: public pages.
-  for (const path of ["/", "/faq", "/onboarding", "/auth/register", "/auth/login"]) {
+  for (const path of ["/", "/faq", "/onboarding", "/auth/register", "/auth/login", "/terms", "/privacy", "/auth/forgot-password"]) {
     const response = await fetch(`${base}${path}`);
     check(`public page renders: ${path}`, response.status === 200);
   }
@@ -391,7 +424,7 @@ async function main() {
     body: JSON.stringify({ name: `Smoke Wedding Updated ${suffix}`, venue: "Updated Hall" }),
   });
   const updatedWedding = await updateWeddingResponse.json();
-  check("host can update wedding details", updateWeddingResponse.status === 200);
+  check("host can update wedding details", updateWeddingResponse.status === 200 && updatedWedding.wedding?.id === weddingId);
   const weddingDetailResponse = await host.request(`/api/weddings/${weddingId}`);
   const weddingDetail = await weddingDetailResponse.json();
   check(
@@ -516,13 +549,13 @@ async function main() {
     body: JSON.stringify({ token: invitationToken, fullName: "No Mobile" }),
   });
   check("RSVP rejects a missing mobile number", missingMobileRsvpResponse.status === 400);
-  const unknownTokenRsvpResponse = await fetch(`${base}/api/rsvp`, {
+  const unknownTokenRsvpResponse = await fetch(`${base}/api/rsvp/phone/request`, {
     method: "POST",
     headers: { "content-type": "application/json", "x-forwarded-for": "10.1.1.3" },
-    body: JSON.stringify({ token: "not-a-real-invitation", fullName: "Nobody", mobile: "9999999999" }),
+    body: JSON.stringify({ invitationToken: "not-a-real-invitation", mobile: "9999999999" }),
   });
-  check("RSVP rejects an unknown invitation token", unknownTokenRsvpResponse.status === 404);
-  const invalidEditTokenResponse = await fetch(`${base}/api/rsvp`, {
+  check("phone verification rejects an unknown invitation token", unknownTokenRsvpResponse.status === 404);
+  const invalidEditTokenResponse = await guestBrowser.request("/api/rsvp", {
     method: "POST",
     headers: { "content-type": "application/json", "x-forwarded-for": "10.1.1.4" },
     body: JSON.stringify({
@@ -533,7 +566,7 @@ async function main() {
       editToken: "definitely-not-a-valid-edit-token",
     }),
   });
-  check("RSVP rejects an invalid edit token", invalidEditTokenResponse.status === 403);
+  check("RSVP rejects an invalid edit token", invalidEditTokenResponse.status === 404);
 
   // Past-deadline edge case. The plan limit allows a limited number of
   // weddings, so the deadline is moved on the existing wedding instead of
@@ -544,16 +577,18 @@ async function main() {
     body: JSON.stringify({ rsvpDeadline: "2020-01-01" }),
   });
   check("host can move the RSVP deadline into the past", pastDeadlinePatch.status === 200);
-  const pastRsvpResponse = await fetch(`${base}/api/rsvp`, {
+  const pastRsvpResponse = await guestBrowser.request("/api/rsvp", {
     method: "POST",
     headers: { "content-type": "application/json", "x-forwarded-for": "10.1.1.5" },
     body: JSON.stringify({
       token: invitationToken,
       fullName: "Too Late",
-      mobile: `94${suffix.slice(-8)}`,
+      mobile: rsvpMobile,
+      phoneProof: proof,
     }),
   });
-  check("RSVP rejects a submission after the wedding deadline", pastRsvpResponse.status === 400);
+  const pastRsvp = await pastRsvpResponse.json();
+  check("RSVP rejects a submission after the wedding deadline", pastRsvpResponse.status === 400 && /deadline/i.test(pastRsvp.error));
   // Restore the deadline so the remaining checks run against a live wedding.
   await host.request(`/api/weddings/${weddingId}`, {
     method: "PATCH",
@@ -574,18 +609,20 @@ async function main() {
   const pastEvent = (await eventDeadlineResponse.json()).event;
   check("host can create an event with a past deadline", eventDeadlineResponse.status === 201 && Boolean(pastEvent?.id));
   if (pastEvent?.id) {
-    const eventDeadlineRsvpResponse = await fetch(`${base}/api/rsvp`, {
+    const eventDeadlineRsvpResponse = await guestBrowser.request("/api/rsvp", {
       method: "POST",
       headers: { "content-type": "application/json", "x-forwarded-for": "10.1.1.6" },
       body: JSON.stringify({
         token: invitationToken,
         fullName: "Event Too Late",
-        mobile: `93${suffix.slice(-8)}`,
+        mobile: rsvpMobile,
+        phoneProof: proof,
         eventResponses: { [pastEvent.id]: "yes" },
         answers: [{ questionId: question.id, value: "late" }],
       }),
     });
-    check("RSVP rejects an event whose deadline has passed", eventDeadlineRsvpResponse.status === 400);
+    const eventDeadlineRsvp = await eventDeadlineRsvpResponse.json();
+    check("RSVP rejects an event whose deadline has passed", eventDeadlineRsvpResponse.status === 400 && /Past Event/.test(eventDeadlineRsvp.error));
     await host.request(`/api/weddings/${weddingId}/events/${pastEvent.id}`, { method: "DELETE" });
   }
 
@@ -614,7 +651,7 @@ async function main() {
   const registerResponse = await fetch(`${base}/api/register`, {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ name: "Smoke Outsider", email: outsiderEmail, password: "outsider123" }),
+    body: JSON.stringify({ name: "Smoke Outsider", email: outsiderEmail, password: "outsider123", ...policyAcceptance }),
   });
   check("registration creates a workspace-backed account", registerResponse.status === 201);
 
@@ -661,8 +698,28 @@ async function main() {
   }
   check("registration rate limit returns 429", registrationRateLimited);
 
-  const deleteResponse = await host.request(`/api/weddings/${weddingId}`, { method: "DELETE" });
-  check("host can delete the wedding", deleteResponse.status === 200);
+  const unconfirmedDelete = await host.request(`/api/weddings/${weddingId}`, { method: "DELETE" });
+  check("wedding deletion requires explicit confirmation", unconfirmedDelete.status === 400);
+  const wrongConfirmation = await host.request(`/api/weddings/${weddingId}`, {
+    method: "DELETE",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ confirmName: "Wrong wedding name" }),
+  });
+  check("wedding deletion rejects another wedding name", wrongConfirmation.status === 400);
+  const deleteResponse = await host.request(`/api/weddings/${weddingId}`, {
+    method: "DELETE",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ confirmName: `Smoke Wedding Updated ${suffix}` }),
+  });
+  const deletion = await deleteResponse.json();
+  check("host can delete the wedding", deleteResponse.status === 200 && deletion.status === "COMPLETED" && Boolean(deletion.jobId));
+  const retriedDelete = await host.request(`/api/weddings/${weddingId}`, {
+    method: "DELETE",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ confirmName: `Smoke Wedding Updated ${suffix}` }),
+  });
+  const retriedDeletion = await retriedDelete.json();
+  check("confirmed wedding deletion can be retried safely", retriedDelete.status === 200 && retriedDeletion.jobId === deletion.jobId);
 
   const goneResponse = await host.request(`/api/weddings/${weddingId}`);
   check("deleted wedding is no longer readable", goneResponse.status === 404);
@@ -679,10 +736,8 @@ async function main() {
     await prisma.user.deleteMany({ where: { id: outsiderUser.id } });
   }
 
-  // Remove the entitlement fixture so the demo workspace returns to Free.
-  if (entitlementFixture) {
-    await prisma.subscription.deleteMany({ where: { id: entitlementFixture.id } });
-  }
+  // The wedding relation retains payment history on deletion. Remove the test order.
+  await prisma.payment.deleteMany({ where: { id: entitlementFixture.id } });
 
   console.log(`\n${passed} checks passed, ${failures.length} failed`);
   if (failures.length > 0) {

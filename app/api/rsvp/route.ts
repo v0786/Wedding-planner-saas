@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
 import {
   ApiError,
   assertSameOrigin,
@@ -8,8 +8,12 @@ import {
 } from "@/lib/api"
 import { checkRateLimit, clientKey } from "@/lib/rate-limit"
 import { submitRsvp } from "@/lib/rsvp-service"
+import { rsvpBrowserToken } from "@/lib/rsvp-browser"
+import { assertRsvpPhoneProof } from "@/lib/rsvp-otp"
+import { rsvpSchema } from "@/lib/validation"
+import { Prisma } from "@prisma/client"
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
     assertSameOrigin(req)
 
@@ -25,11 +29,25 @@ export async function POST(req: Request) {
     }
 
     const body = await readJson(req)
-    const result = await submitRsvp(body)
-    return NextResponse.json({ success: true, ...result }, { status: 201 })
+    const input = rsvpSchema.parse(body)
+    if (!input.editToken) {
+      assertRsvpPhoneProof(input.phoneProof, {
+        invitationToken: input.token,
+        mobile: input.mobile,
+        browserToken: rsvpBrowserToken(req.cookies),
+      })
+    }
+    const result = await submitRsvp(body, undefined, undefined, req.cookies)
+    return NextResponse.json({ success: true, ...result }, {
+      status: 201,
+      headers: { "Cache-Control": "private, no-store", "Referrer-Policy": "no-referrer" },
+    })
   } catch (error) {
     if (error instanceof ApiError) {
       return jsonError(error.message, error.status)
+    }
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+      return jsonError("An RSVP already exists. Use your saved edit link.", 409)
     }
     return handleApiError(error)
   }

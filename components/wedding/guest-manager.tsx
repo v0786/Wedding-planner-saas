@@ -9,11 +9,16 @@ export type GuestRecord = {
   mobile: string | null
   email: string | null
   group: string | null
+  side: string | null
+  category: string | null
+  accommodationNeeds: string | null
+  transportNeeds: string | null
   notes: string | null
   dietaryPrefs: string | null
   rsvpSubmission: {
     id: string
     status: string
+    partySize?: number | null
     familyMembers: Array<{ id: string }>
     eventResponses: Array<{ eventId: string; status: string }>
     dietaryPrefs: string | null
@@ -33,6 +38,10 @@ type FormState = {
   mobile: string
   email: string
   group: string
+  side: string
+  category: string
+  accommodationNeeds: string
+  transportNeeds: string
   notes: string
   dietaryPrefs: string
 }
@@ -43,6 +52,10 @@ const emptyForm: FormState = {
   mobile: "",
   email: "",
   group: "",
+  side: "",
+  category: "",
+  accommodationNeeds: "",
+  transportNeeds: "",
   notes: "",
   dietaryPrefs: "",
 }
@@ -52,18 +65,26 @@ export default function GuestManager({
   initialGuests,
   initialPagination,
   groups,
+  contactsVisible: initialContactsVisible = false,
+  readOnly = false,
 }: {
   weddingId: string
   initialGuests: GuestRecord[]
   initialPagination: Pagination
   groups: string[]
+  contactsVisible?: boolean
+  readOnly?: boolean
 }) {
   const [guests, setGuests] = useState(initialGuests)
+  const [contactsVisible, setContactsVisible] = useState(initialContactsVisible)
   const [pagination, setPagination] = useState(initialPagination)
   const [groupOptions, setGroupOptions] = useState(groups)
   const [search, setSearch] = useState("")
   const [group, setGroup] = useState("")
+  const [side, setSide] = useState("")
+  const [category, setCategory] = useState("")
   const [status, setStatus] = useState("all")
+  const [sort, setSort] = useState("newest")
   const [pageSize, setPageSize] = useState(25)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
@@ -76,22 +97,28 @@ export default function GuestManager({
   const [saving, setSaving] = useState(false)
   const [importing, setImporting] = useState(false)
   const [importIssues, setImportIssues] = useState<string[]>([])
+  const [importFile, setImportFile] = useState<File | null>(null)
+  const [importKey, setImportKey] = useState("")
+  const [importPreview, setImportPreview] = useState<{ total: number; rows: FormState[] } | null>(null)
 
   function update(field: keyof FormState, value: string) {
     setForm((current) => ({ ...current, [field]: value }))
   }
 
-  async function load(nextPage: number) {
+  async function load(nextPage: number, requestedPageSize = pageSize) {
     setLoading(true)
     setError("")
     try {
       const params = new URLSearchParams({
         page: String(nextPage),
-        pageSize: String(pageSize),
+        pageSize: String(requestedPageSize),
         status,
+        sort,
       })
       if (search.trim()) params.set("search", search.trim())
       if (group) params.set("group", group)
+      if (side) params.set("side", side)
+      if (category) params.set("category", category)
 
       const res = await fetch(`/api/weddings/${weddingId}/guests?${params.toString()}`)
       const data = await res.json()
@@ -100,6 +127,7 @@ export default function GuestManager({
         return
       }
       setGuests(data.guests)
+      setContactsVisible(data.contactsVisible === true)
       setPagination(data.pagination)
       setGroupOptions((current) => {
         const next = new Set(current)
@@ -131,6 +159,10 @@ export default function GuestManager({
       mobile: guest.mobile ?? "",
       email: guest.email ?? "",
       group: guest.group ?? "",
+      side: guest.side ?? "",
+      category: guest.category ?? "",
+      accommodationNeeds: guest.accommodationNeeds ?? "",
+      transportNeeds: guest.transportNeeds ?? "",
       notes: guest.notes ?? "",
       dietaryPrefs: guest.dietaryPrefs ?? "",
     })
@@ -152,7 +184,7 @@ export default function GuestManager({
       const res = await fetch(url, {
         method: editingId ? "PATCH" : "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify(editingId && !contactsVisible ? { ...form, mobile: undefined, email: undefined } : form),
       })
       const data = await res.json()
       if (!res.ok) {
@@ -195,9 +227,7 @@ export default function GuestManager({
     }
   }
 
-  async function handleImport(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    if (!file) return
+  async function importCsv(file: File, preview: boolean, key = importKey) {
     setImporting(true)
     setError("")
     setNotice("")
@@ -206,26 +236,43 @@ export default function GuestManager({
     try {
       const formData = new FormData()
       formData.append("file", file)
-      const res = await fetch(`/api/weddings/${weddingId}/guests/import`, {
+      const response = await fetch(`/api/weddings/${weddingId}/guests/import${preview ? "?preview=true" : ""}`, {
         method: "POST",
+        headers: { "Idempotency-Key": key },
         body: formData,
       })
-      const data = await res.json()
-      if (!res.ok) {
+      const data = await response.json()
+      if (!response.ok) {
         setError(data.error || "Could not import the CSV file")
         setUpgradeUrl(typeof data.upgradeUrl === "string" ? data.upgradeUrl : "")
         setImportIssues(Array.isArray(data.issues) ? data.issues : [])
         return
       }
-      setNotice(`Imported ${data.imported} guest${data.imported === 1 ? "" : "s"}.`)
-      await load(1)
-    } catch (err) {
-      console.error(err)
-      setError("Something went wrong")
+      if (preview) {
+        setImportFile(file)
+        setImportPreview({ total: data.total, rows: data.rows })
+      } else {
+        setImportFile(null)
+        setImportKey("")
+        setImportPreview(null)
+        setNotice(`Imported ${data.imported} guest${data.imported === 1 ? "" : "s"}.`)
+        await load(1)
+      }
+    } catch {
+      setError("Could not import the CSV file. Please try again.")
     } finally {
       setImporting(false)
-      e.target.value = ""
     }
+  }
+
+  async function handleImport(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0]
+    event.target.value = ""
+    setImportFile(null)
+    setImportPreview(null)
+    const key = crypto.randomUUID()
+    setImportKey(key)
+    if (file) await importCsv(file, true, key)
   }
 
   return (
@@ -242,7 +289,7 @@ export default function GuestManager({
           >
             Export CSV
           </a>
-          <label className="cursor-pointer rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+          {!readOnly && <label className="cursor-pointer rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
             {importing ? "Importing..." : "Import CSV"}
             <input
               type="file"
@@ -251,16 +298,19 @@ export default function GuestManager({
               disabled={importing}
               className="sr-only"
             />
-          </label>
-          <button
+          </label>}
+          {!readOnly && <button
             type="button"
             onClick={startCreate}
             className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
           >
             Add guest
-          </button>
+          </button>}
         </div>
       </div>
+
+      {readOnly && <p className="rounded-lg bg-champagne-100 p-4 text-sm text-ink-700">This wedding is read-only. You can view the guest list and export permitted data.</p>}
+      {!contactsVisible && <p className="text-sm text-gray-600">Phone numbers and email addresses are hidden from the guest list and exports. Change contact visibility in wedding details to show them.</p>}
 
       <form
         onSubmit={(e) => {
@@ -314,7 +364,22 @@ export default function GuestManager({
             <option value="confirmed">Confirmed</option>
             <option value="pending">Pending</option>
             <option value="declined">Declined</option>
+            <option value="maybe">Maybe</option>
             <option value="none">No response</option>
+          </select>
+        </div>
+        <div>
+          <label htmlFor="guest-side" className="block text-sm font-medium text-gray-700">Side</label>
+          <input id="guest-side" value={side} onChange={(event) => setSide(event.target.value)} list="guest-side-options" placeholder="All sides" className={inputClass} />
+        </div>
+        <div>
+          <label htmlFor="guest-category" className="block text-sm font-medium text-gray-700">Category</label>
+          <input id="guest-category" value={category} onChange={(event) => setCategory(event.target.value)} placeholder="All categories" className={inputClass} />
+        </div>
+        <div>
+          <label htmlFor="guest-sort" className="block text-sm font-medium text-gray-700">Sort</label>
+          <select id="guest-sort" value={sort} onChange={(event) => setSort(event.target.value)} className={inputClass}>
+            <option value="newest">Newest first</option><option value="oldest">Oldest first</option><option value="name">Name</option>
           </select>
         </div>
         <div className="flex items-end gap-2 sm:col-span-2 lg:col-span-4">
@@ -330,7 +395,7 @@ export default function GuestManager({
             onChange={(e) => {
               const value = Number(e.target.value)
               setPageSize(value)
-              load(1)
+              load(1, value)
             }}
             className="rounded-md border border-gray-300 px-2 py-2 text-sm"
           >
@@ -368,6 +433,30 @@ export default function GuestManager({
         </div>
       )}
 
+      <datalist id="guest-side-options">
+        <option value="Bride" /><option value="Groom" /><option value="Both" />
+      </datalist>
+
+      {importPreview && importFile && (
+        <section className="space-y-4 rounded-lg border border-gray-200 bg-white p-5">
+          <h3 className="font-semibold text-gray-900">Review CSV import</h3>
+          <p className="text-sm text-gray-600">{importPreview.total} validated guests. Showing the first {importPreview.rows.length}. Confirm to add them to this wedding.</p>
+          <div className="overflow-x-auto">
+            <table className="min-w-full text-left text-sm">
+              <thead><tr>{["Name", "Mobile", "Group", "Side", "Category"].map((heading) => <th key={heading} className="p-2">{heading}</th>)}</tr></thead>
+              <tbody>{importPreview.rows.map((row, index) => <tr key={index} className="border-t border-gray-100">
+                <td className="p-2">{row.firstName} {row.lastName}</td><td className="p-2">{row.mobile || "—"}</td>
+                <td className="p-2">{row.group || "—"}</td><td className="p-2">{row.side || "—"}</td><td className="p-2">{row.category || "—"}</td>
+              </tr>)}</tbody>
+            </table>
+          </div>
+          <div className="flex gap-2">
+            <button type="button" disabled={importing} onClick={() => importCsv(importFile, false)} className="btn btn-primary">{importing ? "Importing…" : "Confirm import"}</button>
+            <button type="button" disabled={importing} onClick={() => { setImportFile(null); setImportPreview(null) }} className="btn btn-secondary">Cancel import</button>
+          </div>
+        </section>
+      )}
+
       {showForm && (
         <form onSubmit={handleSave} className="space-y-4 rounded-lg bg-white p-5 shadow">
           <h3 className="font-semibold text-gray-900">{editingId ? "Edit guest" : "New guest"}</h3>
@@ -393,7 +482,7 @@ export default function GuestManager({
                 className={inputClass}
               />
             </Field>
-            <Field label="Mobile" htmlFor="guest-mobile">
+            {(!editingId || contactsVisible) && <Field label="Mobile" htmlFor="guest-mobile">
               <input
                 id="guest-mobile"
                 type="tel"
@@ -403,8 +492,8 @@ export default function GuestManager({
                 className={inputClass}
                 placeholder="10-digit mobile number"
               />
-            </Field>
-            <Field label="Email" htmlFor="guest-email">
+            </Field>}
+            {(!editingId || contactsVisible) && <Field label="Email" htmlFor="guest-email">
               <input
                 id="guest-email"
                 type="email"
@@ -413,7 +502,7 @@ export default function GuestManager({
                 onChange={(e) => update("email", e.target.value)}
                 className={inputClass}
               />
-            </Field>
+            </Field>}
             <Field label="Group" htmlFor="guest-form-group">
               <input
                 id="guest-form-group"
@@ -424,6 +513,18 @@ export default function GuestManager({
                 className={inputClass}
                 placeholder="e.g., Bride's family"
               />
+            </Field>
+            <Field label="Side" htmlFor="guest-form-side">
+              <input id="guest-form-side" value={form.side} onChange={(event) => update("side", event.target.value)} list="guest-side-options" maxLength={120} placeholder="Bride, Groom, or a custom side" className={inputClass} />
+            </Field>
+            <Field label="Category" htmlFor="guest-form-category">
+              <input id="guest-form-category" value={form.category} onChange={(event) => update("category", event.target.value)} maxLength={120} placeholder="VIP, relatives, friends, colleagues" className={inputClass} />
+            </Field>
+            <Field label="Accommodation needs" htmlFor="guest-accommodation">
+              <textarea id="guest-accommodation" value={form.accommodationNeeds} onChange={(event) => update("accommodationNeeds", event.target.value)} maxLength={1000} rows={2} className={inputClass} />
+            </Field>
+            <Field label="Transport needs" htmlFor="guest-transport">
+              <textarea id="guest-transport" value={form.transportNeeds} onChange={(event) => update("transportNeeds", event.target.value)} maxLength={1000} rows={2} className={inputClass} />
             </Field>
             <Field label="Dietary preferences" htmlFor="guest-dietary">
               <input
@@ -479,7 +580,7 @@ export default function GuestManager({
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                {["Guest", "Mobile", "Group", "RSVP", "Family", "Dietary", ""].map((heading) => (
+                {["Guest", ...(contactsVisible ? ["Mobile"] : []), "Group", "RSVP", "Party size", "Dietary", ...(readOnly ? [] : [""])].map((heading) => (
                   <th
                     key={heading || "actions"}
                     scope="col"
@@ -497,24 +598,25 @@ export default function GuestManager({
                     {guest.firstName} {guest.lastName}
                     {guest.email && <div className="text-xs font-normal text-gray-500">{guest.email}</div>}
                   </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-600">
+                  {contactsVisible && <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-600">
                     {guest.mobile ?? "—"}
-                  </td>
+                  </td>}
                   <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-600">
                     {guest.group ?? "—"}
+                    {(guest.side || guest.category) && <div className="text-xs text-gray-500">{[guest.side, guest.category].filter(Boolean).join(" · ")}</div>}
                   </td>
                   <td className="whitespace-nowrap px-4 py-3 text-sm">
                     <StatusBadge status={guest.rsvpSubmission?.status ?? "none"} />
                   </td>
                   <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-600">
                     {guest.rsvpSubmission
-                      ? 1 + guest.rsvpSubmission.familyMembers.length
+                      ? guest.rsvpSubmission.status === "declined" ? 0 : guest.rsvpSubmission.partySize ?? 1 + guest.rsvpSubmission.familyMembers.length
                       : "—"}
                   </td>
                   <td className="max-w-[12rem] truncate px-4 py-3 text-sm text-gray-600">
                     {guest.rsvpSubmission?.dietaryPrefs || guest.dietaryPrefs || "—"}
                   </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-right text-sm">
+                  {!readOnly && <td className="whitespace-nowrap px-4 py-3 text-right text-sm">
                     <button
                       type="button"
                       onClick={() => startEdit(guest)}
@@ -529,7 +631,7 @@ export default function GuestManager({
                     >
                       Delete
                     </button>
-                  </td>
+                  </td>}
                 </tr>
               ))}
             </tbody>
@@ -564,7 +666,7 @@ export default function GuestManager({
       <details className="rounded-lg bg-white p-4 text-sm text-gray-600 shadow">
         <summary className="cursor-pointer font-medium text-gray-900">CSV format</summary>
         <p className="mt-2">
-          Header row: <code>firstName,lastName,mobile,email,group,notes,dietaryPrefs</code>. Only
+          Header row: <code>firstName,lastName,mobile,email,group,notes,dietaryPrefs,side,category,accommodationNeeds,transportNeeds</code>. Only
           <code> firstName</code> is required. Mobile numbers must be unique within a wedding. The
           import is rejected as a whole if any row is invalid.
         </p>
@@ -577,6 +679,7 @@ function StatusBadge({ status }: { status: string }) {
   const styles: Record<string, string> = {
     confirmed: "bg-green-100 text-green-800",
     pending: "bg-yellow-100 text-yellow-800",
+    maybe: "bg-blue-100 text-blue-800",
     declined: "bg-red-100 text-red-800",
     none: "bg-gray-100 text-gray-700",
   }
