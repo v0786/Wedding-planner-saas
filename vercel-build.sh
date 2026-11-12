@@ -8,7 +8,8 @@
 #   3. Builds the Next.js application for production
 #
 # Required environment variables (set in Vercel project settings):
-#   DATABASE_URL           - Production PostgreSQL connection string
+#   DATABASE_URL           - Runtime transaction-pooler PostgreSQL URL
+#   DIRECT_URL             - Session-pooler PostgreSQL URL for migrations
 #   AUTH_SECRET            - NextAuth v5 secret (production value)
 #   AUTH_URL               - Production Auth URL (e.g. https://app.vercel.app)
 #   NEXT_PUBLIC_APP_URL    - Public application URL
@@ -17,6 +18,10 @@
 #   RAZORPAY_WEBHOOK_SECRET- Razorpay webhook signing secret
 #   ADMIN_EMAILS           - Comma-separated admin email allowlist
 set -euo pipefail
+
+# Existing direct PostgreSQL installs remain compatible until a dedicated
+# session-pooler URL is configured. Supabase on IPv4 requires DIRECT_URL.
+export DIRECT_URL="${DIRECT_URL:-${DATABASE_URL:?DATABASE_URL is required}}"
 
 echo "============================================"
 echo "  Wedding Guest Manager — Vercel Build"

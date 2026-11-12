@@ -24,8 +24,8 @@ export default function UpgradeRequired({
 }) {
   return (
     <main className="mx-auto max-w-2xl px-4 py-12 sm:px-6">
-      <div className="rounded-2xl border border-gray-200 bg-white p-8 text-center shadow-sm">
-        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-50 text-2xl" aria-hidden="true">
+      <div className="rounded-2xl border border-gray-200 bg-brand-surface p-8 text-center shadow-sm">
+        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-champagne-100 text-2xl" aria-hidden="true">
           🔒
         </div>
         <h1 className="mt-4 text-2xl font-bold text-gray-900">{title}</h1>
@@ -37,13 +37,13 @@ export default function UpgradeRequired({
         <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
           <Link
             href={upgradeUrl}
-            className="rounded-xl bg-gradient-to-r from-pink-600 to-indigo-600 px-4 py-2.5 text-sm font-semibold text-white hover:from-pink-700 hover:to-indigo-700"
+            className="rounded-xl bg-brand-primary px-4 py-2.5 text-sm font-semibold text-[#17130b] hover:bg-brand-primary-hover"
           >
             See upgrade options
           </Link>
           <Link
             href={actionHref}
-            className="rounded-xl border border-gray-300 px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+            className="rounded-xl border border-gray-300 px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-ivory-100"
           >
             {actionLabel}
           </Link>

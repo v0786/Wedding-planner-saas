@@ -1,3 +1,4 @@
+import AuthFrame from "@/components/auth/auth-frame"
 import RegisterForm from "@/components/auth/register-form"
 import Link from "next/link"
 
@@ -5,7 +6,7 @@ export const metadata = { title: "Create account | Wedding Guest Manager" }
 
 export default function RegisterPage() {
   return (
-    <div className="paper-texture relative flex min-h-screen items-center justify-center overflow-hidden bg-ivory-50 px-4 py-12 sm:px-6">
+    <AuthFrame>
       <div className="w-full max-w-md">
         <div className="text-center">
           <Link
@@ -43,7 +44,7 @@ export default function RegisterPage() {
           </Link>
         </div>
       </div>
-    </div>
+    </AuthFrame>
   )
 }
 

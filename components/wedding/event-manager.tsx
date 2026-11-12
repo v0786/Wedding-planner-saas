@@ -294,7 +294,7 @@ export default function EventManager({
           description="No events yet. Add Haldi, Mehendi, the wedding ceremony, and reception to build the schedule."
         />
       ) : (
-        <ul className="stagger divide-y divide-ivory-200 overflow-hidden rounded-2xl border border-ivory-300/70 bg-white/85 shadow-soft">
+        <ul className="stagger divide-y divide-ivory-200 overflow-hidden rounded-2xl border border-ivory-300/70 bg-brand-surface shadow-soft">
           {events.map((event) => (
             <li key={event.id} className="flex flex-wrap items-start justify-between gap-4 px-5 py-4">
               <div className="min-w-0">

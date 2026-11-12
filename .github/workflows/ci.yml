@@ -28,6 +28,7 @@ jobs:
 
     env:
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/wedding_guest_manager_test
+      DIRECT_URL: postgresql://postgres:postgres@localhost:5432/wedding_guest_manager_test
       AUTH_SECRET: ci-auth-secret-change-me
       AUTH_URL: http://127.0.0.1:3000
       AUTH_TRUST_HOST: "true"

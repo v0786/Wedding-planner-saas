@@ -85,7 +85,7 @@ export default function CheckInScanner({ onScan }: { onScan: (code: string) => v
       }}>
         {scanning ? "Close scanner" : "Scan QR code"}
       </button>
-      {scanning && <video ref={videoRef} className="aspect-video w-full rounded-xl bg-ink-900" muted playsInline />}
+      {scanning && <video ref={videoRef} className="aspect-video w-full rounded-xl bg-black" muted playsInline />}
       <FormError>{error}</FormError>
     </div>
   )

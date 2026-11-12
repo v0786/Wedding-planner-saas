@@ -71,7 +71,7 @@ export default function InviteLinkManager({
   }
 
   return (
-    <div className="space-y-6 rounded-lg bg-white p-6 shadow">
+    <div className="space-y-6 rounded-lg bg-brand-surface p-6 shadow">
       <div>
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-lg font-semibold text-gray-900">Invitation status</h2>
@@ -81,8 +81,8 @@ export default function InviteLinkManager({
             disabled={loading || readOnly || (!published && !canPublish)}
             className={`rounded-md px-4 py-2 text-sm font-medium disabled:opacity-50 ${
               published
-                ? "bg-red-100 text-red-700 hover:bg-red-200"
-                : "bg-green-100 text-green-700 hover:bg-green-200"
+                ? "bg-rose-100 text-brand-danger hover:bg-rose-100"
+                : "bg-sage-100 text-brand-success hover:bg-sage-100"
             }`}
           >
             {loading ? "Updating..." : published ? "Unpublish" : "Publish"}
@@ -90,7 +90,7 @@ export default function InviteLinkManager({
         </div>
         <p className="text-sm text-gray-600">
           Status:{" "}
-          <span className={published ? "font-medium text-green-700" : "font-medium text-gray-700"}>
+          <span className={published ? "font-medium text-brand-success" : "font-medium text-gray-700"}>
             {readOnly ? "Expired" : published ? "Published" : "Draft"}
           </span>
         </p>
@@ -109,12 +109,12 @@ export default function InviteLinkManager({
       </div>
 
       {error && (
-        <div role="alert" className="rounded-md bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div role="alert" className="rounded-md bg-rose-100 px-4 py-3 text-sm text-brand-danger">
           {error}
         </div>
       )}
       {notice && (
-        <div role="status" className="rounded-md bg-green-50 px-4 py-3 text-sm text-green-800">
+        <div role="status" className="rounded-md bg-sage-100 px-4 py-3 text-sm text-brand-success">
           {notice}
         </div>
       )}
@@ -163,12 +163,12 @@ function LinkField({
           type="text"
           value={value}
           readOnly
-          className="flex-1 rounded-md border border-gray-300 bg-gray-50 px-3 py-2 text-sm"
+          className="flex-1 rounded-md border border-gray-300 bg-ivory-100 px-3 py-2 text-sm"
         />
         <button
           type="button"
           onClick={() => onCopy(value)}
-          className="rounded-md bg-gray-100 px-4 py-2 text-sm text-gray-700 hover:bg-gray-200"
+          className="rounded-md bg-brand-surface-muted px-4 py-2 text-sm text-gray-700 hover:bg-brand-surface-muted"
         >
           Copy
         </button>

@@ -1,3 +1,4 @@
+import AuthFrame from "@/components/auth/auth-frame"
 import LoginForm from "@/components/auth/login-form"
 import Link from "next/link"
 
@@ -19,7 +20,7 @@ async function LoginPageContent({
   const { registered } = await searchParams
 
   return (
-    <div className="paper-texture relative flex min-h-screen items-center justify-center overflow-hidden bg-ivory-50 px-4 py-12 sm:px-6">
+    <AuthFrame>
       <div className="w-full max-w-md">
         <div className="text-center">
           <Link
@@ -66,7 +67,7 @@ async function LoginPageContent({
           </Link>
         </div>
       </div>
-    </div>
+    </AuthFrame>
   )
 }
 

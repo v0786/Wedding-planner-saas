@@ -46,23 +46,23 @@ export default async function PrintableInvitation({ params }: { params: Promise<
             {wedding.couplePhotoUrl && <div role="img" aria-label={`Portrait of ${couple}`} className="mx-auto mb-5 h-24 w-24 rounded-full border-4 bg-cover bg-center" style={{ borderColor: palette.accent, backgroundImage: `url(${JSON.stringify(wedding.couplePhotoUrl)})` }} />}
             <p className="eyebrow" style={{ color: palette.primary }}>You&apos;re invited</p>
             <h1 className="mt-4 break-words font-display text-4xl sm:text-6xl" style={{ color: palette.primary }}>{couple}</h1>
-            <p className="mt-3 font-display text-xl italic text-ink-600">{wedding.name}</p>
+            <p className="mt-3 font-display text-xl italic text-[#665447]">{wedding.name}</p>
             <div className="mx-auto my-6 h-px max-w-40" style={{ backgroundColor: palette.accent }} />
-            {date && <p className="font-display text-xl text-ink-800">{date}</p>}
-            {wedding.venue && <p className="mt-2 font-display text-lg text-ink-800">{wedding.venue}</p>}
-            {wedding.address && <p className="mt-1 whitespace-pre-wrap text-sm text-ink-600">{wedding.address}</p>}
+            {date && <p className="font-display text-xl text-[#34261d]">{date}</p>}
+            {wedding.venue && <p className="mt-2 font-display text-lg text-[#34261d]">{wedding.venue}</p>}
+            {wedding.address && <p className="mt-1 whitespace-pre-wrap text-sm text-[#665447]">{wedding.address}</p>}
           </div>
-          {wedding.description && <p className="mx-auto mt-6 max-w-xl whitespace-pre-wrap text-ink-700">{wedding.description}</p>}
+          {wedding.description && <p className="mx-auto mt-6 max-w-xl whitespace-pre-wrap text-[#34261d]">{wedding.description}</p>}
           {events.length > 0 && (
             <section className="mx-auto mt-8 max-w-xl">
-              <h2 className="mb-3 font-display text-xl text-ink-900">The celebration</h2>
+              <h2 className="mb-3 font-display text-xl text-[#34261d]">The celebration</h2>
               <ul className="divide-y divide-ivory-300">
                 {events.map((event) => (
                   <li key={event.id} className="break-inside-avoid py-3">
-                    <p className="font-display text-lg text-ink-800">{event.name}</p>
-                    <p className="text-sm text-ink-600">{[event.date ? calendarDate.format(event.date) : null, event.time, event.venue, event.address].filter(Boolean).join(" · ")}</p>
-                    {event.description && <p className="mt-1 text-sm text-ink-600">{event.description}</p>}
-                    {event.dressCode && <p className="mt-1 text-sm text-ink-600">Dress code · {event.dressCode}</p>}
+                    <p className="font-display text-lg text-[#34261d]">{event.name}</p>
+                    <p className="text-sm text-[#665447]">{[event.date ? calendarDate.format(event.date) : null, event.time, event.venue, event.address].filter(Boolean).join(" · ")}</p>
+                    {event.description && <p className="mt-1 text-sm text-[#665447]">{event.description}</p>}
+                    {event.dressCode && <p className="mt-1 text-sm text-[#665447]">Dress code · {event.dressCode}</p>}
                     {event.mapUrl && <a href={event.mapUrl} className="text-sm underline" rel="noreferrer">View location</a>}
                   </li>
                 ))}
@@ -70,7 +70,7 @@ export default async function PrintableInvitation({ params }: { params: Promise<
             </section>
           )}
           {(deadline || rsvpPath) && (
-            <footer className="mt-6 break-inside-avoid text-sm text-ink-700">
+            <footer className="mt-6 break-inside-avoid text-sm text-[#34261d]">
               {deadline && <p className="font-semibold">{deadline}</p>}
               {rsvpPath && <a href={rsvpPath} className="mt-2 inline-block font-semibold underline" style={{ color: palette.primary }}>RSVP online</a>}
             </footer>

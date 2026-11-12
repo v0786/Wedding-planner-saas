@@ -11,7 +11,7 @@ export default function ReportExportControls({
 }) {
   const columns = includeContacts ? DEFAULT_REPORT_COLUMNS : DEFAULT_REPORT_COLUMNS.filter((column) => column !== "mobile" && column !== "email")
   return (
-    <details className="mb-6 rounded-2xl border border-brand-border bg-white p-5 print:hidden">
+    <details className="mb-6 rounded-2xl border border-brand-border bg-brand-surface p-5 print:hidden">
       <summary className="cursor-pointer font-medium">Choose report columns and filters</summary>
       <form action={`/api/weddings/${weddingId}/rsvps/export`} className="mt-4 space-y-4">
         <input type="hidden" name="selection" value="custom" />

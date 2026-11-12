@@ -275,7 +275,7 @@ export default async function WeddingDetailPage({ params }: { params: Promise<{ 
 
 function Stat({ label, value, hint, tone }: { label: string; value: number; hint?: string; tone?: string }) {
   return (
-    <div className="bg-white/85 px-5 py-5">
+    <div className="bg-brand-surface px-5 py-5">
       <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.14em] text-ink-400">{label}</p>
       <p className={`mt-1.5 font-display text-3xl ${tone ?? "text-ink-800"}`}>{value}</p>
       {hint && <p className="mt-1 text-xs text-ink-400">{hint}</p>}

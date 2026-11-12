@@ -8,7 +8,7 @@ export default function GlobalError({
   reset: () => void
 }) {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
+    <div className="flex min-h-screen items-center justify-center bg-brand-background px-4">
       <div className="max-w-md text-center">
         <h1 className="text-2xl font-bold text-gray-900">Something went wrong</h1>
         <p className="mt-2 text-gray-600">
@@ -19,7 +19,7 @@ export default function GlobalError({
         <button
           type="button"
           onClick={reset}
-          className="mt-6 rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+          className="mt-6 rounded-md bg-brand-primary px-4 py-2 text-sm font-medium text-[#17130b] hover:bg-brand-primary-hover"
         >
           Try again
         </button>

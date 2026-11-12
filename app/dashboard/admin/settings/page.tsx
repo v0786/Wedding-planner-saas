@@ -12,7 +12,7 @@ export default async function SettingsPage() {
   const audits = await prisma.platformSettingsAudit.findMany({ orderBy: { createdAt: "desc" }, take: 10 })
   return (
     <main className="mx-auto max-w-3xl space-y-6 px-4 py-8">
-      <Link href="/dashboard/admin/plans" className="text-sm text-indigo-600">Plan pricing</Link>
+      <Link href="/dashboard/admin/plans" className="text-sm text-gold-500">Plan pricing</Link>
       <h1 className="text-2xl font-semibold">Platform settings</h1>
       <PlatformSettingsEditor initial={settings} />
       <section className="border-t border-ivory-200 pt-6">

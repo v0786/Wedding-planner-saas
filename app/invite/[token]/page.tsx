@@ -64,7 +64,7 @@ export default async function InvitePage({ params }: { params: Promise<{ token: 
   }
   const entitlements = await getWeddingEntitlements(sourceWedding.workspaceId, sourceWedding.id)
 
-  const palette = invitationTheme(wedding)
+  const palette = invitationTheme(wedding, "web")
   const coupleNames = wedding.coupleName2
     ? `${wedding.coupleName1} & ${wedding.coupleName2}`
     : wedding.coupleName1
@@ -116,7 +116,7 @@ export default async function InvitePage({ params }: { params: Promise<{ token: 
   const whatsappHref = `https://wa.me/?text=${encodeURIComponent(shareMessage)}`
 
   return (
-    <div className="relative isolate min-h-screen overflow-x-hidden paper-texture" data-invitation-theme={palette.name} style={invitationThemeStyle(wedding)}>
+    <div className="relative isolate min-h-screen overflow-x-hidden paper-texture" data-invitation-theme={palette.name} style={invitationThemeStyle(wedding, "web")}>
       {/* The cover image sits behind a warm ivory veil so the type always reads. */}
       {wedding.coverImageUrl && (
         <div className="pointer-events-none absolute inset-0 -z-10" aria-hidden="true">

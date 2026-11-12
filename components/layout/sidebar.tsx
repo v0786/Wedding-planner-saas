@@ -79,7 +79,7 @@ const groups: NavGroup[] = [
 
 function Monogram() {
   return (
-    <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gold-sheen text-base font-semibold text-white shadow-glow">
+    <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gold-sheen text-base font-semibold text-[#17130b] shadow-glow">
       W
     </span>
   );
@@ -102,7 +102,7 @@ export default function Sidebar({
   };
 
   return (
-    <div className="flex h-full flex-col bg-ivory-100/90 backdrop-blur-xl" data-variant={variant}>
+    <div className="flex h-full flex-col bg-brand-surface/95 backdrop-blur-xl" data-variant={variant}>
       <div className="flex items-center gap-3 px-6 pb-6 pt-7">
         <Link href="/dashboard" className="flex items-center gap-3" onClick={onNavigate}>
           <Monogram />
@@ -137,8 +137,8 @@ export default function Sidebar({
                       aria-current={active ? "page" : undefined}
                       className={`group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200 ease-refined ${
                         active
-                          ? "bg-white text-ink-800 shadow-soft"
-                          : "text-ink-500 hover:bg-white/70 hover:text-ink-800"
+                          ? "bg-gold-500/10 text-gold-400 ring-1 ring-gold-500/20"
+                          : "text-ink-500 hover:bg-gold-500/5 hover:text-ink-800"
                       }`}
                     >
                       {active ? (
@@ -162,7 +162,7 @@ export default function Sidebar({
       </nav>
 
       <div className="border-t border-ivory-300/70 p-4">
-        <div className="rounded-xl border border-champagne-200 bg-white/80 p-4">
+        <div className="rounded-xl border border-gold-500/20 bg-gold-500/5 p-4">
           <p className="font-display text-base text-ink-800">Need a hand?</p>
           <p className="mt-1 text-xs leading-relaxed text-ink-400">
             Our wedding-day playbook answers the questions couples ask most.

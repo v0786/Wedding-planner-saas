@@ -1,12 +1,6 @@
 import type { Config } from "tailwindcss";
 
-/**
- * Wedding Guest Planner — design tokens.
- *
- * The palette is warm and editorial: ivory paper, champagne surfaces and a
- * muted gold accent. Neutrals are warm (never blue-gray) so long dashboard
- * sessions feel calm rather than clinical.
- */
+/** Dark gold wedding palette; legacy names map to semantic theme variables. */
 const config: Config = {
   content: [
     "./pages/**/*.{js,ts,jsx,tsx,mdx}",
@@ -17,52 +11,64 @@ const config: Config = {
     extend: {
       colors: {
         ivory: {
-          50: "#FDFCF9",
-          100: "#FAF7F0",
-          200: "#F5EFE3",
-          300: "#EDE4D2",
-          400: "#E1D5BC",
+          50: "rgb(var(--ivory-50) / <alpha-value>)",
+          100: "rgb(var(--ivory-100) / <alpha-value>)",
+          200: "rgb(var(--ivory-200) / <alpha-value>)",
+          300: "rgb(var(--ivory-300) / <alpha-value>)",
+          400: "rgb(var(--ivory-400) / <alpha-value>)",
+        },
+        gray: {
+          100: "rgb(var(--ink-100) / <alpha-value>)",
+          200: "rgb(var(--ink-200) / <alpha-value>)",
+          300: "rgb(var(--ink-300) / <alpha-value>)",
+          400: "rgb(var(--ink-400) / <alpha-value>)",
+          500: "rgb(var(--ink-500) / <alpha-value>)",
+          600: "rgb(var(--ink-600) / <alpha-value>)",
+          700: "rgb(var(--ink-700) / <alpha-value>)",
+          800: "rgb(var(--ink-800) / <alpha-value>)",
+          900: "rgb(var(--ink-900) / <alpha-value>)",
+          50: "rgb(var(--ivory-50) / <alpha-value>)",
         },
         champagne: {
-          100: "#F7EEDC",
-          200: "#EFE0C4",
-          300: "#E2CCA4",
-          400: "#D3B887",
+          100: "#211e16",
+          200: "#332c1b",
+          300: "#514329",
+          400: "#a98a4d",
         },
         gold: {
-          200: "#E8D6AE",
-          300: "#D9BE87",
+          200: "#4a3c22",
+          300: "#897044",
           400: "#C9A961",
-          500: "#B28F4C",
-          600: "#8F7038",
-          700: "#6B5227",
+          500: "#D4B575",
+          600: "#DCC18B",
+          700: "#E8CFA0",
         },
         ink: {
-          100: "#EDE9E3",
-          200: "#D8D2C9",
-          300: "#B5ADA3",
-          400: "#948A7E",
-          500: "#756B60",
-          600: "#554D45",
-          700: "#3A342E",
-          800: "#24201C",
-          900: "#151210",
+          100: "rgb(var(--ink-100) / <alpha-value>)",
+          200: "rgb(var(--ink-200) / <alpha-value>)",
+          300: "rgb(var(--ink-300) / <alpha-value>)",
+          400: "rgb(var(--ink-400) / <alpha-value>)",
+          500: "rgb(var(--ink-500) / <alpha-value>)",
+          600: "rgb(var(--ink-600) / <alpha-value>)",
+          700: "rgb(var(--ink-700) / <alpha-value>)",
+          800: "rgb(var(--ink-800) / <alpha-value>)",
+          900: "rgb(var(--ink-900) / <alpha-value>)",
         },
         sage: {
-          50: "#F2F6F1",
-          100: "#E2EDE1",
+          50: "#15221b",
+          100: "#1d3025",
           300: "#B4CBB4",
-          500: "#5F8A63",
-          600: "#4A7050",
-          700: "#3A5A40",
+          500: "#8fbd9d",
+          600: "#9bcca9",
+          700: "#acd9b8",
         },
         rose: {
-          50: "#FBF2F1",
-          100: "#F7E4E1",
+          50: "#2a191b",
+          100: "#3a2225",
           300: "#E0B0A9",
-          500: "#B4574D",
-          600: "#9A463D",
-          700: "#7D3830",
+          500: "#ea9b92",
+          600: "#e5a09a",
+          700: "#f1b3ab",
         },
         /* design.md §2.2 — Modern Luxury Wedding Editorial design tokens.
            Authoritative palette for the redesign; mapped to CSS variables
@@ -104,9 +110,9 @@ const config: Config = {
       },
       backgroundImage: {
         "gold-sheen":
-          "linear-gradient(135deg, #C9A961 0%, #8F7038 55%, #6B5227 100%)",
+          "linear-gradient(135deg, #C9A961 0%, #DCC18B 55%, #E8CFA0 100%)",
         "champagne-wash":
-          "linear-gradient(180deg, #FDFCF9 0%, #FAF7F0 40%, #F5EFE3 100%)",
+          "linear-gradient(180deg, #111210 0%, #191a16 40%, #23241e 100%)",
         "paper-grain":
           "radial-gradient(circle at 20% 10%, rgba(201,169,97,0.10), transparent 45%), radial-gradient(circle at 85% 0%, rgba(143,112,56,0.08), transparent 40%)",
       },

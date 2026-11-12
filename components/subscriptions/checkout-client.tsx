@@ -129,7 +129,7 @@ export default function CheckoutClient({
   return (
     <div className="space-y-4">
       {error && (
-        <div role="alert" className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div role="alert" className="rounded-xl border border-rose-300/40 bg-rose-100 px-4 py-3 text-sm text-brand-danger">
           {error}
         </div>
       )}
@@ -144,7 +144,7 @@ export default function CheckoutClient({
         type="button"
         onClick={startCheckout}
         disabled={loading}
-        className="w-full rounded-xl bg-gradient-to-r from-pink-600 to-indigo-600 px-4 py-3 text-sm font-semibold text-white hover:from-pink-700 hover:to-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
+        className="w-full rounded-xl bg-brand-primary px-4 py-3 text-sm font-semibold text-[#17130b] hover:bg-brand-primary-hover disabled:cursor-not-allowed disabled:opacity-60"
       >
         {loading ? "Starting checkout…" : `Pay ${confirmedQuote?.amountInPaise !== undefined ? formatInr(confirmedQuote.amountInPaise) : priceLabel}`}
       </button>
@@ -152,7 +152,7 @@ export default function CheckoutClient({
         Payments are processed securely by Razorpay. Your plan activates only after the payment is verified.
       </p>
       <p className="text-center text-xs">
-        <Link href="/pricing" className="text-indigo-600 hover:text-indigo-700">Compare all plans</Link>
+        <Link href="/pricing" className="text-brand-primary hover:text-brand-primary-hover">Compare all plans</Link>
       </p>
     </div>
   )

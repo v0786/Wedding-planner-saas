@@ -11,7 +11,7 @@ npm ci
 cp .env.example .env
 ```
 
-Fill the gitignored `.env` with the development `DATABASE_URL`, a generated `AUTH_SECRET`, `AUTH_URL`, `AUTH_TRUST_HOST` and `NEXT_PUBLIC_APP_URL`. Keep Preview and Production databases separate. Then run the actual package scripts.
+Fill the gitignored `.env` with the development `DATABASE_URL` and `DIRECT_URL` (same local database), a generated `AUTH_SECRET`, `AUTH_URL`, `AUTH_TRUST_HOST` and `NEXT_PUBLIC_APP_URL`. Keep Preview and Production databases separate. Then run the actual package scripts.
 
 ```bash
 npm run db:generate
@@ -63,3 +63,18 @@ The daily cron remains a dry run until `WEDDING_RETENTION_DELETE_ENABLED=true`. 
 ## Before release
 
 Populate the platform business details, obtain legal review of the draft policies, provision an admin explicitly, configure strong admin authentication, and verify credentials and providers on staging. Review Supabase Data API access/RLS and storage permissions for the Prisma server access model. Run device/camera, accessibility, backup restore, monitoring and a consented pilot. Current local results are in `implementation-tracker.md`.
+
+## Supabase connection modes
+
+For project `qdyesqugohaeebcqlqql`, obtain the **exact pooler host** from
+Supabase → Connect. Set `DATABASE_URL` to the transaction pooler on port 6543
+with `pgbouncer=true&sslmode=require`; set `DIRECT_URL` to the session pooler
+on port 5432 with `sslmode=require`. Use the `postgres.<PROJECT_REF>` user and
+percent-encode the password. Prisma uses `DIRECT_URL` only for migrations and
+introspection. Do not run demo seeding on production.
+
+The direct database endpoint is IPv6-only and previously caused Vercel P1001.
+An existing Vercel Supabase integration points at a different project; its
+connection strings must not be substituted for this project's credentials.
+GitHub `main` pushes already trigger production builds in the linked Vercel
+project. A successful build and live-flow verification are still required.

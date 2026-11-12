@@ -31,13 +31,13 @@ export default function DeleteWedding({ id, name }: { id: string; name: string }
   }
 
   return (
-    <details className="mt-10 rounded-xl border border-rose-200 bg-white p-5">
+    <details className="mt-10 rounded-xl border border-rose-200 bg-brand-surface p-5">
       <summary className="cursor-pointer text-sm font-medium text-rose-700">Delete this wedding</summary>
       <form className="mt-4 space-y-3" onSubmit={removeWedding}>
         <p className="text-sm text-ink-600">This permanently removes the wedding, guests, invitations and responses. Download the records you need before continuing. Payment history is retained.</p>
         <label htmlFor="delete-wedding-confirmation" className="block text-sm font-medium">Type {name} to confirm</label>
         <input id="delete-wedding-confirmation" className="input w-full" value={confirmation} onChange={event => setConfirmation(event.target.value)} required autoComplete="off" />
-        <button type="submit" disabled={busy || confirmation !== name} className="btn bg-rose-700 text-white disabled:opacity-50">{busy ? "Deleting…" : "Permanently delete wedding"}</button>
+        <button type="submit" disabled={busy || confirmation !== name} className="btn bg-[#9a3935] text-white disabled:opacity-50">{busy ? "Deleting…" : "Permanently delete wedding"}</button>
         {error && <p role="alert" className="text-sm text-rose-700">{error}</p>}
       </form>
     </details>

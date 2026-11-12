@@ -159,14 +159,14 @@ export default function QuestionManager({
         <button
           type="button"
           onClick={startCreate}
-          className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+          className="rounded-md bg-brand-primary px-4 py-2 text-sm font-medium text-[#17130b] hover:bg-brand-primary-hover"
         >
           Add question
         </button>
       </div>
 
       {error && (
-        <div role="alert" className="rounded-md bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div role="alert" className="rounded-md bg-rose-100 px-4 py-3 text-sm text-brand-danger">
           {error}
           {upgradeUrl && (
             <p className="mt-2">
@@ -177,7 +177,7 @@ export default function QuestionManager({
       )}
 
       {showForm && (
-        <form onSubmit={handleSubmit} className="space-y-4 rounded-lg bg-white p-5 shadow">
+        <form onSubmit={handleSubmit} className="space-y-4 rounded-lg bg-brand-surface p-5 shadow">
           <h3 className="font-semibold text-gray-900">{editingId ? "Edit question" : "New question"}</h3>
 
           <Field label="Question" htmlFor="question-text">
@@ -258,7 +258,7 @@ export default function QuestionManager({
             <button
               type="submit"
               disabled={loading}
-              className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
+              className="rounded-md bg-brand-primary px-4 py-2 text-sm font-medium text-[#17130b] hover:bg-brand-primary-hover disabled:opacity-50"
             >
               {loading ? "Saving..." : editingId ? "Save question" : "Create question"}
             </button>
@@ -269,7 +269,7 @@ export default function QuestionManager({
                 setEditingId(null)
                 setError("")
               }}
-              className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-ivory-100"
             >
               Cancel
             </button>
@@ -278,11 +278,11 @@ export default function QuestionManager({
       )}
 
       {questions.length === 0 ? (
-        <p className="rounded-lg bg-white p-8 text-center text-gray-500 shadow">
+        <p className="rounded-lg bg-brand-surface p-8 text-center text-gray-500 shadow">
           No custom questions yet. Add meal preference, accessibility needs, or any other question.
         </p>
       ) : (
-        <ul className="divide-y divide-gray-200 rounded-lg bg-white shadow">
+        <ul className="divide-y divide-gray-200 rounded-lg bg-brand-surface shadow">
           {questions.map((question) => (
             <li key={question.id} className="flex flex-wrap items-start justify-between gap-3 p-4">
               <div>
@@ -302,14 +302,14 @@ export default function QuestionManager({
                 <button
                   type="button"
                   onClick={() => startEdit(question)}
-                  className="rounded-md border border-gray-300 px-3 py-1 text-sm text-gray-700 hover:bg-gray-50"
+                  className="rounded-md border border-gray-300 px-3 py-1 text-sm text-gray-700 hover:bg-ivory-100"
                 >
                   Edit
                 </button>
                 <button
                   type="button"
                   onClick={() => handleDelete(question)}
-                  className="rounded-md border border-red-200 px-3 py-1 text-sm text-red-700 hover:bg-red-50"
+                  className="rounded-md border border-rose-300/40 px-3 py-1 text-sm text-brand-danger hover:bg-rose-100"
                 >
                   Delete
                 </button>
@@ -323,7 +323,7 @@ export default function QuestionManager({
 }
 
 const inputClass =
-  "mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+  "mt-1 block w-full rounded-md border border-gray-300 bg-brand-surface px-3 py-2 text-sm shadow-sm focus:border-brand-primary focus:outline-none focus:ring-1 focus:ring-brand-primary"
 
 function Field({
   label,

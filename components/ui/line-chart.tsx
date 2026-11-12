@@ -20,7 +20,7 @@ interface LineChartProps {
 export default function LineChart({
   data,
   height = 200,
-  color = "#B28F4C",
+  color = "#D6B66D",
   fillColor = "rgba(201, 169, 97, 0.22)",
   showPoints = true,
   showGrid = true,
@@ -43,14 +43,14 @@ export default function LineChart({
   }, [])
 
   if (data.length === 0) {
-    return <div className={`${className} h-[${height}px] flex items-center justify-center text-gray-400`}>No data</div>
+    return <div className={`${className} flex items-center justify-center text-ink-400`} style={{ height }}>No data</div>
   }
 
   const maxValue = Math.max(...data.map(d => d.value), 1)
   const minValue = Math.min(...data.map(d => d.value), 0)
   const range = maxValue - minValue || 1
 
-  const getX = (index: number) => (index / (data.length - 1)) * 100
+  const getX = (index: number) => data.length === 1 ? 50 : (index / (data.length - 1)) * 100
   const getY = (value: number) => 100 - ((value - minValue) / range) * 100
 
   const points = data.map((d, i) => ({
@@ -85,7 +85,7 @@ export default function LineChart({
         aria-label="Line chart"
       >
         {showGrid && (
-          <g stroke="#e5e7eb" strokeWidth="0.5">
+          <g stroke="var(--rule)" strokeWidth="0.5">
             {[4, 3, 2, 1].map((i) => (
               <line key={i} x1="0" y1={i * 25} x2="100" y2={i * 25} />
             ))}
@@ -129,7 +129,7 @@ export default function LineChart({
             cy={point.y}
             r={4}
             fill={color}
-            stroke="white"
+            stroke="var(--paper-raised)"
             strokeWidth={2}
             style={{ opacity: animationProgress }}
           />

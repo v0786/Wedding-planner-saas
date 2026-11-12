@@ -285,11 +285,11 @@ export default function GuestManager({
         <div className="flex flex-wrap gap-2">
           <a
             href={`/api/weddings/${weddingId}/guests/export`}
-            className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+            className="rounded-md border border-gray-300 bg-brand-surface px-3 py-2 text-sm font-medium text-gray-700 hover:bg-ivory-100"
           >
             Export CSV
           </a>
-          {!readOnly && <label className="cursor-pointer rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+          {!readOnly && <label className="cursor-pointer rounded-md border border-gray-300 bg-brand-surface px-3 py-2 text-sm font-medium text-gray-700 hover:bg-ivory-100">
             {importing ? "Importing..." : "Import CSV"}
             <input
               type="file"
@@ -302,7 +302,7 @@ export default function GuestManager({
           {!readOnly && <button
             type="button"
             onClick={startCreate}
-            className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+            className="rounded-md bg-brand-primary px-4 py-2 text-sm font-medium text-[#17130b] hover:bg-brand-primary-hover"
           >
             Add guest
           </button>}
@@ -317,7 +317,7 @@ export default function GuestManager({
           e.preventDefault()
           load(1)
         }}
-        className="grid grid-cols-1 gap-3 rounded-lg bg-white p-4 shadow sm:grid-cols-2 lg:grid-cols-4"
+        className="grid grid-cols-1 gap-3 rounded-lg bg-brand-surface p-4 shadow sm:grid-cols-2 lg:grid-cols-4"
       >
         <div className="lg:col-span-2">
           <label htmlFor="guest-search" className="block text-sm font-medium text-gray-700">
@@ -385,7 +385,7 @@ export default function GuestManager({
         <div className="flex items-end gap-2 sm:col-span-2 lg:col-span-4">
           <button
             type="submit"
-            className="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800"
+            className="rounded-md bg-brand-primary px-4 py-2 text-sm font-medium text-[#17130b] hover:bg-brand-primary-hover"
           >
             Apply filters
           </button>
@@ -409,7 +409,7 @@ export default function GuestManager({
       </form>
 
       {error && (
-        <div role="alert" className="rounded-md bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div role="alert" className="rounded-md bg-rose-100 px-4 py-3 text-sm text-brand-danger">
           <p>{error}</p>
           {upgradeUrl && (
             <p className="mt-2">
@@ -428,7 +428,7 @@ export default function GuestManager({
         </div>
       )}
       {notice && (
-        <div role="status" className="rounded-md bg-green-50 px-4 py-3 text-sm text-green-800">
+        <div role="status" className="rounded-md bg-sage-100 px-4 py-3 text-sm text-brand-success">
           {notice}
         </div>
       )}
@@ -438,7 +438,7 @@ export default function GuestManager({
       </datalist>
 
       {importPreview && importFile && (
-        <section className="space-y-4 rounded-lg border border-gray-200 bg-white p-5">
+        <section className="space-y-4 rounded-lg border border-gray-200 bg-brand-surface p-5">
           <h3 className="font-semibold text-gray-900">Review CSV import</h3>
           <p className="text-sm text-gray-600">{importPreview.total} validated guests. Showing the first {importPreview.rows.length}. Confirm to add them to this wedding.</p>
           <div className="overflow-x-auto">
@@ -458,7 +458,7 @@ export default function GuestManager({
       )}
 
       {showForm && (
-        <form onSubmit={handleSave} className="space-y-4 rounded-lg bg-white p-5 shadow">
+        <form onSubmit={handleSave} className="space-y-4 rounded-lg bg-brand-surface p-5 shadow">
           <h3 className="font-semibold text-gray-900">{editingId ? "Edit guest" : "New guest"}</h3>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Field label="First name" htmlFor="guest-first-name">
@@ -552,7 +552,7 @@ export default function GuestManager({
             <button
               type="submit"
               disabled={saving}
-              className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
+              className="rounded-md bg-brand-primary px-4 py-2 text-sm font-medium text-[#17130b] hover:bg-brand-primary-hover disabled:opacity-50"
             >
               {saving ? "Saving..." : editingId ? "Save guest" : "Add guest"}
             </button>
@@ -563,7 +563,7 @@ export default function GuestManager({
                 setEditingId(null)
                 setError("")
               }}
-              className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-ivory-100"
             >
               Cancel
             </button>
@@ -572,13 +572,13 @@ export default function GuestManager({
       )}
 
       {guests.length === 0 ? (
-        <p className="rounded-lg bg-white p-8 text-center text-gray-500 shadow">
+        <p className="rounded-lg bg-brand-surface p-8 text-center text-gray-500 shadow">
           No guests found. Add a guest or import a CSV file.
         </p>
       ) : (
-        <div className="overflow-x-auto rounded-lg bg-white shadow">
+        <div className="overflow-x-auto rounded-lg bg-brand-surface shadow">
           <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+            <thead className="bg-ivory-100">
               <tr>
                 {["Guest", ...(contactsVisible ? ["Mobile"] : []), "Group", "RSVP", "Party size", "Dietary", ...(readOnly ? [] : [""])].map((heading) => (
                   <th
@@ -620,14 +620,14 @@ export default function GuestManager({
                     <button
                       type="button"
                       onClick={() => startEdit(guest)}
-                      className="mr-2 rounded-md border border-gray-300 px-2 py-1 text-gray-700 hover:bg-gray-50"
+                      className="mr-2 rounded-md border border-gray-300 px-2 py-1 text-gray-700 hover:bg-ivory-100"
                     >
                       Edit
                     </button>
                     <button
                       type="button"
                       onClick={() => handleDelete(guest)}
-                      className="rounded-md border border-red-200 px-2 py-1 text-red-700 hover:bg-red-50"
+                      className="rounded-md border border-rose-300/40 px-2 py-1 text-brand-danger hover:bg-rose-100"
                     >
                       Delete
                     </button>
@@ -645,7 +645,7 @@ export default function GuestManager({
             type="button"
             disabled={pagination.page <= 1 || loading}
             onClick={() => load(pagination.page - 1)}
-            className="rounded-md border border-gray-300 bg-white px-3 py-2 font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-40"
+            className="rounded-md border border-gray-300 bg-brand-surface px-3 py-2 font-medium text-gray-700 hover:bg-ivory-100 disabled:opacity-40"
           >
             Previous
           </button>
@@ -656,14 +656,14 @@ export default function GuestManager({
             type="button"
             disabled={pagination.page >= pagination.totalPages || loading}
             onClick={() => load(pagination.page + 1)}
-            className="rounded-md border border-gray-300 bg-white px-3 py-2 font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-40"
+            className="rounded-md border border-gray-300 bg-brand-surface px-3 py-2 font-medium text-gray-700 hover:bg-ivory-100 disabled:opacity-40"
           >
             Next
           </button>
         </nav>
       )}
 
-      <details className="rounded-lg bg-white p-4 text-sm text-gray-600 shadow">
+      <details className="rounded-lg bg-brand-surface p-4 text-sm text-gray-600 shadow">
         <summary className="cursor-pointer font-medium text-gray-900">CSV format</summary>
         <p className="mt-2">
           Header row: <code>firstName,lastName,mobile,email,group,notes,dietaryPrefs,side,category,accommodationNeeds,transportNeeds</code>. Only
@@ -677,11 +677,11 @@ export default function GuestManager({
 
 function StatusBadge({ status }: { status: string }) {
   const styles: Record<string, string> = {
-    confirmed: "bg-green-100 text-green-800",
+    confirmed: "bg-sage-100 text-brand-success",
     pending: "bg-yellow-100 text-yellow-800",
-    maybe: "bg-blue-100 text-blue-800",
-    declined: "bg-red-100 text-red-800",
-    none: "bg-gray-100 text-gray-700",
+    maybe: "bg-brand-surface-muted text-brand-info",
+    declined: "bg-rose-100 text-brand-danger",
+    none: "bg-brand-surface-muted text-gray-700",
   }
   return (
     <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${styles[status] ?? styles.none}`}>
@@ -691,7 +691,7 @@ function StatusBadge({ status }: { status: string }) {
 }
 
 const inputClass =
-  "mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+  "mt-1 block w-full rounded-md border border-gray-300 bg-brand-surface px-3 py-2 text-sm shadow-sm focus:border-brand-primary focus:outline-none focus:ring-1 focus:ring-brand-primary"
 
 function Field({
   label,

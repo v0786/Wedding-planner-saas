@@ -291,10 +291,10 @@ export default function RsvpForm({
   ]
 
   const progress = ((activeSection + 1) / sections.length) * 100
-  const palette = invitationTheme(wedding)
+  const palette = invitationTheme(wedding, "web")
 
   return (
-    <div className="min-h-screen" data-invitation-theme={palette.name} style={invitationThemeStyle(wedding)}>
+    <div className="min-h-screen" data-invitation-theme={palette.name} style={invitationThemeStyle(wedding, "web")}>
       {(wedding.coverImageUrl || wedding.couplePhotoUrl) && (
         <div className="relative mx-auto max-w-2xl overflow-hidden rounded-b-3xl border-b-4" style={{ borderColor: palette.accent }}>
           {wedding.coverImageUrl && <div role="img" aria-label="Wedding cover" className="h-32 bg-cover bg-center sm:h-44" style={{ backgroundImage: `url(${JSON.stringify(wedding.coverImageUrl)})` }} />}
@@ -323,7 +323,7 @@ export default function RsvpForm({
             </button>
             <div className="flex items-center gap-2">
               <span className="font-display text-base text-ink-800">{wedding.name}</span>
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gold-sheen text-sm font-semibold text-white shadow-glow">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gold-sheen text-sm font-semibold text-[#17130b] shadow-glow">
                 <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
                   <path d="M2 5a2 2 0 012-2h7a2 2 0 012 2v4a2 2 0 01-2 2H9v2a1 1 0 100 2h2a1 1 0 100-2H9V7a2 2 0 012-2h7a2 2 0 012 2v4a2 2 0 01-2 2H4a2 2 0 01-2-2V5z" />
                 </svg>
@@ -361,7 +361,7 @@ export default function RsvpForm({
                 <div 
                   className={`w-10 h-10 rounded-2xl flex items-center justify-center text-sm font-semibold transition-all duration-300 ${
                     index < activeSection
-                      ? "bg-brand-primary text-white"
+                      ? "bg-brand-primary text-[#17130b]"
                       : index === activeSection
                       ? "bg-brand-accent/20 text-brand-primary ring-2 ring-brand-primary/30"
                       : "bg-brand-surface-muted text-brand-text-muted"
@@ -400,7 +400,7 @@ export default function RsvpForm({
             {error && (
               <div
                 role="alert"
-                className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700"
+                className="rounded-2xl border border-rose-300/40 bg-rose-100 px-4 py-3 text-sm font-medium text-brand-danger"
               >
                 {error}
               </div>
@@ -588,7 +588,7 @@ export default function RsvpForm({
                               />
                               <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-2 transition-colors ${
                                 eventResponses[event.id] === option
-                                  ? "bg-brand-primary text-white"
+                                  ? "bg-brand-primary text-[#17130b]"
                                   : "bg-brand-surface-muted text-brand-text-muted group-hover:bg-brand-accent/20 group-hover:text-brand-primary"
                               }`}>
                                 {option === "yes" && (
@@ -690,7 +690,7 @@ export default function RsvpForm({
                           <button
                             type="button"
                             onClick={() => removeFamilyMember(member.id)}
-                            className="absolute top-3 right-3 p-1.5 rounded-lg text-brand-text-muted hover:bg-brand-danger hover:text-white transition-colors opacity-0 group-hover:opacity-100"
+                            className="absolute top-3 right-3 p-1.5 rounded-lg text-brand-text-muted hover:bg-[#9a3935] hover:text-white transition-colors opacity-0 group-hover:opacity-100"
                             aria-label="Remove family member"
                           >
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -788,7 +788,7 @@ export default function RsvpForm({
                         </>
                       ) : loading ? (
                         <>
-                          <svg className="animate-spin -ml-1 mr-2 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
+                          <svg className="animate-spin -ml-1 mr-2 h-5 w-5 text-current" fill="none" viewBox="0 0 24 24">
                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                           </svg>
@@ -912,7 +912,7 @@ export default function RsvpForm({
                     >
                       {loading ? (
                         <>
-                          <svg className="animate-spin -ml-1 mr-2 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
+                          <svg className="animate-spin -ml-1 mr-2 h-5 w-5 text-current" fill="none" viewBox="0 0 24 24">
                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                           </svg>
@@ -932,7 +932,7 @@ export default function RsvpForm({
               )}
 
               {reviewing && (
-                <section role="dialog" aria-modal="true" aria-labelledby="rsvp-review-heading" className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-ink-900/50 p-4">
+                <section role="dialog" aria-modal="true" aria-labelledby="rsvp-review-heading" className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/70 p-4">
                   <div className="max-h-[90vh] w-full max-w-lg space-y-4 overflow-y-auto rounded-2xl bg-brand-surface p-6 shadow-lift">
                     <h2 id="rsvp-review-heading" className="font-display text-2xl text-ink-900">Review your RSVP</h2>
                     <dl className="space-y-2 text-sm">
@@ -972,7 +972,7 @@ export default function RsvpForm({
           {/* Floating WhatsApp Share Button */}
           {shareable && whatsappSharing && <button
             onClick={shareOnWhatsApp}
-            className="fixed bottom-6 right-4 md:bottom-8 md:right-8 z-40 p-4 bg-brand-primary text-white rounded-2xl shadow-lift hover:bg-brand-primary-hover hover:scale-105 transition-all active:scale-[0.98]"
+            className="fixed bottom-6 right-4 md:bottom-8 md:right-8 z-40 p-4 bg-brand-primary text-[#17130b] rounded-2xl shadow-lift hover:bg-brand-primary-hover hover:scale-105 transition-all active:scale-[0.98]"
             aria-label="Share on WhatsApp"
           >
             <svg className="w-7 h-7" fill="currentColor" viewBox="0 0 24 24">

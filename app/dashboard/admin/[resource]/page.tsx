@@ -28,7 +28,7 @@ export default async function AdminResourcePage({ params, searchParams }: { para
     <main className="mx-auto max-w-7xl space-y-6 px-4 py-8 sm:px-6">
       <Link href="/dashboard/admin" className="text-sm text-ink-500">Back to administrator overview</Link>
       <h1 className="font-display text-3xl text-ink-900">{ADMIN_RESOURCES[resource]}</h1>
-      <form method="get" className="space-y-3 rounded-xl border border-ivory-200 bg-white p-5">
+      <form method="get" className="space-y-3 rounded-xl border border-ivory-200 bg-brand-surface p-5">
         <label htmlFor="admin-purpose" className="block text-sm font-medium">Administrative purpose</label>
         <p id="purpose-hint" className="text-sm text-ink-500">Record why you need access. Use a support reference or general purpose and keep guest details and secrets out of this field.</p>
         <input id="admin-purpose" name="reason" required minLength={12} maxLength={300} defaultValue={query.reason ?? ""} aria-describedby="purpose-hint" className="input w-full" />
@@ -38,7 +38,7 @@ export default async function AdminResourcePage({ params, searchParams }: { para
       {listing && <>
         <p className="text-sm text-ink-500">{listing.total} records · Page {listing.page}</p>
         {resource === "retention" && <p className="text-sm text-ink-500">This view shows eligibility dates. The retention worker stays in dry-run mode until deletion is explicitly enabled.</p>}
-        <div className="overflow-x-auto rounded-xl border border-ivory-200 bg-white">
+        <div className="overflow-x-auto rounded-xl border border-ivory-200 bg-brand-surface">
           <table className="w-full text-left text-sm"><thead><tr>{listing.columns.map(column => <th key={column} scope="col" className="whitespace-nowrap border-b border-ivory-200 px-4 py-3 font-medium">{column}</th>)}</tr></thead>
             <tbody>{listing.rows.map((row, index) => <tr key={index}>{row.map((cell, cellIndex) => <td key={cellIndex} className="max-w-sm break-words border-b border-ivory-100 px-4 py-3 align-top">{cell}</td>)}</tr>)}</tbody>
           </table>

@@ -44,7 +44,7 @@ export default function BillingActions({
         type="button"
         disabled={loading}
         onClick={() => call("PATCH")}
-        className="rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+        className="rounded-lg border border-gray-300 bg-brand-surface px-3 py-2 text-sm font-medium text-gray-700 hover:bg-ivory-100 disabled:opacity-60"
       >
         {loading ? "Resuming…" : "Resume subscription"}
       </button>
@@ -60,7 +60,7 @@ export default function BillingActions({
           call("POST", { immediate: false })
         }
       }}
-      className="rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+      className="rounded-lg border border-gray-300 bg-brand-surface px-3 py-2 text-sm font-medium text-gray-700 hover:bg-ivory-100 disabled:opacity-60"
     >
       {loading ? "Cancelling…" : "Cancel at period end"}
     </button>

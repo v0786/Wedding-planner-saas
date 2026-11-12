@@ -39,7 +39,7 @@ export default function GroupInvitationTransfer({ token }: { token: string }) {
   }
 
   return (
-    <div className="space-y-3 rounded-2xl border border-ivory-200 bg-white p-5 text-ink-900">
+    <div className="space-y-3 rounded-2xl border border-ivory-200 bg-brand-surface p-5 text-ink-900">
       {path ? (
         <>
           <label className="label" htmlFor="replacement-invite">New one-time invitation link</label>

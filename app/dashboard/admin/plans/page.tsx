@@ -22,12 +22,12 @@ export default async function AdminPlansPage() {
   if (!isAdmin) {
     return (
       <main className="mx-auto max-w-2xl px-4 py-12">
-        <h1 className="text-2xl font-bold text-gray-900">Administrator access required</h1>
-        <p className="mt-2 text-sm text-gray-600">
+        <h1 className="text-2xl font-bold text-ink-900">Administrator access required</h1>
+        <p className="mt-2 text-sm text-ink-600">
           Your account is not allowed to edit plan pricing. Ask an operator to grant the admin flag or add your
-          verified email to <code className="rounded bg-gray-100 px-1 py-0.5">ADMIN_EMAILS</code>.
+          verified email to <code className="rounded bg-ivory-100 px-1 py-0.5">ADMIN_EMAILS</code>.
         </p>
-        <Link href="/dashboard" className="mt-6 inline-block text-sm font-medium text-indigo-600">← Back to dashboard</Link>
+        <Link href="/dashboard" className="mt-6 inline-block text-sm font-medium text-gold-500">← Back to dashboard</Link>
       </main>
     )
   }
@@ -38,13 +38,13 @@ export default async function AdminPlansPage() {
   return (
     <main className="mx-auto max-w-4xl space-y-6 px-4 py-8 sm:px-6 lg:px-8">
       <div>
-        <Link href="/dashboard/billing" className="text-sm font-medium text-indigo-600 hover:text-indigo-700">← Billing</Link>
-        <h1 className="mt-3 text-2xl font-bold text-gray-900">Plan pricing & limits</h1>
-        <p className="mt-1 text-sm text-gray-600">
+        <Link href="/dashboard/billing" className="text-sm font-medium text-gold-500 hover:text-indigo-700">← Billing</Link>
+        <h1 className="mt-3 text-2xl font-bold text-ink-900">Plan pricing & limits</h1>
+        <p className="mt-1 text-sm text-ink-600">
           Prices are stored server-side in paise. Leave a price empty to show “Coming Soon”. Changes apply
           immediately without a deploy.
         </p>
-        <p className="mt-2 text-xs text-gray-500">
+        <p className="mt-2 text-xs text-ink-500">
           Payments: {paymentsConfigured ? "Razorpay configured" : "Razorpay keys missing"} · Changes are audited by
           the app logs and affect all workspaces.
         </p>

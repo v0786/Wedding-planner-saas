@@ -1,7 +1,25 @@
 # Design System --- Wedding Guest Manager
 
-**Version:** 2.0 \| **Theme:** Light only; no dark mode in initial
-product.
+**Version:** 3.0 | **Theme:** Dark gold, selected by the owner on 12 November 2026.
+
+This explicit direction supersedes the earlier light-only palette. The website,
+account pages, dashboard and public RSVP use charcoal surfaces, warm ivory text,
+and restrained gold accents. Printed reports and invitation exports retain paper
+backgrounds and dark ink. Canonical screen tokens live in `app/globals.css`.
+
+| Token | HEX |
+| --- | --- |
+| Background | `#10110F` |
+| Surface | `#1B1C17` |
+| Muted surface | `#23241E` |
+| Primary gold | `#D4B575` |
+| Primary hover | `#E8CFA0` |
+| Text | `#F5EEDD` |
+| Muted text | `#B8B09D` |
+| Border | `#35342A` |
+
+Gold action buttons use dark text (`#17130B`). Reduced-motion preferences
+are respected. Legacy light specifications below are retained for reference.
 
 ## 1. Brand direction
 

@@ -54,7 +54,7 @@ export default function AppShell({
             onClick={() => setOpen(true)}
             aria-label="Open navigation"
             aria-expanded={open}
-            className="flex h-10 w-10 items-center justify-center rounded-xl border border-ivory-300 bg-white text-ink-600 shadow-soft transition-colors hover:text-ink-800"
+            className="flex h-10 w-10 items-center justify-center rounded-xl border border-ivory-300 bg-brand-surface text-ink-600 shadow-soft transition-colors hover:text-ink-800"
           >
             <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.7}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
@@ -62,7 +62,7 @@ export default function AppShell({
           </button>
 
           <Link href="/dashboard" className="flex items-center gap-2.5">
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-gold-sheen text-sm font-semibold text-white shadow-glow">
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-gold-sheen text-sm font-semibold text-[#17130b] shadow-glow">
               W
             </span>
             <span className="font-display text-base text-ink-800">Wedding Guest Planner</span>
@@ -82,12 +82,12 @@ export default function AppShell({
           tabIndex={open ? 0 : -1}
           aria-label="Close navigation"
           onClick={() => setOpen(false)}
-          className={`absolute inset-0 bg-ink-900/30 backdrop-blur-[2px] transition-opacity duration-300 ${
+          className={`absolute inset-0 bg-black/65 backdrop-blur-[2px] transition-opacity duration-300 ${
             open ? "opacity-100" : "opacity-0"
           }`}
         />
         <div
-          className={`absolute inset-y-0 left-0 w-[17rem] max-w-[85vw] border-r border-ivory-300/70 shadow-lift transition-transform duration-300 ease-refined ${
+          className={`absolute inset-y-0 left-0 w-[17rem] max-w-[85vw] border-r border-ivory-300/70 bg-brand-surface shadow-lift transition-transform duration-300 ease-refined ${
             open ? "translate-x-0" : "-translate-x-full"
           }`}
         >
@@ -111,9 +111,10 @@ export default function AppShell({
 
       <div className="lg:pl-72 print:!pl-0">
         {email ? (
-          <div className="hidden border-b border-ivory-200/70 bg-white/50 lg:block print:!hidden">
-            <div className="mx-auto flex max-w-6xl items-center justify-end px-6 py-2 text-xs text-ink-400 lg:px-10">
-              Signed in as <span className="ml-1 font-medium text-ink-600">{email}</span>
+          <div className="hidden border-b border-ivory-200/70 bg-brand-surface/50 lg:block print:!hidden">
+            <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-6 py-4 text-xs text-ink-400 lg:px-10">
+              <span className="text-[10px] uppercase tracking-[0.22em] text-gold-500">Your celebration workspace</span>
+              <span className="truncate">Signed in as <span className="ml-1 font-medium text-ink-600">{email}</span></span>
             </div>
           </div>
         ) : null}

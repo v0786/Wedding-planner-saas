@@ -45,10 +45,10 @@ export default async function CheckoutPage({
   const back = `/dashboard/billing?weddingId=${encodeURIComponent(wedding.id)}`
   return (
     <main className="mx-auto max-w-lg px-4 py-10 sm:px-6">
-      <Link href={back} className="text-sm font-medium text-indigo-600 hover:text-indigo-700">← Wedding billing</Link>
-      <section className="mt-6 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-        <h1 className="text-2xl font-bold text-gray-900">{plan.name} for {wedding.name}</h1>
-        <p className="mt-2 text-sm text-gray-600">One-time payment. Access runs through the wedding date.</p>
+      <Link href={back} className="text-sm font-medium text-gold-500 hover:text-indigo-700">← Wedding billing</Link>
+      <section className="mt-6 rounded-2xl border border-ivory-200 bg-brand-surface p-6 shadow-sm">
+        <h1 className="text-2xl font-bold text-ink-900">{plan.name} for {wedding.name}</h1>
+        <p className="mt-2 text-sm text-ink-600">One-time payment. Access runs through the wedding date.</p>
         {quote && (
           <dl className="mt-5 space-y-2 text-sm">
             <div className="flex justify-between"><dt>Plan price</dt><dd>{formatInr(quote.baseAmountInPaise)}</dd></div>

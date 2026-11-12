@@ -87,7 +87,7 @@ function PlanForm({
   }
 
   return (
-    <form onSubmit={save} className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+    <form onSubmit={save} className="rounded-2xl border border-gray-200 bg-brand-surface p-6 shadow-sm">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="text-lg font-semibold text-gray-900">
           {plan.code} <span className="text-sm font-normal text-gray-500">· {name}</span>
@@ -111,7 +111,7 @@ function PlanForm({
           <input
             value={name}
             onChange={(event) => setName(event.target.value)}
-            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
+            className="mt-1 w-full rounded-lg border border-gray-300 bg-brand-surface px-3 py-2"
           />
         </label>
         <label className="block text-sm">
@@ -121,7 +121,7 @@ function PlanForm({
             min={0}
             value={sortOrder}
             onChange={(event) => setSortOrder(event.target.value)}
-            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
+            className="mt-1 w-full rounded-lg border border-gray-300 bg-brand-surface px-3 py-2"
           />
         </label>
         <label className="block text-sm sm:col-span-2">
@@ -130,7 +130,7 @@ function PlanForm({
             rows={2}
             value={description}
             onChange={(event) => setDescription(event.target.value)}
-            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
+            className="mt-1 w-full rounded-lg border border-gray-300 bg-brand-surface px-3 py-2"
           />
         </label>
         <label className="block text-sm">
@@ -143,7 +143,7 @@ function PlanForm({
             disabled={isFree}
             placeholder="Leave empty for Coming Soon"
             onChange={(event) => setPriceRupees(event.target.value)}
-            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 disabled:bg-gray-50"
+            className="mt-1 w-full rounded-lg border border-gray-300 bg-brand-surface px-3 py-2 disabled:bg-ivory-100"
           />
           <span className="mt-1 block text-xs text-gray-500">
             Empty = “Coming Soon”. {isFree ? "Free is always free." : "Stored in paise server-side."}
@@ -164,7 +164,7 @@ function PlanForm({
                 value={limits[key] ?? ""}
                 placeholder="Unlimited"
                 onChange={(event) => setLimits((current) => ({ ...current, [key]: event.target.value }))}
-                className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
+                className="mt-1 w-full rounded-lg border border-gray-300 bg-brand-surface px-3 py-2"
               />
             </label>
           ))}
@@ -194,24 +194,24 @@ function PlanForm({
       </div>
 
       {!isFree && isActive && priceRupees.trim() === "" && (
-        <p className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+        <p className="mt-4 rounded-lg border border-gold-300/30 bg-champagne-100 px-3 py-2 text-xs text-brand-warning">
           This plan is marked available but has no price, so it will still show “Coming Soon” and cannot be bought.
         </p>
       )}
       {!paymentsConfigured && !isFree && (
-        <p className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+        <p className="mt-4 rounded-lg border border-gold-300/30 bg-champagne-100 px-3 py-2 text-xs text-brand-warning">
           Razorpay keys are not configured. Prices can be saved, but checkout will remain disabled.
         </p>
       )}
 
-      {error && <p role="alert" className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
-      {message && <p role="status" className="mt-4 rounded-lg bg-green-50 px-3 py-2 text-sm text-green-800">{message}</p>}
+      {error && <p role="alert" className="mt-4 rounded-lg bg-rose-100 px-3 py-2 text-sm text-brand-danger">{error}</p>}
+      {message && <p role="status" className="mt-4 rounded-lg bg-sage-100 px-3 py-2 text-sm text-brand-success">{message}</p>}
 
       <div className="mt-5 flex justify-end">
         <button
           type="submit"
           disabled={saving}
-          className="rounded-lg bg-gradient-to-r from-pink-600 to-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:from-pink-700 hover:to-indigo-700 disabled:opacity-60"
+          className="rounded-lg bg-brand-primary px-4 py-2 text-sm font-semibold text-[#17130b] hover:bg-brand-primary-hover disabled:opacity-60"
         >
           {saving ? "Saving…" : `Save ${plan.code}`}
         </button>

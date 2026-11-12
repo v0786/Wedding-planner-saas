@@ -6,6 +6,7 @@ Updated 12 November 2026. This tracker follows the full supplied product scope. 
 
 The fresh inspection covered the root application, `app/`, `components/`, `lib/`, Prisma schema and migrations, tests, CI, configuration, screenshots and product document folders. The product-document inventory contains 53 Markdown files with 27 distinct bodies. Every numbered `inbox/*-1.md` duplicates its unnumbered counterpart. Reference copies remain available in `inbox/`.
 
+- The owner selected a dark gold visual design on 12 November 2026. Landing, account, dashboard and guest screens use the dark palette; paper exports retain light backgrounds. Future authorized changes are pushed to GitHub main and the existing Vercel Git integration automatically redeploys.
 - The user's approved prices are Basic ₹499, Pro ₹999 and Prime ₹1,999, one time per wedding. Guest counts remain unlimited.
 - The current Prisma and Auth.js stack is retained under `docs/Rules.md` and `docs/SUPABASE_MIGRATION_PLAN.md`. Supabase Auth remains a separately planned migration.
 - The source of truth is the latest user instruction, then the canonical requirements in `docs/`. The API document describes a proposed contract. Existing working routes should retain compatibility while their actual behavior is documented.
@@ -99,3 +100,27 @@ In this container the Prisma schema-engine migration command has failed. The exe
 5. Run physical mobile/camera, accessibility and consented pilot acceptance before production release.
 
 Historical GitHub billing, token-scope, database and deployment statements from the 2026-10-31 tracker were not reverified in this inspection. They are not current completion evidence. No live SMS, real payment, production data operation or deployment is established by this tracker.
+
+## Dark gold frontend checkpoint — 12 November 2026
+
+Implemented an editorial landing page, shared account layout, dark navigation,
+pricing cards, dashboard surfaces, guest tools and public invitation styling.
+Gold controls use dark text. Named/custom invitation accents adapt for readable
+dark web screens while PDF/PNG retain the paper palette. Print status colours
+remain readable. Reduced motion and mobile navigation are preserved.
+
+Verification: lint and TypeScript passed; 107 unit cases and 50 database cases
+passed in the isolated full run. Three added custom-accent contrast cases also
+passed (five invitation-theme cases total). The production build, 96 HTTP checks
+and six browser journeys passed. Responsive visual inspection covers the landing,
+pricing, login, public invite and dashboard. Browser checks exercise saved RSVP
+changes, forwarded-link rejection, device transfer and registration.
+
+Deployment: GitHub main is linked to automatic Vercel production builds. The
+existing deployment fails with Prisma P1001 because the configured Supabase
+direct endpoint is IPv6-only. The exact project pooler host is required from
+Supabase Connect; the dashboard currently has no authenticated session. Existing
+integration connection strings belong to a different project and are not used.
+Prisma now separates runtime DATABASE_URL from migration DIRECT_URL. Production
+Auth.js secret, canonical application URLs and trusted-host config were added
+securely in Vercel. Provider staging and prior documented product gaps remain.

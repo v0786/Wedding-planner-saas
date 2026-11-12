@@ -102,7 +102,7 @@ export default function FaqPage() {
             ))}
           </div>
 
-          <div className="mt-12 rounded-3xl border border-ivory-300/70 bg-white/80 px-6 py-8 text-center shadow-soft">
+          <div className="mt-12 rounded-3xl border border-ivory-300/70 bg-brand-surface px-6 py-8 text-center shadow-soft">
             <p className="text-sm text-ink-600">
               Still need help?{" "}
               <Link

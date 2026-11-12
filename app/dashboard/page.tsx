@@ -244,7 +244,7 @@ function QuickAction({
   return (
     <Link
       href={href}
-      className="group flex items-center gap-4 rounded-xl border border-ivory-300/70 bg-white/70 p-4 transition-all duration-300 ease-refined hover:-translate-y-0.5 hover:border-gold-300 hover:bg-champagne-100/40 hover:shadow-soft"
+      className="group flex items-center gap-4 rounded-xl border border-ivory-300/70 bg-brand-surface/70 p-4 transition-all duration-300 ease-refined hover:-translate-y-0.5 hover:border-gold-300 hover:bg-champagne-100/40 hover:shadow-soft"
     >
       <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-champagne-100 text-gold-700 transition-colors duration-300 group-hover:bg-gold-200/70">
         <svg

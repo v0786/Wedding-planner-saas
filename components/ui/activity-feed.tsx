@@ -135,7 +135,7 @@ export default function ActivityFeed({
       {displayActivities.map((activity) => (
         <div
           key={activity.id}
-          className="group flex gap-4 rounded-xl border border-ivory-200 bg-white/70 p-4 transition-all duration-200 ease-refined hover:border-gold-200 hover:bg-white"
+          className="group flex gap-4 rounded-xl border border-ivory-200 bg-brand-surface p-4 transition-all duration-200 ease-refined hover:border-gold-200 hover:bg-brand-surface"
         >
           <div
             className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${typeColors[activity.type]}`}

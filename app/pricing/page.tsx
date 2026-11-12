@@ -71,20 +71,20 @@ export default async function PricingPage() {
           </div>
         )}
 
-        <div className="mt-14 grid gap-6 lg:grid-cols-3 lg:items-start">
+        <div className="mt-14 grid gap-6 lg:grid-cols-3 lg:items-stretch">
           {catalog.plans.map((plan) => {
             const highlight = plan.code === "PRO"
             return (
               <section
                 key={plan.code}
-                className={`relative flex flex-col rounded-3xl border bg-white p-7 ${
+                className={`relative flex flex-col rounded-3xl border bg-brand-surface p-7 sm:p-8 ${
                   highlight
-                    ? "border-gold-300 shadow-lift ring-1 ring-gold-200"
+                    ? "border-gold-500/60 bg-gradient-to-b from-gold-500/10 to-brand-surface shadow-lift ring-1 ring-gold-500/20"
                     : "border-ivory-300/70 shadow-soft"
                 }`}
               >
                 {highlight && (
-                  <span className="absolute -top-3 left-7 inline-flex items-center rounded-full bg-gold-sheen px-3 py-1 text-[0.6875rem] font-semibold uppercase tracking-[0.18em] text-white shadow-glow">
+                  <span className="absolute -top-3 left-7 inline-flex items-center rounded-full bg-gold-sheen px-3 py-1 text-[0.6875rem] font-semibold uppercase tracking-[0.18em] text-[#17130b] shadow-glow">
                     Most popular
                   </span>
                 )}
