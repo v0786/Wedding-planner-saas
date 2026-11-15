@@ -1,10 +1,9 @@
 import { expectedRsvpAttendance, rsvpPartySize } from "@/lib/rsvp-attendance"
 import { contactsAreVisible } from "@/lib/wedding-settings"
 import { requireUserId } from "@/lib/server-auth"
-import { stringify } from "csv-stringify/sync"
 import { prisma } from "@/lib/prisma"
 import { handleApiError } from "@/lib/api"
-import { spreadsheetCsvOptions } from "@/lib/csv"
+import { spreadsheetFormat, tabularDownload } from "@/lib/spreadsheet"
 import { requireWeddingAccess } from "@/lib/wedding-access"
 import { assertWeddingFeature } from "@/lib/subscriptions/service"
 import { readReportExport } from "@/lib/report-export"
@@ -70,15 +69,8 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
         return [values[column]]
       })
     })
-    const csv = stringify(rows, { ...spreadsheetCsvOptions, header: true, columns: headers })
     const safeName = wedding.name.replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "").toLowerCase()
-    return new Response(csv, {
-      headers: {
-        "Content-Type": "text/csv; charset=utf-8",
-        "Cache-Control": "private, no-store",
-        "Content-Disposition": `attachment; filename="${safeName || "wedding"}-rsvps.csv"`,
-      },
-    })
+    return await tabularDownload({ headers, rows, name: `${safeName || "wedding"}-rsvps`, format: spreadsheetFormat(req), sheetName: "RSVPs" })
   } catch (error) {
     return handleApiError(error)
   }
