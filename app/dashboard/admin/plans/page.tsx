@@ -6,6 +6,7 @@ import AdminPlanEditor from "@/components/subscriptions/admin-plan-editor"
 import { ensurePlanRows, getPlanConfigs } from "@/lib/subscriptions/service"
 import { isPaymentConfigured } from "@/lib/subscriptions/razorpay"
 import { isAdminAllowed } from "@/lib/subscriptions/admin-access"
+import { requireAdminPage } from "@/lib/subscriptions/admin"
 
 export const dynamic = "force-dynamic"
 
@@ -32,6 +33,7 @@ export default async function AdminPlansPage() {
     )
   }
 
+  await requireAdminPage()
   await ensurePlanRows()
   const [plans, paymentsConfigured] = await Promise.all([getPlanConfigs(), Promise.resolve(isPaymentConfigured())])
 
