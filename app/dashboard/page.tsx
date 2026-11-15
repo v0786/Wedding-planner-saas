@@ -21,6 +21,9 @@ export default async function DashboardPage() {
     orderBy: { createdAt: "asc" },
     select: { workspaceId: true },
   })
+  const setupDraft = await prisma.weddingSetupDraft.findUnique({
+    where: { userId: session.user.id }, select: { completedWeddingId: true },
+  })
   const workspaceId = membership?.workspaceId
 
   const [weddings, recentActivity, metrics] = workspaceId ? await Promise.all([
@@ -54,6 +57,9 @@ export default async function DashboardPage() {
         description={"Here's what's happening with your weddings today."}
         actions={
           <>
+            {setupDraft && !setupDraft.completedWeddingId && (
+              <ButtonLink href="/onboarding/setup" variant="secondary">Resume wedding setup</ButtonLink>
+            )}
             <ButtonLink href="/dashboard/billing" variant="secondary">Manage billing</ButtonLink>
             <ButtonLink href="/dashboard/weddings/new" variant="primary">
               <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}>
