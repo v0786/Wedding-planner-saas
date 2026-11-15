@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import AssetUpload from "@/components/wedding/asset-upload"
 import { Field, Input, Select } from "@/components/ui/field"
 import { INVITATION_THEMES } from "@/lib/wedding-settings"
 
@@ -20,8 +21,8 @@ export default function InvitationDesignFields({ weddingId, value, canCustomize,
   message: string
 }) {
   const color = value.themeColor || INVITATION_THEMES[value.invitationTheme].color
-  const cover = value.coverImageUrl.startsWith("https://") ? value.coverImageUrl : ""
-  const photo = value.couplePhotoUrl.startsWith("https://") ? value.couplePhotoUrl : ""
+  const cover = (value.coverImageUrl.startsWith("https://") || value.coverImageUrl.startsWith("/api/weddings/")) ? value.coverImageUrl : ""
+  const photo = (value.couplePhotoUrl.startsWith("https://") || value.couplePhotoUrl.startsWith("/api/weddings/")) ? value.couplePhotoUrl : ""
   return (
     <fieldset className="space-y-5 border-t border-ivory-200 pt-6">
       <legend className="font-display text-lg text-ink-800">Invitation design</legend>
@@ -38,12 +39,14 @@ export default function InvitationDesignFields({ weddingId, value, canCustomize,
             onChange={event => onChange({ themeColor: event.target.value })} />
         </Field>
       </div>
+      <AssetUpload weddingId={weddingId} kind="cover" disabled={!canCustomize} onUploaded={url => onChange({ coverImageUrl: url })} />
+      <AssetUpload weddingId={weddingId} kind="couple" disabled={!canCustomize} onUploaded={url => onChange({ couplePhotoUrl: url })} />
       <Field label="Cover image URL" htmlFor="invitation-cover" hint="Use an HTTPS image link you have permission to share.">
-        <Input id="invitation-cover" type="url" value={value.coverImageUrl} disabled={!canCustomize} maxLength={2048}
+        <Input id="invitation-cover" type="text" value={value.coverImageUrl} disabled={!canCustomize} maxLength={2048}
           onChange={event => onChange({ coverImageUrl: event.target.value })} placeholder="https://…" />
       </Field>
       <Field label="Couple photo URL" htmlFor="invitation-photo">
-        <Input id="invitation-photo" type="url" value={value.couplePhotoUrl} disabled={!canCustomize} maxLength={2048}
+        <Input id="invitation-photo" type="text" value={value.couplePhotoUrl} disabled={!canCustomize} maxLength={2048}
           onChange={event => onChange({ couplePhotoUrl: event.target.value })} placeholder="https://…" />
       </Field>
       <article aria-label="Invitation design preview" className="overflow-hidden rounded-2xl border-2 text-center" style={{ borderColor: color }}>
