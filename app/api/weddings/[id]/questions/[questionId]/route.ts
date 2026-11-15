@@ -7,7 +7,7 @@ import {
 } from "@/lib/api"
 import { requireUserId } from "@/lib/server-auth"
 import { requireOpenWeddingAccess } from "@/lib/wedding-access"
-import { customQuestionSchema } from "@/lib/validation"
+import { customQuestionUpdateSchema } from "@/lib/validation"
 import { ApiError } from "@/lib/errors"
 import { logAudit } from "@/lib/audit"
 
@@ -26,7 +26,7 @@ export async function PATCH(req: Request, { params }: Params) {
     if (!existing) throw new ApiError("Question not found", 404)
 
     const body = await readJson(req)
-    const data = customQuestionSchema.partial().parse(body)
+    const data = customQuestionUpdateSchema.parse(body)
     const updated = await prisma.customQuestion.update({
       where: { id: questionId },
       data,
