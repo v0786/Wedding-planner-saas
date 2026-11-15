@@ -5,6 +5,9 @@ import { prisma } from "@/lib/prisma"
 import { requireUserId } from "@/lib/server-auth"
 import { ensurePlanRows } from "@/lib/subscriptions/service"
 import { generateEditToken } from "@/lib/tokens"
+import { Workbook } from "exceljs"
+import { GET as exportGuests } from "@/app/api/weddings/[id]/guests/export/route"
+import { tabularDownload } from "@/lib/spreadsheet"
 
 jest.mock("@/lib/server-auth", () => ({ requireUserId: jest.fn() }))
 
@@ -130,4 +133,38 @@ it("preserves hidden contacts when updating another field and supports explicit 
   expect((await patch({ mobile: "", email: "" })).status).toBe(200)
   expect(await prisma.guest.findUnique({ where: { id: guest.id } })).toMatchObject({ mobile: null, email: null })
   await prisma.wedding.update({ where: { id: weddingId }, data: { contactVisibility: "hidden" } })
+})
+
+it("previews, commits and safely exports native Excel with tenant and contact privacy checks", async () => {
+  const download = await tabularDownload({ headers: ["firstName", "mobile", "email"], rows: [["Excel Guest", "+919876543210", "guest@example.com"]], name: "guests", sheetName: "Guests", format: "xlsx" })
+  const content = await download.arrayBuffer()
+  const request = (preview: boolean) => {
+    const body = new FormData()
+    body.set("file", new File([content], "guests.xlsx", { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }))
+    return new Request(`http://test.local/import${preview ? "?preview=true" : ""}`, { method: "POST", body })
+  }
+  const preview = await importGuests(request(true), params())
+  expect(preview.status).toBe(200)
+  expect(await prisma.guest.count({ where: { weddingId } })).toBe(0)
+  expect((await importGuests(request(false), params())).status).toBe(201)
+  expect((await importGuests(request(false), params())).status).toBe(200)
+  expect(await prisma.guest.count({ where: { weddingId } })).toBe(1)
+
+  const exported = await exportGuests(new Request("http://test.local/export?format=xlsx"), params())
+  expect(exported.status).toBe(200)
+  const workbook = new Workbook()
+  await workbook.xlsx.load(await exported.arrayBuffer())
+  const values = JSON.stringify(workbook.worksheets[0].getSheetValues())
+  expect(values).toContain("Excel Guest")
+  expect(values).not.toMatch(/mobile|email|9876543210|guest@example.com/)
+
+  await prisma.wedding.update({ where: { id: weddingId }, data: { contactVisibility: "visible" } })
+  const visible = await exportGuests(new Request("http://test.local/export?format=xlsx"), params())
+  await workbook.xlsx.load(await visible.arrayBuffer())
+  expect(JSON.stringify(workbook.worksheets[0].getSheetValues())).toContain("+919876543210")
+  await prisma.wedding.update({ where: { id: weddingId }, data: { contactVisibility: "hidden" } })
+
+  jest.mocked(requireUserId).mockResolvedValue("another-user")
+  expect((await exportGuests(new Request("http://test.local/export?format=xlsx"), params())).status).toBe(404)
+  jest.mocked(requireUserId).mockResolvedValue(ownerId)
 })
