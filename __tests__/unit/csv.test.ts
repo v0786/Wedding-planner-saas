@@ -26,6 +26,13 @@ describe("parseGuestCsv", () => {
     if (!result.ok) expect(result.errors.join(" ")).toMatch(/Unknown column/)
   })
 
+  it("rejects duplicate and prototype-related headers before creating row objects", () => {
+    for (const csv of ["firstName,firstName\nA,B\n", "firstName,__proto__\nA,value\n", "firstName,constructor\nA,value\n"]) {
+      expect(parseGuestCsv(csv)).toMatchObject({ ok: false })
+    }
+    expect({}.constructor).toBe(Object)
+  })
+
   it("rejects a whole import when one row is invalid", () => {
     const result = parseGuestCsv(
       "firstName,email\nAarav,aarav@example.com\nMeera,not-an-email\n",
