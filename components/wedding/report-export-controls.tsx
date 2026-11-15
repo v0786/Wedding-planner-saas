@@ -43,7 +43,10 @@ export default function ReportExportControls({
           <label className="text-sm">Dietary preference<input className="input mt-1 w-full" name="dietary" maxLength={120} /></label>
         </div>
         {!includeContacts && <p className="text-sm text-brand-text-muted">Contact details are hidden. You can change the wedding privacy setting in Edit details.</p>}
-        <button className="btn btn-secondary" type="submit">Download selected report (CSV)</button>
+        <div className="flex flex-wrap gap-2">
+          <button className="btn btn-secondary" type="submit" name="format" value="csv">Download selected report (CSV)</button>
+          <button className="btn btn-secondary" type="submit" name="format" value="xlsx">Download selected report (Excel)</button>
+        </div>
       </form>
     </details>
   )
