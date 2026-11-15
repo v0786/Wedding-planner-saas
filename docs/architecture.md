@@ -85,3 +85,19 @@ Policy acceptance is versioned and recorded for the authenticated user. Admin ac
 - Broad platform administration, strong admin authentication, monitoring and restore acceptance.
 
 Keep these targets in the requirement map until code and executed acceptance evidence establish completion. Avoid replacing the working modular web application solely to match the proposed folder diagram.
+
+
+## 15 November 2026 implementation additions
+
+The web architecture now includes account-private `WeddingSetupDraft`, encrypted
+`AdminMfaCredential`, native Excel adapters, a private server-mediated Supabase
+Storage adapter, durable asset cleanup and health routes. All Prisma tables have
+deny-by-default RLS; public Data API roles have no application-table privileges.
+Auth.js identity is not treated as Supabase Auth identity. Authorization remains
+in the server domain services; a future Auth migration must design its own policies.
+
+Administrator reads and writes require session-bound TOTP/recovery step-up in
+addition to explicit administrator provisioning. Image access checks current
+wedding publication, public-field consent and expiry on every uncached proxy read.
+See setup and the latest tracker for configuration and executed evidence; earlier
+remaining-target descriptions are historical where superseded by this section.
