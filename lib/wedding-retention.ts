@@ -3,6 +3,7 @@ import { ApiError } from "@/lib/errors"
 import { weddingExpiry } from "@/lib/wedding-lifecycle"
 import { prisma } from "@/lib/prisma"
 import { hashEditToken } from "@/lib/tokens"
+import { weddingAssetPrefix } from "@/lib/wedding-assets"
 import { scheduleWeddingReminders } from "@/lib/wedding-reminders"
 
 const RETENTION_DAYS = 7
@@ -46,7 +47,7 @@ async function deleteWeddingWithJob(tx: Prisma.TransactionClient, weddingId: str
   // hashed identifiers, timestamps and aggregate counts after completion.
   await tx.weddingDeletionJob.update({
     where: { id: jobId },
-    data: { weddingId: null, status: "COMPLETED", completedAt: now, safeResult: { guests, responses, groups } },
+    data: { weddingId: null, status: "COMPLETED", completedAt: now, safeResult: { guests, responses, groups, assetCleanupPrefix: weddingAssetPrefix(weddingId), assetCleanupStatus: "PENDING" } },
   })
   return { success: true, jobId, status: "COMPLETED" as const }
 }

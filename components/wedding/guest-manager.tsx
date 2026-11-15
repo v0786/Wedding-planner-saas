@@ -243,7 +243,7 @@ export default function GuestManager({
       })
       const data = await response.json()
       if (!response.ok) {
-        setError(data.error || "Could not import the CSV file")
+        setError(data.error || "Could not import the guest file")
         setUpgradeUrl(typeof data.upgradeUrl === "string" ? data.upgradeUrl : "")
         setImportIssues(Array.isArray(data.issues) ? data.issues : [])
         return
@@ -259,7 +259,7 @@ export default function GuestManager({
         await load(1)
       }
     } catch {
-      setError("Could not import the CSV file. Please try again.")
+      setError("Could not import the guest file. Please try again.")
     } finally {
       setImporting(false)
     }
@@ -289,11 +289,17 @@ export default function GuestManager({
           >
             Export CSV
           </a>
+          <a
+            href={`/api/weddings/${weddingId}/guests/export?format=xlsx`}
+            className="rounded-md border border-gray-300 bg-brand-surface px-3 py-2 text-sm font-medium text-gray-700 hover:bg-ivory-100"
+          >
+            Export Excel
+          </a>
           {!readOnly && <label className="cursor-pointer rounded-md border border-gray-300 bg-brand-surface px-3 py-2 text-sm font-medium text-gray-700 hover:bg-ivory-100">
-            {importing ? "Importing..." : "Import CSV"}
+            {importing ? "Importing..." : "Import CSV / Excel"}
             <input
               type="file"
-              accept=".csv,text/csv"
+              accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
               onChange={handleImport}
               disabled={importing}
               className="sr-only"
@@ -439,7 +445,7 @@ export default function GuestManager({
 
       {importPreview && importFile && (
         <section className="space-y-4 rounded-lg border border-gray-200 bg-brand-surface p-5">
-          <h3 className="font-semibold text-gray-900">Review CSV import</h3>
+          <h3 className="font-semibold text-gray-900">Review guest import</h3>
           <p className="text-sm text-gray-600">{importPreview.total} validated guests. Showing the first {importPreview.rows.length}. Confirm to add them to this wedding.</p>
           <div className="overflow-x-auto">
             <table className="min-w-full text-left text-sm">
@@ -573,7 +579,7 @@ export default function GuestManager({
 
       {guests.length === 0 ? (
         <p className="rounded-lg bg-brand-surface p-8 text-center text-gray-500 shadow">
-          No guests found. Add a guest or import a CSV file.
+          No guests found. Add a guest or import a CSV or Excel file.
         </p>
       ) : (
         <div className="overflow-x-auto rounded-lg bg-brand-surface shadow">
@@ -664,11 +670,11 @@ export default function GuestManager({
       )}
 
       <details className="rounded-lg bg-brand-surface p-4 text-sm text-gray-600 shadow">
-        <summary className="cursor-pointer font-medium text-gray-900">CSV format</summary>
+        <summary className="cursor-pointer font-medium text-gray-900">CSV and Excel format</summary>
         <p className="mt-2">
           Header row: <code>firstName,lastName,mobile,email,group,notes,dietaryPrefs,side,category,accommodationNeeds,transportNeeds</code>. Only
           <code> firstName</code> is required. Mobile numbers must be unique within a wedding. The
-          import is rejected as a whole if any row is invalid.
+          import is rejected as a whole if any row is invalid. Use one worksheet for XLSX files, plain text cells, and a maximum of 2,000 guests per import (2 MB). Format phone numbers as text to preserve country codes and leading zeros.
         </p>
       </details>
     </div>

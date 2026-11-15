@@ -38,6 +38,11 @@ export default async function NewWeddingPage() {
         className="mt-6"
       />
 
+      <section className="mb-6 rounded-xl border border-ivory-200 bg-brand-surface p-5">
+        <h2 className="font-display text-lg text-ink-800">Prefer a guided setup?</h2>
+        <p className="mt-2 text-sm text-ink-500">Take it step by step and save your progress to finish on any device.</p>
+        <Link href="/onboarding/setup" className="btn btn-secondary mt-4">Start or resume guided setup</Link>
+      </section>
       <NewWeddingForm />
     </main>
   )

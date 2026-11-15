@@ -52,7 +52,7 @@ npm run test:smoke
 npm run test:e2e
 ```
 
-The current container cannot execute Prisma's schema-engine migration command reliably. Local verification applies the tracked SQL migrations directly to a disposable PostgreSQL database, then generates Prisma Client. Verify normal `npm run db:deploy` in staging before release. Do not silently apply a schema-engine workaround to production.
+The 15 November verification successfully ran normal `npm run db:deploy` on a fresh disposable PostgreSQL database. Historical schema-engine failures no longer apply to this runtime. Verify the same command against the intended staging database before a production migration.
 
 ## Lifecycle
 
@@ -78,3 +78,53 @@ An existing Vercel Supabase integration points at a different project; its
 connection strings must not be substituted for this project's credentials.
 GitHub `main` pushes already trigger production builds in the linked Vercel
 project. A successful build and live-flow verification are still required.
+
+### Administrator authenticator setup
+
+Apply the tracked Prisma migrations, including `20261115110000_admin_mfa`,
+before enabling platform administration. Keep a strong stable `AUTH_SECRET`
+(at least 32 characters) in the server environment and encrypted backup secrets.
+An explicitly provisioned administrator visiting `/dashboard/admin` is redirected
+to `/dashboard/admin-access` to enroll an authenticator using their account
+password. Save the eight one-use recovery codes in a password manager. A
+Google-only administrator can set a password via the account recovery flow.
+Platform access requires a fresh second factor every 15 minutes and after a
+new sign-in. Do not rotate the encryption secret without planning MFA
+re-enrollment or a controlled encrypted-credential migration.
+
+
+### Private image uploads
+
+Set `SUPABASE_STORAGE_URL` to the wedding database project's HTTPS API origin,
+`SUPABASE_SERVICE_ROLE_KEY` server-only, and `SUPABASE_ASSET_BUCKET` (default
+`wedding-assets`). Create a private bucket restricted to PNG/JPEG/WebP with a
+4 MB object limit. The application refuses public buckets. These credentials
+must belong to the same intended project; unrelated Vercel integration keys
+must not be substituted. Auth.js authorizes uploads and owner previews; guests
+can fetch only the currently selected, published, unexpired, approved images.
+The proxy exposes no service key or signed storage URL. Supabase Data API access
+to Prisma tables is disabled by RLS and explicit privilege revocation.
+
+Deletion cleanup runs for completed, authorized wedding deletion jobs and retries
+provider failures. Existing remote URL images are never deleted by the application.
+Production storage/RLS/provider behavior still requires staged acceptance.
+
+### Guest spreadsheets and setup
+
+Guided setup is `/onboarding/setup`; drafts persist per signed-in account and
+are cleared of duplicate personal content on completion. Existing quick-create
+remains available. Apply both new onboarding/admin migrations and the Data API
+lockdown migration before running this release.
+
+Guest import accepts CSV or one visible XLSX sheet, at most 2,000 guest rows per
+upload. All plans retain unlimited overall guests. Preview before confirmation;
+legacy `.xls`, formulas, links, dates, macros and embedded files are rejected.
+Exports offer native Excel or CSV while preserving the wedding's contact privacy.
+
+### Health monitoring
+
+`GET /api/health` is minimal public liveness. Configure an independent strong
+`HEALTH_CHECK_SECRET`; `GET /api/health/ready` requires its Bearer authorization
+and returns 200 only after database/schema checks, otherwise sanitized 503.
+Configure your uptime monitor securely; never put its credential in a URL.
+Backup restore and infrastructure alert delivery remain operational acceptance.

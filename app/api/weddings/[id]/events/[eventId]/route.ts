@@ -8,7 +8,7 @@ import {
   readJson,
   ApiError,
 } from "@/lib/api"
-import { eventSchema } from "@/lib/validation"
+import { eventUpdateSchema } from "@/lib/validation"
 import { getEventAccess, requireOpenWeddingAccess } from "@/lib/wedding-access"
 import { logAudit } from "@/lib/audit"
 
@@ -25,7 +25,7 @@ export async function PATCH(req: Request, { params }: Params) {
     if (!event) throw new ApiError("Event not found", 404)
 
     const body = await readJson(req)
-    const data = eventSchema.partial().parse(body)
+    const data = eventUpdateSchema.parse(body)
     await assertEventDesignChanges(wedding.workspaceId, id, event, data)
     const updated = await prisma.event.update({ where: { id: eventId }, data })
     await logAudit(id, userId, "event.updated", { eventId })

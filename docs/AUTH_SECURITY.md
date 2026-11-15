@@ -124,3 +124,43 @@ reason/confirmation for overrides and deletion.
 -   [ ] Logs checked for PII/secrets.
 -   [ ] Backup/restore/deletion policies tested.
 -   [ ] Dependency scan and independent security review completed.
+
+## Implemented administrator step-up — 15 November 2026
+
+The current application retains Auth.js and Prisma under the approved migration
+plan. Platform administration now requires both a manually provisioned admin
+identity and a separate, recent authenticator verification. The shared
+`requireAdmin` guard protects all administrative services and API routes; the
+admin page layout and page guards redirect to `/dashboard/admin-access`.
+
+Enrollment requires the existing account password and a six-digit RFC 6238
+SHA-1 authenticator code. A Google-only administrator can use the existing
+account password-recovery flow before enrollment. Setup expires after ten
+minutes. The authenticator secret is encrypted with AES-256-GCM using a
+purpose-separated key derived from the server's `AUTH_SECRET` (at least 32
+characters); neither the secret nor recovery codes enter logs or audit records.
+Eight high-entropy recovery codes are displayed once and stored only as SHA-256
+hashes. Store these outside the application in a password manager.
+
+A successful second factor creates a Secure-in-production, HttpOnly,
+SameSite=Strict cookie valid for 15 minutes. Its encrypted payload is bound to
+the current Auth.js session cookie, account session version, user ID and
+credential ID. Sign-in/session changes and credential removal invalidate that
+access. TOTP time steps and recovery codes are consumed through conditional
+PostgreSQL writes so replay and concurrent duplicate verification cannot
+succeed. All verification attempts use the shared database limiter and fail
+closed if that limiter is unavailable.
+
+To replace a lost authenticator, verify with an unused recovery code, reopen
+Administrator verification, then choose replacement and confirm the account
+password. Removing the old credential closes administrator access until a new
+authenticator is enrolled. Enrollment, successful verification, recovery use
+and credential replacement are durably audited. An operator-assisted reset
+must independently verify the administrator identity; there is no public reset
+or bypass endpoint. Retain the encryption key with encrypted backups: rotating
+`AUTH_SECRET` requires a controlled MFA credential migration or re-enrollment.
+
+Local tests cover RFC vectors, encryption/tamper resistance, clock/replay
+bounds, session binding, guard enforcement, real-database enrollment,
+concurrent recovery consumption and credential replacement. Live device
+acceptance and independent security review remain release checks.

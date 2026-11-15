@@ -1,10 +1,12 @@
 import Link from "next/link"
+import { requireAdminPage } from "@/lib/subscriptions/admin"
 import { ADMIN_RESOURCES, getAdminOverview } from "@/lib/admin-overview"
 
 export const dynamic = "force-dynamic"
 export const revalidate = 0
 
 export default async function AdminOverviewPage() {
+  await requireAdminPage()
   const overview = await getAdminOverview()
   return (
     <main className="mx-auto max-w-6xl space-y-7 px-4 py-8 sm:px-6">
@@ -14,6 +16,7 @@ export default async function AdminOverviewPage() {
           <div key={label} className="rounded-xl border border-ivory-200 bg-brand-surface p-5"><p className="text-sm text-ink-500">{label}</p><p className="mt-2 text-3xl font-semibold">{value}</p></div>
         ))}
       </div>
+      <Link href="/dashboard/admin-access" className="text-sm underline">Authenticator and session security</Link>
       <nav aria-label="Platform administration" className="grid gap-3 sm:grid-cols-2">
         {Object.entries(ADMIN_RESOURCES).map(([resource, label]) => <Link key={resource} href={`/dashboard/admin/${resource}`} className="rounded-xl border border-ivory-200 bg-brand-surface p-5 font-medium hover:border-gold-400">{label}</Link>)}
         <Link href="/dashboard/admin/plans" className="rounded-xl border border-ivory-200 bg-brand-surface p-5 font-medium">Plan prices and features</Link>

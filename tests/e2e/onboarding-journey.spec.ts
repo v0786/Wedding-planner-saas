@@ -1,0 +1,47 @@
+import { expect, test } from "@playwright/test"
+
+test("saves an incomplete guided setup, resumes it and creates one private wedding before checkout", async ({ page }) => {
+  const suffix = String(Date.now())
+  const email = `guided-owner-${suffix}@example.com`
+  const password = "test-owner-password-2026"
+  const weddingName = `Guided Wedding ${suffix}`
+
+  await page.goto("/auth/register")
+  await page.getByLabel("Full name").fill("Guided Setup Owner")
+  await page.getByLabel("Email address").fill(email)
+  await page.getByLabel("Password", { exact: true }).fill(password)
+  await page.getByLabel("Confirm password").fill(password)
+  await page.getByRole("checkbox", { name: /I accept the Terms of Service/ }).check()
+  await page.getByRole("checkbox", { name: /I have read the Privacy Notice/ }).check()
+  await page.getByRole("button", { name: "Create account", exact: true }).click()
+  await expect(page).toHaveURL(/\/auth\/login\?registered=1/)
+  await page.getByLabel("Email address").fill(email)
+  await page.getByLabel("Password", { exact: true }).fill(password)
+  await page.getByRole("button", { name: "Sign in", exact: true }).click()
+  await expect(page).toHaveURL(/\/dashboard$/)
+
+  await page.goto("/onboarding/setup")
+  await page.getByLabel("Wedding name", { exact: true }).fill(weddingName)
+  await page.getByRole("button", { name: "Save and exit", exact: true }).click()
+  await expect(page).toHaveURL(/\/dashboard$/)
+  await page.goto("/onboarding/setup")
+  await expect(page.getByLabel("Wedding name", { exact: true })).toHaveValue(weddingName)
+  await page.getByLabel("First person’s name", { exact: true }).fill("First person")
+  await page.getByLabel("Wedding date", { exact: true }).fill("2028-12-10")
+  await page.getByRole("button", { name: "Save and continue", exact: true }).click()
+  await page.getByLabel("Venue (optional)", { exact: true }).fill("Test venue")
+  await page.getByRole("button", { name: "Save and continue", exact: true }).click()
+  await expect(page.getByLabel("Guest contact visibility")).toHaveValue("hidden")
+  await page.getByRole("button", { name: "Save and continue", exact: true }).click()
+  await expect(page.getByRole("heading", { name: "Review", exact: true })).toBeVisible()
+  await expect(page.getByText(weddingName, { exact: true })).toBeVisible()
+  await page.getByRole("button", { name: "Create wedding and choose plan", exact: true }).click()
+  await expect(page.getByRole("heading", { name: "Your wedding workspace is ready", exact: true })).toBeVisible()
+  const weddingLink = await page.getByRole("link", { name: "View wedding", exact: true }).getAttribute("href")
+  await page.reload()
+  await expect(page.getByRole("link", { name: "View wedding", exact: true })).toHaveAttribute("href", weddingLink!)
+  await page.getByRole("link", { name: "Choose a plan", exact: true }).click()
+  await expect(page).toHaveURL(/\/dashboard\/billing\?weddingId=/)
+  await expect(page.getByRole("heading", { name: weddingName, exact: true })).toBeVisible()
+  await expect(page.getByText("Choose a one-time plan", { exact: true })).toBeVisible()
+})

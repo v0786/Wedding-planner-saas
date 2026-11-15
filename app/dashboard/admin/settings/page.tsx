@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { requireAdmin } from "@/lib/subscriptions/admin"
+import { requireAdminPage } from "@/lib/subscriptions/admin"
 import { getPlatformSettings, settingsSchema } from "@/lib/settings"
 import { prisma } from "@/lib/prisma"
 import PlatformSettingsEditor from "@/components/admin/platform-settings-editor"
@@ -7,7 +7,7 @@ import PlatformSettingsEditor from "@/components/admin/platform-settings-editor"
 export const dynamic = "force-dynamic"
 
 export default async function SettingsPage() {
-  await requireAdmin()
+  await requireAdminPage()
   const settings = settingsSchema.parse(await getPlatformSettings())
   const audits = await prisma.platformSettingsAudit.findMany({ orderBy: { createdAt: "desc" }, take: 10 })
   return (

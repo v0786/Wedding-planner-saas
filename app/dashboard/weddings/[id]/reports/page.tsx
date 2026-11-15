@@ -63,6 +63,12 @@ export default async function ReportsPage({ params }: { params: Promise<{ id: st
                 <a href={`/api/weddings/${wedding.id}/rsvps/export`} className="btn btn-secondary btn-sm">
                   Export RSVPs (CSV)
                 </a>
+                <a href={`/api/weddings/${wedding.id}/reports/export?format=xlsx`} className="btn btn-secondary btn-sm">
+                  Export summary (Excel)
+                </a>
+                <a href={`/api/weddings/${wedding.id}/rsvps/export?format=xlsx`} className="btn btn-secondary btn-sm">
+                  Export RSVPs (Excel)
+                </a>
               </>
             )}
           </div>

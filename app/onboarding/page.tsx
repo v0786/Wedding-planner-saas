@@ -7,7 +7,7 @@ export default async function OnboardingPage() {
   const session = await auth()
   if (session?.user?.id) {
     if (!await currentPolicyAcceptance(session.user.id)) redirect("/onboarding/policies")
-    redirect("/dashboard")
+    redirect("/onboarding/setup")
   }
 
   return (

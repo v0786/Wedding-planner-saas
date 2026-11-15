@@ -1,6 +1,6 @@
 import { describe, it, expect } from "@jest/globals"
 import { PRIVACY_VERSION, TERMS_VERSION } from "@/lib/policies"
-import { rsvpSchema, registerSchema, guestSchema, eventSchema, optionalDate } from "@/lib/validation"
+import { rsvpSchema, registerSchema, guestSchema, eventSchema, optionalDate, weddingUpdateSchema, eventUpdateSchema, customQuestionUpdateSchema } from "@/lib/validation"
 
 describe("rsvpSchema", () => {
   const valid = {
@@ -104,5 +104,26 @@ describe("optionalDate", () => {
 
   it("rejects an invalid date", () => {
     expect(optionalDate.safeParse("not-a-date").success).toBe(false)
+  })
+})
+
+
+describe("partial update validation", () => {
+  it("preserves saved privacy and timezone when updating unrelated wedding fields", () => {
+    expect(weddingUpdateSchema.parse({ name: "Updated celebration" })).toEqual({ name: "Updated celebration" })
+  })
+
+  it("does not reset event order or public fields during a name-only update", () => {
+    expect(eventUpdateSchema.parse({ name: "Updated event" })).toEqual({ name: "Updated event" })
+  })
+
+  it("does not change question type, visibility or required state during a text update", () => {
+    expect(customQuestionUpdateSchema.parse({ question: "Updated question?" })).toEqual({ question: "Updated question?" })
+  })
+
+  it("retains policy-specific rejection messages after validator upgrades", () => {
+    const parsed = registerSchema.safeParse({ name: "Host", email: "host@example.com", password: "longenough", termsAccepted: false, privacyAcknowledged: true, termsVersion: TERMS_VERSION, privacyVersion: PRIVACY_VERSION })
+    expect(parsed.success).toBe(false)
+    if (!parsed.success) expect(parsed.error.issues[0].message).toBe("Accept the Terms to continue")
   })
 })

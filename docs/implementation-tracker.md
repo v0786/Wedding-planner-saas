@@ -1,6 +1,6 @@
 # Implementation Tracker — Wedding Guest Manager
 
-Updated 12 November 2026. This tracker follows the full supplied product scope. Source files show implementation presence, while executed checks establish only the behavior exercised at that checkpoint. The latest local combined verification passed. Production/provider acceptance and the remaining product phases are listed below.
+Updated 15 November 2026. This tracker follows the full supplied product scope. Source files show implementation presence, while executed checks establish only the behavior exercised at that checkpoint. The latest local combined verification passed. Production/provider acceptance and the remaining product phases are listed below.
 
 ## Inspection and decisions
 
@@ -124,3 +124,62 @@ integration connection strings belong to a different project and are not used.
 Prisma now separates runtime DATABASE_URL from migration DIRECT_URL. Production
 Auth.js secret, canonical application URLs and trusted-host config were added
 securely in Vercel. Provider staging and prior documented product gaps remain.
+
+
+## SaaS completion checkpoint — 15 November 2026
+
+Implemented and independently integrated the remaining web guest-planner slices:
+
+- Native CSV/XLSX import preview and retry-safe commit; Excel downloads for guests,
+  RSVPs and filtered reports. Limits: one visible sheet, 2,000 rows per import,
+  2 MB compressed/12 MB expanded; these are per-upload limits, not guest caps.
+  Formula/link/macro inputs are rejected; exported guest text stays text.
+- Account-private guided setup with explicit save/resume, timezone/privacy choices,
+  serialized idempotent wedding creation, retention scheduling and plan checkout.
+  Completed setup clears duplicate personal draft data. Dashboard links resumable drafts.
+- Mandatory administrator authenticator enrollment, session-bound 15-minute step-up,
+  encrypted TOTP secrets, one-use recovery codes, replacement/locking, durable rate
+  limits and audit events. Root independently reviewed central guards and replay writes.
+- Private Supabase image upload/proxy with tenant/plan checks, bounded streamed image
+  bodies, MIME signatures, wedding-owned paths and explicit public-field projection.
+  Authorized deletions enqueue durable hashed-prefix cleanup retried by cron.
+- Deny-by-default RLS and Data API privilege revocation for all 31 Prisma tables.
+  The current Auth.js architecture mediates customer access server-side. No permissive
+  Supabase Auth policies were invented; direct trusted Prisma queries retain ownership checks.
+- Public liveness and secret-protected database/schema readiness; JSON byte limits
+  protect request parsing; unexpected exceptions are sanitized before logging.
+- Dependency fixes: exact ExcelJS/csv-parse/Zod versions, compatible PostCSS,
+  deepmerge-ts and scoped uuid overrides. Zod 4 PATCH regression tests ensure
+  unrelated updates never reset privacy, timezone, public fields or event defaults.
+
+Verification executed on the combined working tree, 15 November 2026:
+
+| Check | Observed result |
+| --- | --- |
+| Normal Prisma migrate deploy | Passed all 23 tracked migrations on fresh disposable PostgreSQL |
+| Prisma client generation | Passed |
+| ESLint and TypeScript | Passed; existing public invitation raw-image optimization warning |
+| Unit/UI tests | 150 passed, 31 suites |
+| PostgreSQL integration | 64 passed, 16 suites |
+| Production build | Passed |
+| HTTP smoke | 96 checks passed |
+| Playwright | All 7 journeys passed, including guided save/reload/resume |
+| Production dependency audit | Zero vulnerabilities reported by npm audit --omit=dev |
+| Diff whitespace | Passed |
+
+The runtime supplies an isolated embedded PostgreSQL and headless Chromium shell.
+All application providers were mocked; no real messages, payments or production
+customer data were used. Unlike the historical checkpoint, the normal migration
+engine succeeded on a separately created fresh database. The full application
+run used direct application of the identical tracked SQL after its initial
+attempt to create a missing test database failed.
+
+Remaining external launch requirements: correct production database pooler
+credentials, live provider acceptance (Razorpay, SMS/CAPTCHA, Google, email), a
+private asset bucket and matching server key, legal/business identity, physical
+camera/accessibility acceptance, managed monitoring and actual backup restore
+acceptance. The live project's public schema was observed empty before deployment.
+Production secret values cannot be retrieved from Vercel sensitive env entries.
+A source/build pass does not establish a working production database or providers.
+Native Android/iOS, expanded translations, Cashfree and automated campaigns remain
+separate deferred phases; the implemented release is the responsive web SaaS.

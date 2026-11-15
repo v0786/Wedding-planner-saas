@@ -7,7 +7,7 @@ import {
   ApiError,
 } from "@/lib/api"
 import { guestPhoneVariants } from "@/lib/guest-phone"
-import { parseGuestCsv } from "@/lib/csv"
+import { parseGuestSpreadsheet } from "@/lib/spreadsheet"
 import { requireOpenWeddingAccess } from "@/lib/wedding-access"
 import { logAudit } from "@/lib/audit"
 import { assertWeddingFeature, assertWeddingLimit, withWorkspaceLimitLock } from "@/lib/subscriptions/service"
@@ -24,10 +24,10 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     const preview = new URL(req.url).searchParams.get("preview") === "true"
     const formData = await req.formData()
     const file = formData.get("file")
-    if (!(file instanceof File)) throw new ApiError("Attach a CSV file", 400)
-    if (file.size > 2 * 1024 * 1024) throw new ApiError("The CSV file must be 2 MB or smaller", 400)
+    if (!(file instanceof File)) throw new ApiError("Attach a CSV or XLSX file", 400)
+    if (file.size > 2 * 1024 * 1024) throw new ApiError("The file must be 2 MB or smaller", 400)
 
-    const content = await file.text()
+    const content = Buffer.from(await file.arrayBuffer())
     const contentHash = createHash("sha256").update(content).digest("hex")
     const explicitKey = req.headers.get("idempotency-key")
     if (explicitKey && !/^[A-Za-z0-9_-]{16,128}$/.test(explicitKey)) {
@@ -36,10 +36,10 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     // Older direct API callers receive retry safety for an identical file.
     // A fresh explicit key allows a deliberate repeat of the same file.
     const keyHash = createHash("sha256").update(explicitKey ? `key:${explicitKey}` : `file:${contentHash}`).digest("hex")
-    const parsed = parseGuestCsv(content)
+    const parsed = await parseGuestSpreadsheet(file.name, content)
     if (!parsed.ok) {
       return NextResponse.json(
-        { error: "The CSV file has validation errors", issues: parsed.errors },
+        { error: "The guest file has validation errors", issues: parsed.errors },
         { status: 400 },
       )
     }

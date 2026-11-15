@@ -2,7 +2,14 @@
 
 A Next.js application for wedding setup, guests, invitations, phone-verified RSVPs, reports, and group check-in.
 
-The latest local build, type/lint, 107 unit tests, 50 database tests, 96 HTTP checks and six browser journeys passed. The full product requirements and the current gaps are mapped in [the implementation tracker](docs/implementation-tracker.md). A passing local build does not establish production or provider acceptance.
+The 15 November 2026 combined verification passed: build, type/lint, 150 unit/UI
+tests, 64 PostgreSQL integration tests, 96 HTTP checks and seven browser journeys.
+Normal Prisma migrations passed on a fresh disposable database. Production
+provider/database acceptance remains separate; see [the tracker](docs/implementation-tracker.md).
+
+Includes account-private resumable setup, secure CSV/XLSX guest imports and report
+exports, administrator two-factor authentication, managed private invitation images,
+Data API lockdown and application health endpoints.
 
 ## Current stack
 

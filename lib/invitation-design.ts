@@ -1,9 +1,16 @@
+import { ApiError } from "@/lib/errors"
 import { assertWeddingFeature } from "@/lib/subscriptions/service"
 
 const designFields = ["coverImageUrl", "couplePhotoUrl", "themeColor", "invitationTheme"] as const
 type DesignFields = Partial<Record<typeof designFields[number], string | null>>
 
 export async function assertWeddingDesignChanges(workspaceId: string, weddingId: string, previous: DesignFields, updates: DesignFields) {
+  for (const field of ["coverImageUrl", "couplePhotoUrl"] as const) {
+    const value = updates[field]
+    if (value?.startsWith("/") && !value.startsWith(`/api/weddings/${weddingId}/assets/`)) {
+      throw new ApiError("Choose an image uploaded to this wedding", 400)
+    }
+  }
   const needsCustomization = designFields.some(field => {
     const value = updates[field]
     return value !== undefined && value !== previous[field] && value !== null &&

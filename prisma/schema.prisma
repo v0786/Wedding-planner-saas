@@ -18,6 +18,8 @@ model User {
   sessionVersion Int @default(0)
   passwordResetTokens PasswordResetToken[]
   isAdmin       Boolean   @default(false)
+  adminMfa      AdminMfaCredential?
+  weddingSetupDraft WeddingSetupDraft?
   accounts      Account[]
   sessions      Session[]
   memberships   WorkspaceMember[]
@@ -505,4 +507,25 @@ model WeddingReminder {
 
   @@unique([jobId, deletionAt, offsetDays])
   @@index([status, scheduledAt])
+}
+
+// Secrets are encrypted server-side; recovery codes are stored as hashes only.
+model AdminMfaCredential {
+  id             String @id @default(cuid())
+  userId         String @unique
+  user           User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  encryptedSecret String @db.Text
+  lastUsedStep   BigInt @default(-1)
+  recoveryHashes String[]
+  createdAt      DateTime @default(now())
+}
+
+// Account-private setup data is never exposed by public wedding projections.
+model WeddingSetupDraft {
+  userId String @id
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  data Json
+  step Int @default(0)
+  completedWeddingId String?
+  updatedAt DateTime @updatedAt
 }
