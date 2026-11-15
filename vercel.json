@@ -12,10 +12,5 @@
       "path": "/api/cron/wedding-retention",
       "schedule": "35 18 * * *"
     }
-  ],
-  "git": {
-    "deploymentEnabled": {
-      "codex/guest-planner-completion-20261115": false
-    }
-  }
+  ]
 }
