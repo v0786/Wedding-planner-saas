@@ -102,7 +102,7 @@ export default function Sidebar({
   };
 
   return (
-    <div className="flex h-full flex-col bg-brand-surface/95 backdrop-blur-xl" data-variant={variant}>
+    <div className="flex h-full flex-col bg-champagne-wash backdrop-blur-xl" data-variant={variant}>
       <div className="flex items-center gap-3 px-6 pb-6 pt-7">
         <Link href="/dashboard" className="flex items-center gap-3" onClick={onNavigate}>
           <Monogram />
@@ -137,7 +137,7 @@ export default function Sidebar({
                       aria-current={active ? "page" : undefined}
                       className={`group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200 ease-refined ${
                         active
-                          ? "bg-gold-500/10 text-gold-400 ring-1 ring-gold-500/20"
+                          ? "bg-gold-sheen text-ink-800 ring-1 ring-gold-300/50"
                           : "text-ink-500 hover:bg-gold-500/5 hover:text-ink-800"
                       }`}
                     >
@@ -146,7 +146,7 @@ export default function Sidebar({
                       ) : null}
                       <span
                         className={`shrink-0 transition-colors ${
-                          active ? "text-gold-600" : "text-ink-300 group-hover:text-gold-500"
+                          active ? "text-gold-600" : "text-ink-400 group-hover:text-gold-600"
                         }`}
                       >
                         {item.icon}

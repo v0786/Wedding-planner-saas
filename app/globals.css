@@ -4,41 +4,41 @@
 
 @layer base {
   :root {
-    color-scheme: dark;
-    --ivory-50: 16 17 15;
-    --ivory-100: 23 24 20;
-    --ivory-200: 37 38 31;
-    --ivory-300: 53 52 42;
-    --ivory-400: 76 71 55;
-    --ink-100: 65 63 53;
-    --ink-200: 92 87 72;
-    --ink-300: 143 135 116;
-    --ink-400: 169 161 141;
-    --ink-500: 184 176 157;
-    --ink-600: 207 197 175;
-    --ink-700: 229 219 197;
-    --ink-800: 245 238 221;
-    --ink-900: 255 249 235;
-    --paper: #10110f;
-    --paper-raised: #1b1c17;
-    --ink: #f5eedd;
-    --ink-muted: #b8b09d;
-    --gold: #d4b575;
-    --gold-soft: #332c1b;
-    --rule: #35342a;
-    --color-background: #10110f;
-    --color-surface: #1b1c17;
-    --color-surface-muted: #23241e;
-    --color-primary: #d4b575;
-    --color-primary-hover: #e8cfa0;
-    --color-accent: #c9a961;
-    --color-text: #f5eedd;
-    --color-text-muted: #b8b09d;
-    --color-border: #35342a;
-    --color-success: #9bcca9;
-    --color-warning: #e6c083;
-    --color-danger: #efa59b;
-    --color-info: #9cbdd8;
+    color-scheme: light;
+    --ivory-50: 252 249 243;
+    --ivory-100: 249 244 234;
+    --ivory-200: 243 234 218;
+    --ivory-300: 229 216 193;
+    --ivory-400: 207 188 153;
+    --ink-100: 242 235 225;
+    --ink-200: 222 211 195;
+    --ink-300: 150 134 112;
+    --ink-400: 117 102 83;
+    --ink-500: 100 85 68;
+    --ink-600: 78 63 47;
+    --ink-700: 58 44 32;
+    --ink-800: 45 32 23;
+    --ink-900: 32 23 17;
+    --paper: #fcf9f3;
+    --paper-raised: #fffdf8;
+    --ink: #2d2017;
+    --ink-muted: #645544;
+    --gold: #9a6b20;
+    --gold-soft: #f5e7cb;
+    --rule: #e5d8c1;
+    --color-background: #fcf9f3;
+    --color-surface: #fffdf8;
+    --color-surface-muted: #f9f2e6;
+    --color-primary: #b58632;
+    --color-primary-hover: #a37424;
+    --color-accent: #b58632;
+    --color-text: #2d2017;
+    --color-text-muted: #645544;
+    --color-border: #e5d8c1;
+    --color-success: #37613c;
+    --color-warning: #855515;
+    --color-danger: #a13a32;
+    --color-info: #386283;
   }
 
   html {
@@ -80,14 +80,14 @@
   /* Warm, unobtrusive scrollbars for long guest lists. */
   * {
     scrollbar-width: thin;
-    scrollbar-color: #514832 transparent;
+    scrollbar-color: #cbb894 transparent;
   }
   *::-webkit-scrollbar {
     width: 10px;
     height: 10px;
   }
   *::-webkit-scrollbar-thumb {
-    background-color: #514832;
+    background-color: #cbb894;
     border-radius: 999px;
     border: 3px solid transparent;
     background-clip: content-box;
@@ -146,12 +146,12 @@
   /* ---------- Buttons ---------- */
 
   .btn {
-    @apply inline-flex select-none items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-medium
+    @apply inline-flex select-none items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm font-medium
       transition-all duration-200 ease-refined disabled:pointer-events-none disabled:opacity-50;
   }
 
   .btn-primary {
-    @apply bg-brand-primary text-[#17130b] shadow-glow hover:bg-brand-primary-hover hover:shadow-lift active:scale-[0.985];
+    @apply bg-brand-primary text-[#17130b] shadow-soft hover:bg-brand-primary-hover hover:shadow-lift active:scale-[0.985];
   }
 
   .btn-secondary {
@@ -275,13 +275,13 @@
 @layer components {
   .hero-arch {
     border-radius: 48% 48% 1rem 1rem;
-    background: radial-gradient(ellipse at 50% 30%, #4e4128 0%, #28291f 45%, #171914 100%);
-    box-shadow: inset 0 0 0 1px #c9a96133, 0 30px 80px #0005;
+    background: radial-gradient(ellipse at 50% 30%, #fff8e8 0%, #f2e4c8 55%, #e5cfa7 100%);
+    box-shadow: inset 0 0 0 1px #c9a96133, 0 30px 80px #6d4b1a18;
   }
   .gold-button { @apply bg-brand-primary text-[#17130b] hover:bg-brand-primary-hover; }
 }
 
-/* Exports use paper and dark ink even when the screen uses the dark theme. */
+/* Keep exports on a plain white canvas. */
 @media print {
   :root {
     color-scheme: light;

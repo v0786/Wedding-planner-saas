@@ -1,6 +1,6 @@
 import type { Config } from "tailwindcss";
 
-/** Dark gold wedding palette; legacy names map to semantic theme variables. */
+/** Ivory and gold wedding palette; legacy names map to semantic theme variables. */
 const config: Config = {
   content: [
     "./pages/**/*.{js,ts,jsx,tsx,mdx}",
@@ -30,18 +30,18 @@ const config: Config = {
           50: "rgb(var(--ivory-50) / <alpha-value>)",
         },
         champagne: {
-          100: "#211e16",
-          200: "#332c1b",
-          300: "#514329",
-          400: "#a98a4d",
+          100: "#fbf3e4",
+          200: "#f5e7cb",
+          300: "#e8d2a8",
+          400: "#b58632",
         },
         gold: {
-          200: "#4a3c22",
-          300: "#897044",
-          400: "#C9A961",
-          500: "#D4B575",
-          600: "#DCC18B",
-          700: "#E8CFA0",
+          200: "#f0dfbd",
+          300: "#d6b574",
+          400: "#b58632",
+          500: "#a37424",
+          600: "#91601b",
+          700: "#79501a",
         },
         ink: {
           100: "rgb(var(--ink-100) / <alpha-value>)",
@@ -55,20 +55,20 @@ const config: Config = {
           900: "rgb(var(--ink-900) / <alpha-value>)",
         },
         sage: {
-          50: "#15221b",
-          100: "#1d3025",
+          50: "#f3f7ec",
+          100: "#e8efdb",
           300: "#B4CBB4",
-          500: "#8fbd9d",
-          600: "#9bcca9",
-          700: "#acd9b8",
+          500: "#4d7950",
+          600: "#416b43",
+          700: "#37613c",
         },
         rose: {
-          50: "#2a191b",
-          100: "#3a2225",
+          50: "#fff5f1",
+          100: "#fbe4dd",
           300: "#E0B0A9",
-          500: "#ea9b92",
-          600: "#e5a09a",
-          700: "#f1b3ab",
+          500: "#b25045",
+          600: "#a13a32",
+          700: "#8d302a",
         },
         /* design.md §2.2 — Modern Luxury Wedding Editorial design tokens.
            Authoritative palette for the redesign; mapped to CSS variables
@@ -110,9 +110,9 @@ const config: Config = {
       },
       backgroundImage: {
         "gold-sheen":
-          "linear-gradient(135deg, #C9A961 0%, #DCC18B 55%, #E8CFA0 100%)",
+          "linear-gradient(135deg, #f2deb4 0%, #e6c98e 55%, #d6b574 100%)",
         "champagne-wash":
-          "linear-gradient(180deg, #111210 0%, #191a16 40%, #23241e 100%)",
+          "linear-gradient(180deg, #fffdf8 0%, #fcf9f3 40%, #f5ead7 100%)",
         "paper-grain":
           "radial-gradient(circle at 20% 10%, rgba(201,169,97,0.10), transparent 45%), radial-gradient(circle at 85% 0%, rgba(143,112,56,0.08), transparent 40%)",
       },

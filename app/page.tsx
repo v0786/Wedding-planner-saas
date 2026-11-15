@@ -56,7 +56,7 @@ export default async function Home() {
                 <p className="relative mt-3 text-xs text-gold-500">You&apos;re on our guest list.</p>
                 <p className="relative mt-6 text-[9px] uppercase tracking-[0.16em] text-ink-400">Invitation preview</p>
               </div>
-              <div className="absolute -bottom-1 left-0 right-6 flex items-center gap-4 rounded-xl border border-gold-300/40 bg-[#202119] p-4 shadow-lift sm:-left-4 sm:right-20">
+              <div className="absolute -bottom-1 left-0 right-6 flex items-center gap-4 rounded-xl border border-gold-300/40 bg-brand-surface p-4 shadow-lift sm:-left-4 sm:right-20">
                 <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-gold-300/40 text-gold-500" aria-hidden="true">✓</span>
                 <div><p className="text-sm text-ink-800">Joyfully accepted.</p><p className="mt-1 text-xs text-ink-400">Beautiful invitations. Effortless RSVPs.</p></div>
                 <span className="ml-auto text-xl text-gold-500" aria-hidden="true">✧</span>

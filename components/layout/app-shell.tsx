@@ -40,7 +40,7 @@ export default function AppShell({
   }, [open]);
 
   return (
-    <div className="min-h-screen bg-ivory-50">
+    <div className="min-h-screen bg-ivory-50 paper-texture">
       {/* Desktop sidebar */}
       <aside className="fixed inset-y-0 left-0 z-40 hidden w-72 border-r border-ivory-300/70 lg:block print:!hidden">
         <Sidebar isAdmin={isAdmin} />
@@ -82,7 +82,7 @@ export default function AppShell({
           tabIndex={open ? 0 : -1}
           aria-label="Close navigation"
           onClick={() => setOpen(false)}
-          className={`absolute inset-0 bg-black/65 backdrop-blur-[2px] transition-opacity duration-300 ${
+          className={`absolute inset-0 bg-black/30 backdrop-blur-[2px] transition-opacity duration-300 ${
             open ? "opacity-100" : "opacity-0"
           }`}
         />
@@ -112,13 +112,13 @@ export default function AppShell({
       <div className="lg:pl-72 print:!pl-0">
         {email ? (
           <div className="hidden border-b border-ivory-200/70 bg-brand-surface/50 lg:block print:!hidden">
-            <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-6 py-4 text-xs text-ink-400 lg:px-10">
+            <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-6 py-4 text-xs text-ink-400 lg:px-10">
               <span className="text-[10px] uppercase tracking-[0.22em] text-gold-500">Your celebration workspace</span>
               <span className="truncate">Signed in as <span className="ml-1 font-medium text-ink-600">{email}</span></span>
             </div>
           </div>
         ) : null}
-        <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-10 lg:py-12 print:!max-w-none print:!p-0">{children}</main>
+        <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-10 lg:py-12 print:!max-w-none print:!p-0">{children}</main>
       </div>
     </div>
   );

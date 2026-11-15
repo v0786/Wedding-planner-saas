@@ -1,25 +1,32 @@
-# Design System --- Wedding Guest Manager
+# Design System — Wedding Guest Manager
 
-**Version:** 3.0 | **Theme:** Dark gold, selected by the owner on 12 November 2026.
+**Version:** 4.0 | **Theme:** Ivory & Gold, selected by the owner on 15 November 2026 (frontend option 2).
 
-This explicit direction supersedes the earlier light-only palette. The website,
-account pages, dashboard and public RSVP use charcoal surfaces, warm ivory text,
-and restrained gold accents. Printed reports and invitation exports retain paper
-backgrounds and dark ink. Canonical screen tokens live in `app/globals.css`.
+This direction supersedes the earlier dark gold theme. Landing, account,
+dashboard and guest screens share warm ivory surfaces, espresso text, champagne
+highlights and antique gold accents. Typography retains Cormorant Garamond for
+headings and Inter for controls and body text. Canonical tokens live in
+`app/globals.css` and `tailwind.config.ts`.
 
 | Token | HEX |
 | --- | --- |
-| Background | `#10110F` |
-| Surface | `#1B1C17` |
-| Muted surface | `#23241E` |
-| Primary gold | `#D4B575` |
-| Primary hover | `#E8CFA0` |
-| Text | `#F5EEDD` |
-| Muted text | `#B8B09D` |
-| Border | `#35342A` |
+| Background | `#FCF9F3` |
+| Surface | `#FFFDF8` |
+| Muted surface | `#F9F2E6` |
+| Primary gold | `#B58632` |
+| Primary hover | `#A37424` |
+| Text | `#2D2017` |
+| Muted text | `#645544` |
+| Border | `#E5D8C1` |
 
-Gold action buttons use dark text (`#17130B`). Reduced-motion preferences
-are respected. Legacy light specifications below are retained for reference.
+Use rounded cards, fine warm borders, quiet shadows, gold active navigation,
+readable status pills and responsive layouts. Buttons use dark text on gold.
+The selected dashboard image is a visual reference; real account records and
+available product features determine screen contents. Do not add fictional
+seating/room data to match the mockup. Printed exports use plain white paper.
+Reduced-motion preferences remain respected.
+
+The legacy light palette below is retained as historical reference only.
 
 ## 1. Brand direction
 

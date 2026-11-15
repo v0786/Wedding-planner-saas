@@ -6,7 +6,7 @@ Updated 15 November 2026. This tracker follows the full supplied product scope. 
 
 The fresh inspection covered the root application, `app/`, `components/`, `lib/`, Prisma schema and migrations, tests, CI, configuration, screenshots and product document folders. The product-document inventory contains 53 Markdown files with 27 distinct bodies. Every numbered `inbox/*-1.md` duplicates its unnumbered counterpart. Reference copies remain available in `inbox/`.
 
-- The owner selected a dark gold visual design on 12 November 2026. Landing, account, dashboard and guest screens use the dark palette; paper exports retain light backgrounds. Future authorized changes are pushed to GitHub main and the existing Vercel Git integration automatically redeploys.
+- The owner selected frontend option 2, Ivory & Gold, on 15 November 2026, replacing the previous dark gold direction. Shared theme tokens, navigation, metric cards and account/public surfaces now use the warm light palette; paper exports use plain white backgrounds. Future authorized changes are pushed to GitHub main and the existing Vercel Git integration automatically redeploys.
 - The user's approved prices are Basic ₹499, Pro ₹999 and Prime ₹1,999, one time per wedding. Guest counts remain unlimited.
 - The current Prisma and Auth.js stack is retained under `docs/Rules.md` and `docs/SUPABASE_MIGRATION_PLAN.md`. Supabase Auth remains a separately planned migration.
 - The source of truth is the latest user instruction, then the canonical requirements in `docs/`. The API document describes a proposed contract. Existing working routes should retain compatibility while their actual behavior is documented.
@@ -183,3 +183,23 @@ Production secret values cannot be retrieved from Vercel sensitive env entries.
 A source/build pass does not establish a working production database or providers.
 Native Android/iOS, expanded translations, Cashfree and automated campaigns remain
 separate deferred phases; the implemented release is the responsive web SaaS.
+
+## Ivory & Gold frontend — 15 November 2026
+
+Owner approved visual option 2. Updated shared light theme, semantic and status
+colors, viewport metadata, primary controls, sidebar selection, metric cards,
+workspace canvas and landing-page surface. Existing application routes and data
+flows are retained. No database/schema changes.
+
+Verification in the frontend checkout:
+- `npm ci --no-audit --no-fund`: passed.
+- `npm run build`: passed.
+- `npx tsc --noEmit`: passed.
+- `npm run lint`: passed with the existing invitation image optimization warning.
+- `npm test -- --runInBand`: 145 passed; five registration cases could not run
+  successfully because their PostgreSQL database at localhost:5432 was unavailable.
+- `git diff --check`: passed.
+- Browser preview could not reach the local server from the separate browser
+  environment (ERR_CONNECTION_REFUSED); visual browser acceptance remains open.
+- Previous Vercel production deployment failed during Prisma migration with
+  P1001 (production database unreachable). This frontend does not bypass migrations.
