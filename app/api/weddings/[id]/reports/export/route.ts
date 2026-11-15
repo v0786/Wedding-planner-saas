@@ -1,12 +1,11 @@
-import { stringify } from "csv-stringify/sync"
 import { handleApiError } from "@/lib/api"
-import { spreadsheetCsvOptions } from "@/lib/csv"
+import { spreadsheetFormat, tabularDownload } from "@/lib/spreadsheet"
 import { requireUserId } from "@/lib/server-auth"
 import { assertWeddingFeature } from "@/lib/subscriptions/service"
 import { requireWeddingAccess } from "@/lib/wedding-access"
 import { getWeddingReport } from "@/lib/wedding-report"
 
-export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const userId = await requireUserId()
     const { id } = await params
@@ -37,20 +36,9 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
         ["Groups", group, "Headcount", stats.headcount],
       ]),
     ]
-    const csv = stringify(rows, {
-      ...spreadsheetCsvOptions,
-      header: true,
-      columns: ["Section", "Item", "Metric", "Value"],
-    })
     const safeName = wedding.name.replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "").toLowerCase()
 
-    return new Response(csv, {
-      headers: {
-        "Content-Type": "text/csv; charset=utf-8",
-        "Content-Disposition": `attachment; filename="${safeName || "wedding"}-report.csv"`,
-        "Cache-Control": "private, no-store",
-      },
-    })
+    return await tabularDownload({ headers: ["Section", "Item", "Metric", "Value"], rows, name: `${safeName || "wedding"}-report`, format: spreadsheetFormat(request), sheetName: "Summary" })
   } catch (error) {
     return handleApiError(error)
   }
