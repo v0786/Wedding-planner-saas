@@ -12,9 +12,9 @@ import {
   type LimitMap,
 } from "@/lib/subscriptions/config"
 
-const featureSchema = z.record(z.boolean()).optional()
+const featureSchema = z.record(z.string(), z.boolean()).optional()
 const limitSchema = z
-  .record(z.union([z.number().int().min(0).max(1_000_000), z.null()]))
+  .record(z.string(), z.union([z.number().int().min(0).max(1_000_000), z.null()]))
   .optional()
 
 const updateSchema = z.object({
