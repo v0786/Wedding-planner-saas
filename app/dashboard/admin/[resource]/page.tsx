@@ -2,7 +2,7 @@ import Link from "next/link"
 import { notFound } from "next/navigation"
 import { ZodError } from "zod"
 import { ADMIN_RESOURCES, adminResource, getAdminListing } from "@/lib/admin-overview"
-import { requireAdmin } from "@/lib/subscriptions/admin"
+import { requireAdminPage } from "@/lib/subscriptions/admin"
 
 export const dynamic = "force-dynamic"
 export const revalidate = 0
@@ -10,7 +10,7 @@ export const revalidate = 0
 type Query = { page?: string; reason?: string }
 
 export default async function AdminResourcePage({ params, searchParams }: { params: Promise<{ resource: string }>; searchParams: Promise<Query> }) {
-  await requireAdmin()
+  await requireAdminPage()
   const resource = adminResource((await params).resource)
   if (!resource) notFound()
   const query = await searchParams
