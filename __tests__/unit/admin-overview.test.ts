@@ -16,7 +16,7 @@ jest.mock("@/lib/prisma", () => ({
 
 beforeEach(() => {
   jest.clearAllMocks()
-  jest.mocked(requireAdmin).mockResolvedValue({ id: "administrator", email: "admin@example.com", isAdmin: true, emailVerified: null })
+  jest.mocked(requireAdmin).mockResolvedValue({ id: "administrator", email: "admin@example.com", isAdmin: true, emailVerified: null, sessionVersion: 0 })
 })
 
 it("authorizes before platform counts or customer data can be read", async () => {
