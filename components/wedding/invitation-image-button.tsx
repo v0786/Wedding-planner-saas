@@ -151,7 +151,8 @@ function wrapText(ctx: CanvasRenderingContext2D, value: string): string[] {
 }
 
 async function loadPhoto(url: string): Promise<HTMLImageElement> {
-  if (new URL(url).protocol !== "https:") throw new Error("Use HTTPS images")
+  const resolved = new URL(url, window.location.origin)
+  if (resolved.protocol !== "https:" && !(url.startsWith("/api/weddings/") && resolved.origin === window.location.origin)) throw new Error("Use HTTPS images")
   return new Promise((resolve, reject) => {
     const photo = new Image()
     const timeout = window.setTimeout(() => reject(new Error("Photo timed out")), 10_000)
