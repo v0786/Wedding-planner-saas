@@ -2,11 +2,12 @@ import { requireUserId } from "@/lib/server-auth"
 import { prisma } from "@/lib/prisma"
 import { handleApiError } from "@/lib/api"
 import { contactsAreVisible } from "@/lib/wedding-settings"
-import { guestsToCsv } from "@/lib/csv"
+import { GUEST_CSV_HEADERS } from "@/lib/csv"
+import { spreadsheetFormat, tabularDownload } from "@/lib/spreadsheet"
 import { requireWeddingAccess } from "@/lib/wedding-access"
 import { assertWeddingFeature } from "@/lib/subscriptions/service"
 
-export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const userId = await requireUserId()
     const { id } = await params
@@ -32,15 +33,9 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
       },
     })
 
-    const csv = guestsToCsv(guests, { includeContacts: contactsAreVisible(wedding) })
+    const columns = contactsAreVisible(wedding) ? [...GUEST_CSV_HEADERS] : GUEST_CSV_HEADERS.filter((column) => column !== "mobile" && column !== "email")
     const safeName = wedding.name.replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "").toLowerCase()
-    return new Response(csv, {
-      headers: {
-        "Content-Type": "text/csv; charset=utf-8",
-        "Cache-Control": "private, no-store",
-        "Content-Disposition": `attachment; filename="${safeName || "wedding"}-guests.csv"`,
-      },
-    })
+    return await tabularDownload({ headers: columns, rows: guests.map((guest) => columns.map((column) => guest[column])), name: `${safeName || "wedding"}-guests`, format: spreadsheetFormat(req), sheetName: "Guests" })
   } catch (error) {
     return handleApiError(error)
   }
