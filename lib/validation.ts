@@ -18,7 +18,7 @@ const optionalText = (max: number) =>
 /** Accepts an ISO date string, a `YYYY-MM-DD` input value, a Date, or empty. */
 export const optionalDate = z.preprocess(
   (value) => (value === "" || value === undefined || value === null ? null : value),
-  z.coerce.date({ invalid_type_error: "Enter a valid date" }).nullable(),
+  z.coerce.date({ error: "Enter a valid date" }).nullable(),
 )
 
 export const emailSchema = z.string().trim().toLowerCase().email("Enter a valid email address").max(254)
@@ -67,6 +67,12 @@ const optionalHttpsUrl = z.preprocess(
     value => new URL(value).protocol === "https:", "Use an HTTPS URL",
   ).optional().nullable(),
 )
+const optionalImageUrl = z.preprocess(value => value === "" ? null : value,
+  z.union([
+    z.string().regex(/^\/api\/weddings\/[a-zA-Z0-9_-]+\/assets\/(cover|couple)-[a-f0-9-]{36}\.(png|jpg|webp)$/),
+    z.string().trim().url().max(2048).refine(value => new URL(value).protocol === "https:", "Use an HTTPS image URL"),
+  ]).optional().nullable(),
+)
 const localeSchema = z.string().trim().max(40).refine(value => {
   try { return Intl.DateTimeFormat.supportedLocalesOf([value]).length === 1 } catch { return false }
 }, "Enter a supported formatting locale")
@@ -86,11 +92,18 @@ export const weddingCreateSchema = z.object({
   rsvpDeadline: optionalDate,
 })
 
-export const weddingUpdateSchema = weddingCreateSchema.partial().extend({
+// PATCH schemas omit creation defaults: Zod 4 applies defaults inside optional
+// properties, which would otherwise reset privacy, timezone or event settings.
+export const weddingUpdateSchema = weddingCreateSchema.extend({
+  timezone: weddingCreateSchema.shape.timezone.unwrap(),
+  locale: weddingCreateSchema.shape.locale.unwrap(),
+  contactVisibility: weddingCreateSchema.shape.contactVisibility.unwrap(),
+  publicFields: weddingCreateSchema.shape.publicFields.unwrap(),
+}).partial().extend({
   id: z.string().min(1).optional(),
   mapUrl: optionalHttpsUrl,
-  coverImageUrl: optionalHttpsUrl,
-  couplePhotoUrl: optionalHttpsUrl,
+  coverImageUrl: optionalImageUrl,
+  couplePhotoUrl: optionalImageUrl,
   invitationTheme: z.enum(["classic", "floral", "minimal"]).optional(),
   themeColor: z.preprocess(value => value === "" ? null : value,
     z.string().regex(/^#[0-9a-f]{6}$/i, "Choose a six-digit hex colour").optional().nullable()),
@@ -114,6 +127,11 @@ export const eventSchema = z.object({
   order: z.coerce.number().int().min(0).max(10000).default(0),
   rsvpDeadline: optionalDate,
 })
+
+export const eventUpdateSchema = eventSchema.extend({
+  publicFields: eventSchema.shape.publicFields.unwrap(),
+  order: eventSchema.shape.order.unwrap(),
+}).partial()
 
 export const guestSchema = z.object({
   firstName: text(1, 120),
@@ -191,6 +209,13 @@ export const customQuestionSchema = z.object({
   order: z.coerce.number().int().min(0).max(10000).default(0),
   enabled: z.boolean().default(true),
 })
+
+export const customQuestionUpdateSchema = customQuestionSchema.extend({
+  type: customQuestionSchema.shape.type.unwrap(),
+  required: customQuestionSchema.shape.required.unwrap(),
+  order: customQuestionSchema.shape.order.unwrap(),
+  enabled: customQuestionSchema.shape.enabled.unwrap(),
+}).partial()
 
 export type WeddingInput = z.infer<typeof weddingCreateSchema>
 export type EventInput = z.infer<typeof eventSchema>
