@@ -1,3 +1,4 @@
+import { processWeddingAssetCleanup } from "@/lib/wedding-asset-cleanup"
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { handleApiError } from "@/lib/api"
@@ -23,8 +24,9 @@ export async function GET(request: Request) {
       now,
       deleteDue: process.env.WEDDING_RETENTION_DELETE_ENABLED === "true",
     })
+    const assetCleanup = await processWeddingAssetCleanup()
     console.info("Wedding retention completed", summary)
-    return NextResponse.json({ ...summary, reminders }, { headers: { "Cache-Control": "no-store" } })
+    return NextResponse.json({ ...summary, reminders, assetCleanup }, { headers: { "Cache-Control": "no-store" } })
   } catch (error) {
     return handleApiError(error)
   }
