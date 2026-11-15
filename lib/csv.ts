@@ -60,7 +60,16 @@ export function parseGuestCsv(input: string | Buffer): CsvParseResult {
   let records: Record<string, string>[]
   try {
     records = parse(buffer, {
-      columns: (header: string[]) => header.map((column) => column.trim().replace(/^\uFEFF/, "")),
+      columns: (header: string[]) => {
+        const columns = header.map((column) => column.trim().replace(/^\uFEFF/, ""))
+        // Reject unexpected property names before the CSV parser creates objects.
+        // This also prevents duplicate headers from silently overwriting values.
+        if (new Set(columns).size !== columns.length) throw new Error("Duplicate column headers are not allowed")
+        if (!columns.includes("firstName")) throw new Error('Missing required column "firstName"')
+        const unknown = columns.filter((column) => !(GUEST_CSV_HEADERS as readonly string[]).includes(column))
+        if (unknown.length) throw new Error(`Unknown column(s): ${unknown.join(", ")}`)
+        return columns
+      },
       skip_empty_lines: true,
       trim: true,
       bom: true,
